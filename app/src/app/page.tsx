@@ -1,9 +1,18 @@
-export default function Home() {
+import { redirect } from 'next/navigation'
+import { optionalSession } from '@/lib/dal'
+
+export default async function Home() {
+  // Already signed in? Skip the landing page.
+  const session = await optionalSession()
+  if (session) {
+    redirect('/dashboard')
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-amber-50">
       {/* Top bar */}
       <header className="bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white shadow-lg">
-        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="text-3xl">🎪</div>
             <div>
@@ -11,8 +20,16 @@ export default function Home() {
               <p className="text-xs text-amber-100 opacity-90">Big Star Circus operations platform</p>
             </div>
           </div>
-          <div className="text-xs bg-white/15 px-3 py-1.5 rounded-full font-bold tracking-wide">
-            v0.1 · DEPLOYED
+          <div className="flex items-center gap-3">
+            <a
+              href="/login"
+              className="bg-white text-[#D72027] font-extrabold text-sm px-4 py-2 rounded-full hover:bg-amber-100 shadow-md transition-colors"
+            >
+              Sign in
+            </a>
+            <div className="hidden sm:block text-xs bg-white/15 px-3 py-1.5 rounded-full font-bold tracking-wide">
+              v0.1 · DEPLOYED
+            </div>
           </div>
         </div>
       </header>
@@ -29,6 +46,14 @@ export default function Home() {
             This is the canonical home of every family, every student, every star,
             every roll call, every booking. Made in Australia. Built for circus schools, dance studios, gymnastics clubs — starting with one.
           </p>
+          <div className="mt-8">
+            <a
+              href="/login"
+              className="inline-block bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-lg px-8 py-4 rounded-xl shadow-xl hover:shadow-2xl transition-shadow"
+            >
+              Sign in →
+            </a>
+          </div>
         </div>
 
         {/* Status panel */}
@@ -46,7 +71,7 @@ export default function Home() {
           <FeatureCard
             icon="📋"
             title="Slice 1 · Foundation"
-            status="In progress"
+            status="Live"
             description="Auth + dashboard + tenant + user setup. Sign in via magic link, see today's classes."
           />
           <FeatureCard
@@ -81,7 +106,7 @@ export default function Home() {
         </footer>
       </main>
     </div>
-  );
+  )
 }
 
 function StatusTile({ label, value, sub }: { label: string; value: string; sub: string }) {
@@ -91,15 +116,16 @@ function StatusTile({ label, value, sub }: { label: string; value: string; sub: 
       <div className="text-lg font-extrabold text-zinc-900 mb-1">{value}</div>
       <div className="text-xs text-zinc-600">{sub}</div>
     </div>
-  );
+  )
 }
 
 function FeatureCard({ icon, title, status, description }: { icon: string; title: string; status: string; description: string }) {
   const statusColors: Record<string, string> = {
+    "Live": "bg-green-100 text-green-800",
     "In progress": "bg-amber-100 text-amber-800",
     "Next": "bg-blue-100 text-blue-800",
     "Soon": "bg-zinc-100 text-zinc-700",
-  };
+  }
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
       <div className="flex items-start gap-3 mb-3">
@@ -115,5 +141,5 @@ function FeatureCard({ icon, title, status, description }: { icon: string; title
       </div>
       <p className="text-sm text-zinc-600 leading-relaxed">{description}</p>
     </div>
-  );
+  )
 }
