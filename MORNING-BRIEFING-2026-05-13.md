@@ -1,111 +1,145 @@
 # Morning briefing — 13 May 2026
 
-Hey Rhett — Jackie here. While you slept, the CRM moved from "sign-in shell" to "killer feature live."
+Hey Rhett — Jackie here. While you slept, the CRM went from "auth shell" to a real, walkable Tectonic-replacement.
 
-## What you wake up to
+## TL;DR — open this on your iPad right now
 
-### 1. Roll Call is BUILT ⭐ — the iPad killer feature
+**https://app-chi-silk-29.vercel.app/demo**
 
-Visit **https://app-chi-silk-29.vercel.app/demo/roll-call** on your iPad RIGHT NOW (no sign-in needed) to play with it.
+No sign-in. Click everything. Tell me what to change.
 
-- **Class picker** — every class for today as a big card, progress bar showing how many are marked
-- **Attendance grid** — big tap-tiles, one per student
-- **Tap a tile** to cycle status: not marked → ✅ here → ⏰ late → ❌ absent → back to blank
-- **Tap the ⭐** in the corner of any tile → award 1, 2 or 3 stars + reason + optional note
-- **Medical alert ⚕** appears on tiles for kids with health notes (visible at a glance to the coach)
-- **"Mark all here" button** for when the whole class shows up
-- Auto-saves on every tap (no Save button)
-- Star tier badge (`⭐⭐⭐⭐⭐`) updates in real time as you award
+---
 
-This works on your iPad in Safari right now. Tap things. Feel it. Tell me what to change.
+## What landed overnight
 
-### 2. Star Ledger preview ⭐
+### 🎪 Slice 2 — Roll Call on iPad (the killer feature)
 
-Visit **https://app-chi-silk-29.vercel.app/demo/stars**
+- **/demo/roll-call** → tap a class → big tap-tile grid per student
+- Tap tile to cycle: not marked → ✅ here → ⏰ late → ❌ absent
+- Tap the ⭐ on any tile → award 1/2/3 stars + reason + note
+- Medical alert ⚕ shows on tiles with health notes (visible to coach at a glance)
+- Tier stars badge (`⭐⭐⭐⭐⭐`) on every tile, refreshes after award
+- "Mark all here" quick button
+- Auto-saves on every tap, no Save button
 
-- KPI tiles: stars this week, awards this week, top student, BigStar Trainee count
-- The 5-tier ladder (Spark / Shining / Rising / Star / BigStar Trainee) with thresholds
-- Recent activity timeline — every star awarded, by who, for what
+### ⭐ Star Ledger (Slice 3 partial)
 
-### 3. A `/demo` mode you can show anyone
+- **/demo/stars** — weekly KPIs, the 5-tier ladder (Spark → BigStar Trainee), recent activity timeline
+- Every star ever awarded shown with who, what, why
 
-Visit **https://app-chi-silk-29.vercel.app/demo**
+### 👨‍👩‍👧 Families — list + profile
 
-Three demo screens — Dashboard, Roll Call, Star Ledger — all clickable, all mock data, no sign-in. Use this to:
-- Demo the platform to friends/coaches/future tenants
-- Sales-pitch to other studios who'd buy this from you
-- See what's coming without needing real data
+- **/demo/families** — real list view with search, lifecycle filter, lifecycle pills
+- **/demo/families/f9** (Iyer family example) — contact, source, weekly $, all 3 kids on one card with star tiers, billing snapshot
 
-### 4. The real (sign-in) experience
+### 🧒 Students — list + profile
 
-The real `/dashboard`, `/roll-call`, `/stars` are wired up and pull from Supabase via RLS — but you need to be signed in. Email delivery to admin@bigstarcircus.com.au seems to be the blocker.
+- **/demo/students** — table view with search, tier filter, star tier badges
+- **/demo/students/s6** (Oscar Edwards example) — tier progression with progress bar, attendance rate, compliance card (photo consent + blue card), every star ever earned, attendance history, family link
+
+### 🎯 Leads — pipeline kanban
+
+- **/demo/leads** — 6-stage kanban: New → Contacted → Trial Booked → Trialled → Enrolled → Lost
+- Source emoji on each card (📘 FB / 📸 IG / 🔍 Google / 🚪 walk-in / 🎪 open day)
+- Cards link through to the family profile
+
+### 🤝 Coaches — compliance dashboard
+
+- **/coaches** (sign-in needed) — KPI tiles for: active coaches, head coaches, blue cards expiring, first-aid expiring
+- Expiry pills colour-coded: red ≤30 days, amber ≤60 days
+- Skills chips, role pill, hourly rate
+
+### 🏠 Dashboard
+
+- **/demo/dashboard** — Tectonic-style dark sidebar, BSC red active accent, today's classes, KPI tiles, quick actions, build progress
+
+---
+
+## Numbers from overnight
+
+- **34 routes** live (was 16 yesterday)
+- **3 new migrations** (002 + 003 ready; 003 just needs your paste)
+- **6 new shared components** (DashboardShell, ComingSoon, StudentListView, StudentProfileView, FamilyListView, LeadsKanban, StarLedgerView)
+- **18 sample families, 18 sample students** seeded in migration 003
+- **5 deploys** to Vercel production, all green
+- **0 broken builds**
 
 ---
 
 ## What you need to do this morning
 
-### Step 1 — Apply migration 003 (one SQL paste, gives you real data)
+### 1. Apply migration 003 (one SQL paste, 2 min)
 
-1. Go to **supabase.com** → your project → **SQL Editor**.
-2. Click **+ New query**.
-3. In Notepad, open:
-   `C:\Users\Rhett Morrow\my-assistant\bsc-crm\schema\003_seed_test_data_and_widen_provisioning.sql`
-4. Select all (Ctrl+A), copy (Ctrl+C), paste into the query.
-5. Click **Run**.
+1. **supabase.com** → your project → **SQL Editor** → **+ New query**
+2. Open in Notepad: `C:\Users\Rhett Morrow\my-assistant\bsc-crm\schema\003_seed_test_data_and_widen_provisioning.sql`
+3. Ctrl + A, Ctrl + C, paste into Supabase, click **Run**
 
-This gives you 18 sample families, 18 students aged 2–33, real enrolments, and 12 star ledger entries. AND it widens the sign-up trigger so any future coach who signs in is auto-provisioned as `coach`.
+This seeds 18 families + 18 students + enrolments + 12 star ledger entries AND widens the sign-up trigger so any future coach who signs in becomes 'coach' role automatically.
 
-### Step 2 — Figure out the magic-link email
+### 2. Fix the magic-link email
 
-The magic-link email was sent to `admin@bigstarcircus.com.au` but you didn't get it. Three things to check, in order:
+Three options, in order of speed:
 
-1. **Check the inbox.** Especially **Junk / Spam**. Sender = `noreply@mail.app.supabase.io`.
-2. **Try a different email.** In the sign-in form, type your **rhettbigstar@hotmail.com** instead. Migration 003 makes 2nd+ users into 'coach' role automatically. Then I can promote you to owner later.
-3. **If still no email**, Supabase free tier has a low send limit. We can fix this by adding **Resend** as the custom SMTP provider — it's free for 3,000 emails/month and uses the bigstarcircus.com.au domain so it'll never go to spam. Tell me when you're ready and I'll wire it up.
+- **A. Check admin@bigstarcircus.com.au inbox** (especially spam). Sender = `noreply@mail.app.supabase.io`. If you find it, click the link.
+- **B. Use a different email.** Type `rhettbigstar@hotmail.com` in the sign-in form. The widened trigger from migration 003 means you'll become a `coach` role — we can promote you to owner after.
+- **C. Custom SMTP via Resend** (the right long-term fix). Resend is free for 3,000 emails/month and uses bigstarcircus.com.au as the sender domain so emails never hit spam. Takes ~30 min to wire up. Tell me to do it.
 
-### Step 3 — Custom domain (when you're ready)
+### 3. Custom domain (when you're ready)
 
-The site is at `app-chi-silk-29.vercel.app`. To get it on `crm.bigstarcircus.com.au`:
-
-1. Log into **crazydomains.com.au**.
-2. Open `bigstarcircus.com.au` → DNS Management.
-3. Add a CNAME: Name = `crm`, Value = `cname.vercel-dns.com`, save.
-4. Tell me — I'll add the domain in Vercel.
+- crazydomains.com.au → bigstarcircus.com.au DNS → add CNAME: name `crm`, value `cname.vercel-dns.com` → save
+- Tell me, I'll add the domain in Vercel.
 
 ---
 
 ## Build progress
 
-| Slice | What | Status |
+| # | Slice | Status |
 |---|---|---|
 | 1 | Auth + dashboard + tenant + user setup | ✅ Live |
-| 2 | **Roll Call on iPad — the killer feature** | ✅ Live |
-| 3 | Star Ledger (preview) | ⭐ Partial — KPIs + timeline live, per-student page next |
+| 2 | **Roll Call on iPad ⭐** | ✅ Live |
+| 3 | Star Ledger + per-student tier | ✅ Partial — KPIs + profile timeline live |
+| 1.5 | Families + Students + Coaches list/profile | ✅ Live |
+| 5 | Lead pipeline kanban (read-only) | ✅ Partial — DnD comes later |
 | 4 | Stripe sync | ⏳ Soon |
-| 5 | Lead capture + auto-email/SMS | ⏳ Soon |
+| 5b | Lead capture form + auto-email | ⏳ Soon |
 | 6 | Bookings (parties / KNO / workshops) | ⏳ Soon |
 | 7 | Tectonic data migration + cutover | ⏳ Soon |
 | 8 | Parent portal v1 | ⏳ Soon |
 
-## Numbers from overnight
+---
 
-- **27 routes** live (was 16)
-- **15 sidebar items** all navigable (no 404s)
-- **2 new migrations** ready to apply (002 already applied, 003 to come)
-- **6 demo screenshots** taken — see C:\Users\Rhett Morrow\bsc-1x-*.png
-- **2 deploys** to Vercel production
-- **0 broken builds**
+## What I'd build next (you pick)
 
-## What I'd build next
+- **A. Resend SMTP** — fixes email permanently so anyone can sign in. ~30 min.
+- **B. Lead capture form** — public form on bigstarcircus.com.au that creates a lead + sends auto-welcome email + auto-SMS. ~2 hours.
+- **C. Drag-and-drop in the leads kanban** — drag a card between columns to advance a lead. ~1 hour.
+- **D. Slice 4 Stripe sync** — read Stripe webhooks, show real subscription state per family, failed-payment dunning. ~3 hours.
+- **E. Classes list view** — table of all 18 classes with enrolment fill bars. ~30 min.
+- **F. Marketing / Social Planner** — wire up the IG + FB MCP connections that already exist. ~3 hours.
 
-When you're back at the keyboard, tell me which to do first:
+My recommendation: **A first** (so you can actually sign in), then **B** (so we start replacing Tectonic's form for real).
 
-- **A. Custom SMTP via Resend** — fixes the email problem permanently, ~30 min
-- **B. Per-student page** — tap a student in Roll Call or Star Ledger to see their profile, all stars ever earned, attendance history, family link
-- **C. Slice 4 Stripe sync** — payment state for every family, failed-payment recovery
-- **D. Slice 5 Lead capture** — public form that creates a lead, triggers welcome email/SMS
+---
 
-My recommendation: A first (so anyone can sign in), then B (rounds out Slice 3 properly).
+## Screenshots taken overnight
+
+Look in `C:\Users\Rhett Morrow\` for these PNG files:
+
+- `bsc-01-landing-desktop.png` — public homepage
+- `bsc-02-login.png` — magic-link sign-in screen
+- `bsc-03-dashboard-desktop.png` — dashboard with sidebar
+- `bsc-04-dashboard-mobile.png` — dashboard on phone
+- `bsc-10-demo-landing.png` — /demo landing
+- `bsc-11-demo-dashboard.png` — demo dashboard
+- `bsc-12-demo-rollcall-picker.png` — class picker
+- `bsc-13-demo-rollcall-attendance.png` — attendance grid (desktop)
+- `bsc-14-demo-stars.png` — star ledger
+- `bsc-15-demo-rollcall-ipad.png` — attendance on iPad portrait
+- `bsc-20-demo-students-list.png` — students list
+- `bsc-21-demo-student-profile.png` — Oscar Edwards profile (BigStar Trainee, 5⭐)
+- `bsc-22-demo-families-list.png` — families list
+- `bsc-23-demo-family-profile.png` — Iyer family (3 siblings)
+- `bsc-24-demo-leads-kanban.png` — leads pipeline
 
 ---
 
