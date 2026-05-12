@@ -3,6 +3,10 @@ import { CalendarView } from '@/components/calendar-view'
 import { demoUser } from '@/lib/demo-data'
 import type { CalendarItem } from '@/lib/calendar'
 
+// Force dynamic so the demo times are computed at request time (not build time)
+// — otherwise everyone sees the same "starts in 45 min" baked in at deploy time.
+export const dynamic = 'force-dynamic'
+
 function inMinutes(min: number): Date {
   return new Date(Date.now() + min * 60_000)
 }
