@@ -1,6 +1,8 @@
 import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
+import { NextUpBanner } from '@/components/calendar-view'
+import { expandClass, type CalendarItem } from '@/lib/calendar'
 
 type ClassRow = {
   id: string
@@ -50,7 +52,10 @@ export default async function DashboardPage() {
   const supabase = await createServerSupabase()
   const today = todayInBrisbane()
 
-  const [classesResult, familyCountRes, studentCountRes, classCountRes, leadCountRes] = await Promise.all([
+  const now = new Date()
+  const horizon = new Date(now.getTime() + 6 * 3600_000) // 6h window for "next up"
+
+  const [classesResult, familyCountRes, studentCountRes, classCountRes, leadCountRes, upcomingApptsRes, allClassesRes] = await Promise.all([
     supabase
       .from('classes')
       .select(`
@@ -66,10 +71,65 @@ export default async function DashboardPage() {
     supabase.from('students').select('id', { count: 'exact', head: true }),
     supabase.from('classes').select('id', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('families').select('id', { count: 'exact', head: true }).eq('lifecycle_stage', 'lead'),
+    supabase
+      .from('appointments')
+      .select(`
+        id, title, type, start_at, end_at, location, notes, alert_minutes_before, fee, paid,
+        coach:coaches!appointments_assigned_coach_id_fkey ( full_name ),
+        family:families!appointments_related_family_id_fkey ( id, family_name ),
+        student:students!appointments_related_student_id_fkey ( id, first_name, last_name )
+      `)
+      .gte('end_at', now.toISOString())
+      .lte('start_at', horizon.toISOString())
+      .eq('status', 'scheduled')
+      .order('start_at', { ascending: true })
+      .limit(1),
+    supabase
+      .from('classes')
+      .select(`
+        id, name, discipline, day_of_week, start_time, duration_minutes,
+        primary_coach:coaches!classes_primary_coach_id_fkey ( full_name )
+      `)
+      .eq('status', 'active'),
   ])
 
   const classes = classesResult.data ?? []
   const classError = classesResult.error
+
+  // Build "next up" candidate from BOTH appointments + recurring classes in next 6h
+  const nextUpCandidates: CalendarItem[] = []
+  for (const a of upcomingApptsRes.data ?? []) {
+    const coach = Array.isArray(a.coach) ? a.coach[0] : a.coach
+    const fam = Array.isArray(a.family) ? a.family[0] : a.family
+    const stu = Array.isArray(a.student) ? a.student[0] : a.student
+    nextUpCandidates.push({
+      id: `appt-${a.id}`,
+      kind: 'appointment',
+      title: a.title,
+      type: a.type,
+      start: new Date(a.start_at),
+      end: new Date(a.end_at),
+      location: a.location,
+      notes: a.notes,
+      coach: coach?.full_name ?? null,
+      family: fam ? { id: fam.id, name: fam.family_name } : null,
+      student: stu ? { id: stu.id, firstName: stu.first_name, lastName: stu.last_name } : null,
+      alertMinutesBefore: a.alert_minutes_before,
+      fee: a.fee,
+      paid: a.paid,
+      href: '/calendar',
+    })
+  }
+  // Today's classes expanded for the next 6h
+  for (const c of allClassesRes.data ?? []) {
+    if (c.day_of_week !== today) continue
+    const occ = expandClass(c as any, now)
+    if (occ.end.getTime() >= now.getTime() && occ.start.getTime() <= horizon.getTime()) {
+      nextUpCandidates.push(occ)
+    }
+  }
+  nextUpCandidates.sort((a, b) => a.start.getTime() - b.start.getTime())
+  const nextUp = nextUpCandidates[0] ?? null
 
   return (
     <DashboardShell
@@ -87,6 +147,9 @@ export default async function DashboardPage() {
       }
     >
       <div className="space-y-8">
+        {/* Next up banner (only when something is upcoming in the next 6h) */}
+        {nextUp && <NextUpBanner item={nextUp} now={now} />}
+
         {/* KPI tiles */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <KpiTile
