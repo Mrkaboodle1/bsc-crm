@@ -1,5 +1,6 @@
 import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
+import { DashboardShell } from '@/components/dashboard-shell'
 
 type ClassRow = {
   id: string
@@ -18,11 +19,9 @@ type ClassRow = {
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 function todayInBrisbane() {
-  // BSC runs on AEST (Brisbane = UTC+10, no DST). Get the right day-of-week
-  // regardless of where the server is.
   const now = new Date()
   const brisbane = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Brisbane' }))
-  return brisbane.getDay() // 0=Sun, 6=Sat
+  return brisbane.getDay()
 }
 
 function formatTime(t: string) {
@@ -49,146 +48,262 @@ const DISCIPLINE_EMOJI: Record<string, string> = {
 export default async function DashboardPage() {
   const user = await verifySession()
   const supabase = await createServerSupabase()
-
   const today = todayInBrisbane()
 
-  const { data: classes, error } = await supabase
-    .from('classes')
-    .select(`
-      id, name, day_of_week, start_time, duration_minutes,
-      discipline, age_min, age_max, capacity, weekly_fee,
-      primary_coach:coaches!classes_primary_coach_id_fkey ( full_name )
-    `)
-    .eq('day_of_week', today)
-    .eq('status', 'active')
-    .order('start_time', { ascending: true })
-    .returns<ClassRow[]>()
-
-  // Pull a tenant-wide snapshot for the stat tiles.
-  const [
-    { count: familyCount },
-    { count: studentCount },
-    { count: classCount },
-  ] = await Promise.all([
+  const [classesResult, familyCountRes, studentCountRes, classCountRes, leadCountRes] = await Promise.all([
+    supabase
+      .from('classes')
+      .select(`
+        id, name, day_of_week, start_time, duration_minutes,
+        discipline, age_min, age_max, capacity, weekly_fee,
+        primary_coach:coaches!classes_primary_coach_id_fkey ( full_name )
+      `)
+      .eq('day_of_week', today)
+      .eq('status', 'active')
+      .order('start_time', { ascending: true })
+      .returns<ClassRow[]>(),
     supabase.from('families').select('id', { count: 'exact', head: true }),
     supabase.from('students').select('id', { count: 'exact', head: true }),
     supabase.from('classes').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+    supabase.from('families').select('id', { count: 'exact', head: true }).eq('lifecycle_stage', 'lead'),
   ])
 
+  const classes = classesResult.data ?? []
+  const classError = classesResult.error
+
   return (
-    <div className="space-y-8">
-      {/* Greeting */}
-      <section>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-zinc-900 tracking-tight">
-          {greeting()}, {firstName(user.fullName, user.email)} 👋
-        </h1>
-        <p className="text-zinc-600 mt-1">
-          It&apos;s {DAY_NAMES[today]}. Here&apos;s what&apos;s on today.
-        </p>
-      </section>
+    <DashboardShell
+      user={user}
+      currentPath="/dashboard"
+      pageTitle={`${greeting()}, ${firstName(user.fullName, user.email)} 👋`}
+      pageSubtitle={`It's ${DAY_NAMES[today]} — here's what's on today.`}
+      pageActions={
+        <a
+          href="/roll-call"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+        >
+          📋 Open Roll Call
+        </a>
+      }
+    >
+      <div className="space-y-8">
+        {/* KPI tiles */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <KpiTile
+            icon="👨‍👩‍👧"
+            label="Families"
+            value={familyCountRes.count ?? 0}
+            accent="from-[#D72027] to-[#A0151B]"
+          />
+          <KpiTile
+            icon="🧒"
+            label="Students"
+            value={studentCountRes.count ?? 0}
+            accent="from-amber-500 to-amber-600"
+          />
+          <KpiTile
+            icon="📅"
+            label="Active classes"
+            value={classCountRes.count ?? 0}
+            accent="from-blue-500 to-blue-700"
+          />
+          <KpiTile
+            icon="🎯"
+            label="Open leads"
+            value={leadCountRes.count ?? 0}
+            accent="from-emerald-500 to-emerald-700"
+          />
+        </section>
 
-      {/* Snapshot tiles */}
-      <section className="grid grid-cols-3 gap-3 sm:gap-4">
-        <StatTile icon="👨‍👩‍👧" label="Families" value={familyCount ?? 0} />
-        <StatTile icon="🧒" label="Students" value={studentCount ?? 0} />
-        <StatTile icon="📅" label="Active classes" value={classCount ?? 0} />
-      </section>
-
-      {/* Today's classes */}
-      <section>
-        <div className="flex items-end justify-between mb-4">
-          <h2 className="text-xl sm:text-2xl font-extrabold text-zinc-900">Today&apos;s classes</h2>
-          <a
-            href="/roll-call"
-            className="text-sm font-bold text-[#D72027] hover:underline hidden sm:inline"
-          >
-            Open Roll Call →
-          </a>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-800 rounded-r-xl px-4 py-3 text-sm">
-            Couldn&apos;t load classes: {error.message}
-          </div>
-        )}
-
-        {!error && (!classes || classes.length === 0) && (
-          <div className="bg-white rounded-2xl shadow-md p-8 text-center text-zinc-500">
-            <div className="text-5xl mb-3">🌴</div>
-            <p className="font-bold text-zinc-700">No classes scheduled for {DAY_NAMES[today]}.</p>
-            <p className="text-sm mt-1">Enjoy the day off.</p>
-          </div>
-        )}
-
-        {!error && classes && classes.length > 0 && (
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-            {classes.map((c) => (
-              <li
-                key={c.id}
-                className="bg-white rounded-2xl shadow-md p-5 border-l-4 border-[#FFC107] hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="text-3xl">{DISCIPLINE_EMOJI[c.discipline] || '🎪'}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-lg font-extrabold text-zinc-900 truncate">
-                        {formatTime(c.start_time)}
-                      </span>
-                      <span className="text-xs text-zinc-500 uppercase tracking-wider font-bold">
-                        {c.duration_minutes} min
-                      </span>
+        {/* Two-column: today's classes + build progress */}
+        <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Today's classes */}
+          <div className="xl:col-span-2">
+            <SectionHeader
+              title={`Today's classes`}
+              subtitle={`${classes.length} on ${DAY_NAMES[today]}`}
+              action={
+                <a href="/calendar" className="text-xs font-bold text-[#D72027] hover:underline">
+                  Full calendar →
+                </a>
+              }
+            />
+            {classError && (
+              <div className="bg-red-50 border-l-4 border-red-500 text-red-800 rounded-r-xl px-4 py-3 text-sm">
+                Couldn&apos;t load classes: {classError.message}
+              </div>
+            )}
+            {!classError && classes.length === 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-10 text-center text-zinc-500">
+                <div className="text-5xl mb-3">🌴</div>
+                <p className="font-bold text-zinc-700">
+                  No classes scheduled for {DAY_NAMES[today]}.
+                </p>
+                <p className="text-sm mt-1">Enjoy the day off.</p>
+              </div>
+            )}
+            {!classError && classes.length > 0 && (
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                {classes.map((c) => (
+                  <li
+                    key={c.id}
+                    className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-4 sm:p-5 hover:shadow-md hover:-translate-y-0.5 transition-all"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-3xl">{DISCIPLINE_EMOJI[c.discipline] || '🎪'}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className="text-lg font-extrabold text-zinc-900">
+                            {formatTime(c.start_time)}
+                          </span>
+                          <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">
+                            {c.duration_minutes} min
+                          </span>
+                        </div>
+                        <div className="text-sm font-bold text-zinc-800 mt-1">{c.name}</div>
+                        <div className="text-xs text-zinc-500 mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                          {(c.age_min !== null || c.age_max !== null) && (
+                            <span>
+                              Ages {c.age_min ?? '?'}–{c.age_max ?? '?'}
+                            </span>
+                          )}
+                          <span>Cap {c.capacity}</span>
+                          {c.primary_coach?.full_name && (
+                            <span>Coach: {c.primary_coach.full_name}</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm font-bold text-zinc-800 mt-1">{c.name}</div>
-                    <div className="text-xs text-zinc-500 mt-2 flex flex-wrap gap-x-3 gap-y-1">
-                      {(c.age_min || c.age_max) && (
-                        <span>
-                          Ages {c.age_min ?? '?'}–{c.age_max ?? '?'}
-                        </span>
-                      )}
-                      <span>Cap {c.capacity}</span>
-                      {c.primary_coach?.full_name && (
-                        <span>Coach: {c.primary_coach.full_name}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-      {/* Slice 1 status */}
-      <section className="bg-white rounded-2xl shadow-md p-6 border-t-4 border-[#D72027]">
-        <h3 className="text-xs font-extrabold text-[#D72027] uppercase tracking-widest mb-3">
-          Build Progress
-        </h3>
-        <ul className="space-y-2 text-sm">
-          <li>✅ Slice 1 — Sign in + tenant + dashboard (you&apos;re here)</li>
-          <li>⏳ Slice 2 — Roll Call on iPad (next)</li>
-          <li>⏳ Slice 3 — Star Ledger</li>
-          <li>⏳ Slice 4 — Stripe sync</li>
-        </ul>
-      </section>
-    </div>
+          {/* Build progress + quick actions */}
+          <aside className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
+              <SectionHeader title="Quick actions" />
+              <div className="space-y-2">
+                <QuickAction href="/roll-call" icon="📋" label="Take attendance" />
+                <QuickAction href="/families" icon="➕" label="Add a new family" />
+                <QuickAction href="/leads" icon="🎯" label="View leads" />
+                <QuickAction href="/marketing" icon="📣" label="Plan a post" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
+              <SectionHeader title="Build progress" />
+              <ul className="space-y-2.5 text-sm">
+                <BuildRow status="live" label="Slice 1 — Sign in + dashboard" />
+                <BuildRow status="next" label="Slice 2 — Roll Call on iPad ⭐" />
+                <BuildRow status="soon" label="Slice 3 — Star Ledger" />
+                <BuildRow status="soon" label="Slice 4 — Stripe sync" />
+                <BuildRow status="soon" label="Slice 5 — Lead capture" />
+              </ul>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </DashboardShell>
   )
 }
 
-function StatTile({ icon, label, value }: { icon: string; label: string; value: number }) {
+function KpiTile({
+  icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: string
+  label: string
+  value: number
+  accent: string
+}) {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-4 sm:p-5">
-      <div className="text-2xl sm:text-3xl mb-2">{icon}</div>
-      <div className="text-2xl sm:text-3xl font-extrabold text-zinc-900 leading-none">{value}</div>
-      <div className="text-[10px] sm:text-xs uppercase tracking-wider text-zinc-500 font-bold mt-1">
-        {label}
+    <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-4 sm:p-5 relative overflow-hidden">
+      <div
+        className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accent}`}
+        aria-hidden
+      />
+      <div className="flex items-center gap-3">
+        <span className="text-2xl sm:text-3xl">{icon}</span>
+        <div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-zinc-900 leading-none">
+            {value}
+          </div>
+          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-zinc-500 font-bold mt-1">
+            {label}
+          </div>
+        </div>
       </div>
     </div>
   )
 }
 
+function SectionHeader({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string
+  subtitle?: string
+  action?: React.ReactNode
+}) {
+  return (
+    <div className="flex items-end justify-between mb-3">
+      <div>
+        <h2 className="text-lg font-extrabold text-zinc-900">{title}</h2>
+        {subtitle && <p className="text-xs text-zinc-500">{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  )
+}
+
+function QuickAction({ href, icon, label }: { href: string; icon: string; label: string }) {
+  return (
+    <a
+      href={href}
+      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-50 text-sm font-bold text-zinc-700 hover:text-zinc-900 transition-colors"
+    >
+      <span className="text-lg">{icon}</span>
+      <span>{label}</span>
+      <span className="ml-auto text-zinc-300">→</span>
+    </a>
+  )
+}
+
+function BuildRow({ status, label }: { status: 'live' | 'next' | 'soon'; label: string }) {
+  const dot =
+    status === 'live'
+      ? 'bg-emerald-500'
+      : status === 'next'
+      ? 'bg-amber-500 animate-pulse'
+      : 'bg-zinc-300'
+  const tag =
+    status === 'live'
+      ? 'bg-emerald-100 text-emerald-800'
+      : status === 'next'
+      ? 'bg-amber-100 text-amber-800'
+      : 'bg-zinc-100 text-zinc-500'
+  const tagText = status === 'live' ? 'LIVE' : status === 'next' ? 'NEXT' : 'SOON'
+  return (
+    <li className="flex items-center gap-3">
+      <span className={`inline-block w-2 h-2 rounded-full ${dot}`} aria-hidden />
+      <span className="text-zinc-700 flex-1">{label}</span>
+      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${tag}`}>{tagText}</span>
+    </li>
+  )
+}
+
 function greeting() {
   const h = parseInt(
-    new Date().toLocaleString('en-US', { timeZone: 'Australia/Brisbane', hour: 'numeric', hour12: false }),
+    new Date().toLocaleString('en-US', {
+      timeZone: 'Australia/Brisbane',
+      hour: 'numeric',
+      hour12: false,
+    }),
     10
   )
   if (h < 12) return 'Good morning'
