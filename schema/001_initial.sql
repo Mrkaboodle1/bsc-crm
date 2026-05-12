@@ -387,7 +387,7 @@ CREATE POLICY users_see_tenant_users ON users
 -- Resolved tenant_id for BSC
 WITH bsc AS (SELECT id FROM tenants WHERE slug = 'bigstarcircus')
 INSERT INTO classes (tenant_id, name, day_of_week, start_time, duration_minutes, discipline, age_min, age_max, capacity, weekly_fee)
-SELECT bsc.id, * FROM bsc, (VALUES
+SELECT bsc.id, data.* FROM bsc, (VALUES
   -- Monday
   ('Mon 3:45 Circus Acro 5-8',     1, '15:45'::TIME, 60, 'circus_acro', 5, 8, 10, 27.00),
   ('Mon 4:45 Circus Acro 9-15',    1, '16:45'::TIME, 60, 'circus_acro', 9, 15, 10, 27.00),
@@ -417,7 +417,7 @@ SELECT bsc.id, * FROM bsc, (VALUES
 -- Coaches (initial seed)
 WITH bsc AS (SELECT id FROM tenants WHERE slug = 'bigstarcircus')
 INSERT INTO coaches (tenant_id, full_name, role, employment_type, pay_rate, skills, status)
-SELECT bsc.id, * FROM bsc, (VALUES
+SELECT bsc.id, data.* FROM bsc, (VALUES
   ('Rhett Morrow',     'head',    'employee_parttime', NULL, ARRAY['acro','aerial','juggling','drama','gymnastics','balloon','clowning']::TEXT[], 'active'),
   ('Rodrigo Hoyos',    'adult',   'contractor',        50.00, ARRAY['acro','aerial','gymnastics','juggling','unicycling']::TEXT[], 'active'),
   ('Tamara Seiler',    'adult',   'contractor',        35.00, ARRAY['aerial']::TEXT[], 'active'),

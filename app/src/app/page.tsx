@@ -1,65 +1,119 @@
-import Image from "next/image";
-
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-amber-50">
+      {/* Top bar */}
+      <header className="bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white shadow-lg">
+        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">🎪</div>
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight">BSC CRM</h1>
+              <p className="text-xs text-amber-100 opacity-90">Big Star Circus operations platform</p>
+            </div>
+          </div>
+          <div className="text-xs bg-white/15 px-3 py-1.5 rounded-full font-bold tracking-wide">
+            v0.1 · DEPLOYED
+          </div>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <main className="max-w-6xl mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-5xl font-extrabold text-zinc-900 mb-4 tracking-tight">
+            We&apos;re building <span className="text-[#D72027]">Big Star Circus</span>
+            <br />
+            into a real platform.
+          </h2>
+          <p className="text-xl text-zinc-600 max-w-2xl mx-auto">
+            This is the canonical home of every family, every student, every star,
+            every roll call, every booking. Made in Australia. Built for circus schools, dance studios, gymnastics clubs — starting with one.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Status panel */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border-l-8 border-[#FFC107]">
+          <h3 className="text-sm font-extrabold text-[#D72027] uppercase tracking-widest mb-4">System Status</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatusTile label="Database (Supabase)" value="✅ Connected" sub="10 tables · RLS active · Sydney region" />
+            <StatusTile label="Hosting (Vercel)" value="✅ Live" sub="auto-deploys on every push" />
+            <StatusTile label="Custom domain" value="⏳ Pending" sub="crm.bigstarcircus.com.au — DNS to wire" />
+          </div>
         </div>
+
+        {/* What's next */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <FeatureCard
+            icon="📋"
+            title="Slice 1 · Foundation"
+            status="In progress"
+            description="Auth + dashboard + tenant + user setup. Sign in via magic link, see today's classes."
+          />
+          <FeatureCard
+            icon="📱"
+            title="Slice 2 · Roll Call on iPad ⭐"
+            status="Next"
+            description="The killer feature. Big tap-tiles, status cycling, long-press to award stars. Auto-saves on every tap."
+          />
+          <FeatureCard
+            icon="⭐"
+            title="Slice 3 · Star Ledger"
+            status="Soon"
+            description="5-tier progression (Spark → BigStar Trainee). Auto tier-up. Coach notifications when a student levels."
+          />
+          <FeatureCard
+            icon="💳"
+            title="Slice 4 · Stripe sync"
+            status="Soon"
+            description="Live subscription state. Year-Round Membership rollout. Failed-payment recovery automation."
+          />
+        </div>
+
+        {/* Footer */}
+        <footer className="text-center text-sm text-zinc-500 py-8">
+          <p className="mb-2">
+            Built by <span className="font-bold text-[#D72027]">Jackie</span> with
+            <span className="font-bold"> Rhett Morrow</span> · Multi-tenant from day 1.
+          </p>
+          <p className="text-xs text-zinc-400">
+            Founder · Customer #0 · The asset that becomes the SaaS.
+          </p>
+        </footer>
       </main>
+    </div>
+  );
+}
+
+function StatusTile({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="bg-zinc-50 rounded-xl p-5">
+      <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">{label}</div>
+      <div className="text-lg font-extrabold text-zinc-900 mb-1">{value}</div>
+      <div className="text-xs text-zinc-600">{sub}</div>
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, status, description }: { icon: string; title: string; status: string; description: string }) {
+  const statusColors: Record<string, string> = {
+    "In progress": "bg-amber-100 text-amber-800",
+    "Next": "bg-blue-100 text-blue-800",
+    "Soon": "bg-zinc-100 text-zinc-700",
+  };
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+      <div className="flex items-start gap-3 mb-3">
+        <span className="text-3xl">{icon}</span>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h4 className="font-extrabold text-zinc-900">{title}</h4>
+            <span className={`text-xs font-bold px-2 py-1 rounded-full ${statusColors[status] || "bg-zinc-100"}`}>
+              {status}
+            </span>
+          </div>
+        </div>
+      </div>
+      <p className="text-sm text-zinc-600 leading-relaxed">{description}</p>
     </div>
   );
 }
