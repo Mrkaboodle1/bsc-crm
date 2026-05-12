@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BSC Roll Call">
+<title>BSC Roll Call</title>
+<style>
+  :root {
+    --bsc-red: #D72027;
+    --bsc-red-dark: #A0151B;
+    --bsc-yellow: #FFC107;
+    --bsc-yellow-soft: #FFF4D1;
+    --paper: #fdf8f1;
+    --card: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --line: #ebe3d6;
+    --green: #2E7D32;
+    --green-soft: #E8F5E9;
+    --red: #C62828;
+    --red-soft: #FFEBEE;
+    --amber: #F57C00;
+    --amber-soft: #FFF3E0;
+    --blue: #1565C0;
+    --blue-soft: #E3F2FD;
+    --grey: #9E9E9E;
+    --grey-soft: #F5F5F5;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* HEADER */
+  .topbar {
+    background: linear-gradient(135deg, var(--bsc-red), var(--bsc-red-dark));
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 800; margin: 0; }
+  .topbar .date { font-size: 13px; opacity: 0.9; font-weight: 500; }
+  .topbar .home-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* SCREEN — Today list */
+  .screen { padding: 20px 16px 100px; max-width: 720px; margin: 0 auto; }
+  .screen-title { font-size: 24px; font-weight: 800; color: var(--bsc-red); margin: 0 0 4px; }
+  .screen-sub { color: var(--ink-soft); font-size: 14px; margin: 0 0 20px; }
+
+  .class-list { display: flex; flex-direction: column; gap: 12px; }
+  .class-card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border-left: 6px solid var(--bsc-red);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .class-card:active { transform: scale(0.98); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .class-card.done { border-left-color: var(--green); background: linear-gradient(180deg, #ffffff, #f0fdf4); }
+  .class-card .left { flex: 1; }
+  .class-time { font-weight: 700; font-size: 16px; color: var(--bsc-red-dark); }
+  .class-card.done .class-time { color: var(--green); }
+  .class-name { font-size: 17px; font-weight: 600; margin: 2px 0; }
+  .class-meta { font-size: 13px; color: var(--ink-soft); }
+  .class-card .right { text-align: right; }
+  .class-card .arrow { font-size: 24px; color: var(--bsc-red); }
+  .class-card.done .arrow { color: var(--green); }
+  .day-pick {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+    overflow-x: auto; padding-bottom: 4px;
+  }
+  .day-btn {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--ink-soft);
+  }
+  .day-btn.active { background: var(--bsc-red); color: white; border-color: var(--bsc-red); }
+
+  /* SCREEN — Roll call */
+  .roll-header {
+    background: var(--card);
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .roll-header h2 { font-size: 20px; font-weight: 800; margin: 0 0 4px; color: var(--bsc-red-dark); }
+  .roll-header .meta { font-size: 14px; color: var(--ink-soft); }
+  .roll-header .counts { display: flex; gap: 12px; margin-top: 10px; font-size: 13px; font-weight: 700; }
+  .roll-header .counts span { padding: 4px 10px; border-radius: 10px; }
+  .roll-header .counts .c-p { background: var(--green-soft); color: var(--green); }
+  .roll-header .counts .c-a { background: var(--red-soft); color: var(--red); }
+  .roll-header .counts .c-l { background: var(--amber-soft); color: var(--amber); }
+  .roll-header .counts .c-m { background: var(--blue-soft); color: var(--blue); }
+
+  .student-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .student-tile {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    border-left: 6px solid var(--grey);
+    min-height: 72px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    transition: transform 0.1s;
+    position: relative;
+  }
+  .student-tile:active { transform: scale(0.99); }
+  .student-tile.s-present { border-left-color: var(--green); background: linear-gradient(180deg, #ffffff, var(--green-soft)); }
+  .student-tile.s-absent { border-left-color: var(--red); background: linear-gradient(180deg, #ffffff, var(--red-soft)); }
+  .student-tile.s-late { border-left-color: var(--amber); background: linear-gradient(180deg, #ffffff, var(--amber-soft)); }
+  .student-tile.s-makeup { border-left-color: var(--blue); background: linear-gradient(180deg, #ffffff, var(--blue-soft)); }
+
+  .student-info { flex: 1; }
+  .student-name { font-weight: 700; font-size: 17px; color: var(--ink); }
+  .student-status-text { font-size: 12px; color: var(--ink-soft); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .student-tile .right { display: flex; align-items: center; gap: 12px; }
+  .status-icon { font-size: 28px; }
+  .star-pill {
+    background: var(--bsc-yellow);
+    color: #1a1a1a;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 13px;
+    min-width: 38px;
+    text-align: center;
+  }
+  .star-pill.empty { background: var(--grey-soft); color: var(--grey); }
+
+  .notes-section { background: var(--card); border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+  .notes-label { font-weight: 700; font-size: 13px; color: var(--ink-soft); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .notes-input {
+    width: 100%; min-height: 60px; padding: 10px 12px;
+    border: 1px solid var(--line); border-radius: 8px;
+    font-family: inherit; font-size: 15px;
+    box-sizing: border-box; resize: vertical;
+    -webkit-user-select: text; user-select: text;
+  }
+  .submit-bar {
+    position: sticky; bottom: 0; padding: 12px 16px;
+    background: linear-gradient(180deg, transparent, rgba(253,248,241,0.95) 30%);
+    margin: 0 -16px -100px;
+  }
+  .submit-btn {
+    width: 100%; padding: 18px;
+    background: linear-gradient(135deg, var(--bsc-red), var(--bsc-red-dark));
+    color: white; font-weight: 800; font-size: 18px;
+    border: none; border-radius: 14px;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(215,32,39,0.4);
+  }
+  .submit-btn:active { transform: scale(0.99); }
+  .submit-btn:disabled { background: var(--grey); box-shadow: none; cursor: not-allowed; opacity: 0.5; }
+
+  /* MODAL — Star award */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 1000; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: white; border-radius: 16px; padding: 24px;
+    max-width: 420px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal h3 { margin: 0 0 4px; font-size: 20px; color: var(--bsc-red-dark); }
+  .modal .sub { font-size: 14px; color: var(--ink-soft); margin-bottom: 18px; }
+  .star-options { display: flex; gap: 10px; margin-bottom: 18px; }
+  .star-opt {
+    flex: 1; padding: 18px 8px;
+    background: var(--bsc-yellow-soft);
+    border: 2px solid var(--bsc-yellow);
+    border-radius: 12px;
+    font-weight: 800; font-size: 18px;
+    cursor: pointer; color: var(--ink);
+  }
+  .star-opt:active { background: var(--bsc-yellow); }
+  .reason-label { font-weight: 700; font-size: 12px; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+  .reason-select {
+    width: 100%; padding: 12px; font-size: 15px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: white; font-family: inherit; margin-bottom: 14px;
+  }
+  .note-input-modal {
+    width: 100%; padding: 12px; font-size: 15px;
+    border: 1px solid var(--line); border-radius: 8px;
+    box-sizing: border-box; font-family: inherit;
+    -webkit-user-select: text; user-select: text;
+  }
+  .modal-buttons { display: flex; gap: 10px; margin-top: 18px; }
+  .modal-cancel {
+    flex: 1; padding: 14px; background: var(--grey-soft);
+    color: var(--ink); border: none; border-radius: 10px;
+    font-weight: 700; cursor: pointer; font-size: 15px;
+  }
+  .modal-confirm {
+    flex: 1; padding: 14px;
+    background: linear-gradient(135deg, var(--bsc-red), var(--bsc-red-dark));
+    color: white; border: none; border-radius: 10px;
+    font-weight: 800; cursor: pointer; font-size: 15px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: white;
+    padding: 12px 22px; border-radius: 999px;
+    font-weight: 700; font-size: 14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    opacity: 0; transition: opacity 0.3s;
+    z-index: 999; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* HISTORY */
+  .history-list { display: flex; flex-direction: column; gap: 8px; }
+  .history-item {
+    background: var(--card); border-radius: 10px; padding: 12px 16px;
+    display: flex; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .history-class { font-weight: 700; font-size: 15px; }
+  .history-meta { font-size: 12px; color: var(--ink-soft); }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-soft); }
+  .empty-state .emoji { font-size: 48px; display: block; margin-bottom: 12px; }
+
+  /* TABS BOTTOM */
+  .tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; border-top: 1px solid var(--line);
+    display: flex; padding: 8px 12px;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    z-index: 99;
+  }
+  .tab-btn {
+    flex: 1; padding: 10px 4px;
+    background: transparent; border: none;
+    color: var(--ink-soft); font-size: 11px; font-weight: 700;
+    cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .tab-btn.active { color: var(--bsc-red); }
+  .tab-btn .icon { font-size: 22px; }
+
+  /* iPad optimisations */
+  @media (min-width: 768px) {
+    .student-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .student-tile { min-height: 80px; }
+    .student-name { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="home-btn" onclick="goHome()" id="homeBtn" style="display:none;">← Back</button>
+  <h1 id="topTitle">🎪 BSC Roll Call</h1>
+  <div class="date" id="topDate"></div>
+</div>
+
+<!-- HOME SCREEN -->
+<div class="screen" id="screen-home">
+  <h2 class="screen-title">Today's Classes</h2>
+  <p class="screen-sub" id="homeSubtitle">Tap a class to take the roll</p>
+  <div class="day-pick" id="dayPick"></div>
+  <div class="class-list" id="classList"></div>
+</div>
+
+<!-- ROLL CALL SCREEN -->
+<div class="screen" id="screen-roll" style="display:none;">
+  <div class="roll-header">
+    <h2 id="rollClassName"></h2>
+    <div class="meta" id="rollClassMeta"></div>
+    <div class="counts">
+      <span class="c-p">✅ <span id="cntPresent">0</span></span>
+      <span class="c-a">❌ <span id="cntAbsent">0</span></span>
+      <span class="c-l">⏰ <span id="cntLate">0</span></span>
+      <span class="c-m">🔄 <span id="cntMakeup">0</span></span>
+    </div>
+  </div>
+  <div class="student-grid" id="studentGrid"></div>
+  <div class="notes-section">
+    <div class="notes-label">Coach notes (optional)</div>
+    <textarea class="notes-input" id="rollNotes" placeholder="Anything memorable from class? E.g. 'Tara landed her first cartwheel today!'"></textarea>
+  </div>
+  <div class="submit-bar">
+    <button class="submit-btn" id="submitBtn" onclick="submitRoll()">SAVE + SUBMIT ROLL</button>
+  </div>
+</div>
+
+<!-- HISTORY SCREEN -->
+<div class="screen" id="screen-history" style="display:none;">
+  <h2 class="screen-title">Past Rolls</h2>
+  <p class="screen-sub">All saved rolls — tap to view</p>
+  <div class="history-list" id="historyList"></div>
+</div>
+
+<!-- STARS SCREEN -->
+<div class="screen" id="screen-stars" style="display:none;">
+  <h2 class="screen-title">Star Ledger</h2>
+  <p class="screen-sub">Every star ever awarded</p>
+  <div id="starsList"></div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tabbar">
+  <button class="tab-btn active" id="tab-home" onclick="showTab('home')"><span class="icon">📋</span>Roll Call</button>
+  <button class="tab-btn" id="tab-history" onclick="showTab('history')"><span class="icon">🗂</span>History</button>
+  <button class="tab-btn" id="tab-stars" onclick="showTab('stars')"><span class="icon">⭐</span>Stars</button>
+</div>
+
+<!-- STAR AWARD MODAL -->
+<div class="modal-overlay" id="starModal">
+  <div class="modal">
+    <h3 id="starModalName">Award stars to Student</h3>
+    <div class="sub">How many stars and why?</div>
+    <div class="reason-label">How many?</div>
+    <div class="star-options">
+      <button class="star-opt" data-stars="1" onclick="pickStars(1)">⭐ 1</button>
+      <button class="star-opt" data-stars="2" onclick="pickStars(2)">⭐⭐ 2</button>
+      <button class="star-opt" data-stars="3" onclick="pickStars(3)">⭐⭐⭐ 3</button>
+    </div>
+    <div class="reason-label">Reason</div>
+    <select class="reason-select" id="starReason">
+      <option value="skill_milestone">Skill milestone (new trick / first time)</option>
+      <option value="discipline">Discipline / effort / kindness</option>
+      <option value="attendance">Attendance / shows up consistently</option>
+      <option value="showcase">Showcase / performance</option>
+      <option value="other">Other</option>
+    </select>
+    <div class="reason-label">Notes (optional)</div>
+    <input type="text" class="note-input-modal" id="starNote" placeholder="E.g. First 3-ball cascade ever!">
+    <div class="modal-buttons">
+      <button class="modal-cancel" onclick="closeStarModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmStars()">Award stars</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================================
+// BSC Roll Call — Standalone iPad App (v1)
+// Drafted: 2026-05-12 by Jackie
+// Storage: localStorage only (no backend)
+// ============================================================================
+
+// ----- STATIC DATA — BSC's actual classes + students -----
+
+const CLASSES = [
+  { id: 'mon-acro-5-8',     day: 1, time: '15:45', durMin: 60, name: 'Circus Acro 5-8',     discipline: 'Circus Acro', ageRange: '5–8',  coach: 'Rhett' },
+  { id: 'mon-acro-9-15',    day: 1, time: '16:45', durMin: 60, name: 'Circus Acro 9-15',    discipline: 'Circus Acro', ageRange: '9–15', coach: 'Rhett' },
+  { id: 'mon-adult',        day: 1, time: '17:45', durMin: 60, name: 'Adult Circus',        discipline: 'Adult',       ageRange: '18+',  coach: 'Rhett' },
+  { id: 'tue-bubby',        day: 2, time: '09:00', durMin: 45, name: 'Bubby & Me Toddler',  discipline: 'Toddler',     ageRange: '1–4',  coach: 'Rhett' },
+  { id: 'tue-junior-aerial',day: 2, time: '15:45', durMin: 60, name: 'Junior Aerial',       discipline: 'Aerial',      ageRange: '5–8',  coach: 'Tamara' },
+  { id: 'tue-senior-aerial',day: 2, time: '17:00', durMin: 60, name: 'Senior Aerial',       discipline: 'Aerial',      ageRange: '9–15', coach: 'Tamara' },
+  { id: 'tue-teen-aerial',  day: 2, time: '18:15', durMin: 60, name: 'Teen Aerial',         discipline: 'Aerial',      ageRange: '13–17', coach: 'Tamara' },
+  { id: 'wed-hs-acro',      day: 3, time: '09:30', durMin: 60, name: 'Homeschool Acro',     discipline: 'Homeschool',  ageRange: '5–15', coach: 'Rhett' },
+  { id: 'wed-hs-circus',    day: 3, time: '10:30', durMin: 60, name: 'Homeschool Circus',   discipline: 'Homeschool',  ageRange: '5–15', coach: 'Rhett' },
+  { id: 'wed-hs-aerial',    day: 3, time: '11:30', durMin: 60, name: 'Homeschool Aerial',   discipline: 'Homeschool',  ageRange: '5–15', coach: 'Rhett' },
+  { id: 'wed-fusion-5-8',   day: 3, time: '15:45', durMin: 60, name: 'Circus Fusion 5-8',   discipline: 'Fusion',      ageRange: '5–8',  coach: 'Rodrigo' },
+  { id: 'wed-fusion-8-15',  day: 3, time: '16:45', durMin: 60, name: 'Circus Fusion 8-15',  discipline: 'Fusion',      ageRange: '8–15', coach: 'Rodrigo' },
+  { id: 'thu-fusion-5-8',   day: 4, time: '15:45', durMin: 60, name: 'Circus Fusion 5-8',   discipline: 'Fusion',      ageRange: '5–8',  coach: 'Rhett' },
+  { id: 'thu-fusion-9-15',  day: 4, time: '16:45', durMin: 60, name: 'Circus Fusion 9-15',  discipline: 'Fusion',      ageRange: '9–15', coach: 'Rhett' },
+  { id: 'thu-show',         day: 4, time: '17:45', durMin: 75, name: 'Trainee Show Program',discipline: 'Trainee',     ageRange: '13–17', coach: 'Rhett' },
+  { id: 'fri-junior-aerial',day: 5, time: '15:45', durMin: 60, name: 'Junior Aerial',       discipline: 'Aerial',      ageRange: '5–8',  coach: 'Tamara' },
+  { id: 'fri-senior-aerial',day: 5, time: '16:45', durMin: 60, name: 'Senior Aerial',       discipline: 'Aerial',      ageRange: '9–15', coach: 'Tamara' },
+  { id: 'sat-fusion',       day: 6, time: '09:00', durMin: 60, name: 'Circus Fusion',       discipline: 'Fusion',      ageRange: '5–15', coach: 'Rhett' },
+];
+
+// Sample students (seeded from current CRM data). Coaches can add more via Add Student.
+const STUDENTS = [
+  { id: 's-001', firstName: 'Tara',       lastName: 'Sonyx',         classIds: ['mon-acro-5-8', 'sat-fusion'] },
+  { id: 's-002', firstName: 'Mary Anne',  lastName: 'Claridge',      classIds: ['mon-acro-5-8'] },
+  { id: 's-003', firstName: 'Savannah',   lastName: 'Edwards',       classIds: ['wed-fusion-8-15', 'sat-fusion'] },
+  { id: 's-004', firstName: 'Grace',      lastName: 'Debart',        classIds: ['tue-junior-aerial', 'sat-fusion'] },
+  { id: 's-005', firstName: 'Alessandra', lastName: 'Silvioli',      classIds: ['mon-acro-9-15', 'sat-fusion'] },
+  { id: 's-006', firstName: 'Juliana',    lastName: 'Wolf',          classIds: ['wed-fusion-5-8'] },
+  { id: 's-007', firstName: 'Jasmine',    lastName: 'Makings',       classIds: ['sat-fusion'] },
+  { id: 's-008', firstName: 'Lori',       lastName: 'Hall',          classIds: ['thu-fusion-5-8'] },
+  { id: 's-009', firstName: 'Marg',       lastName: 'Dempster',      classIds: ['wed-fusion-5-8'] },
+  { id: 's-010', firstName: 'Nicolas',    lastName: 'Campos Martini',classIds: ['mon-acro-9-15'] },
+  { id: 's-011', firstName: 'Charlie',    lastName: '',              classIds: ['thu-show', 'tue-teen-aerial'] },
+  { id: 's-012', firstName: 'Aliyah',     lastName: '',              classIds: ['thu-show', 'tue-teen-aerial'] },
+  { id: 's-013', firstName: 'Lewis',      lastName: '',              classIds: ['thu-show', 'tue-teen-aerial'] },
+];
+
+// ----- STATE -----
+
+let currentTab = 'home';
+let currentClassId = null;
+let currentRollState = {};   // { studentId: { status, stars, note } }
+let currentSelectedDay = new Date().getDay();
+let starModalCtx = null;      // { studentId, classId }
+let starModalSelectedCount = 1;
+
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// ----- STORAGE -----
+
+function loadRolls() {
+  try { return JSON.parse(localStorage.getItem('bsc_rolls') || '[]'); } catch { return []; }
+}
+function saveRoll(roll) {
+  const all = loadRolls();
+  all.push(roll);
+  localStorage.setItem('bsc_rolls', JSON.stringify(all));
+}
+function loadStars() {
+  try { return JSON.parse(localStorage.getItem('bsc_stars') || '[]'); } catch { return []; }
+}
+function saveStars(stars) {
+  localStorage.setItem('bsc_stars', JSON.stringify(stars));
+}
+function appendStarsForRoll(rollStudents, classId, dateISO) {
+  const stars = loadStars();
+  rollStudents.forEach(s => {
+    if (s.stars > 0) {
+      stars.push({
+        id: 'st-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+        studentId: s.studentId,
+        stars: s.stars,
+        reason: s.starReason || 'attendance',
+        note: s.starNote || '',
+        classId: classId,
+        date: dateISO,
+        createdAt: new Date().toISOString(),
+      });
+    }
+  });
+  saveStars(stars);
+}
+
+// ----- HELPERS -----
+
+function todayISO() {
+  return new Date().toISOString().slice(0,10);
+}
+function formatToday() {
+  const d = new Date();
+  return d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+function getStudent(id) { return STUDENTS.find(s => s.id === id) || { firstName: 'Unknown', lastName: '' }; }
+function getClass(id) { return CLASSES.find(c => c.id === id); }
+function studentsInClass(classId) { return STUDENTS.filter(s => s.classIds.includes(classId)); }
+function classesOnDay(day) { return CLASSES.filter(c => c.day === day).sort((a,b) => a.time.localeCompare(b.time)); }
+function classDoneToday(classId) {
+  return loadRolls().some(r => r.classId === classId && r.date === todayISO());
+}
+
+// ----- RENDERING -----
+
+function renderTopbar() {
+  document.getElementById('topDate').textContent = formatToday();
+  document.getElementById('homeBtn').style.display = (currentTab === 'home' || currentTab === 'history' || currentTab === 'stars') ? 'none' : 'block';
+  document.getElementById('topTitle').textContent =
+    currentTab === 'home' ? '🎪 BSC Roll Call' :
+    currentTab === 'history' ? '🗂 History' :
+    currentTab === 'stars' ? '⭐ Stars' :
+    'Roll Call';
+}
+
+function renderDayPicker() {
+  const container = document.getElementById('dayPick');
+  container.innerHTML = '';
+  const today = new Date().getDay();
+  for (let i = 1; i <= 6; i++) {  // Mon-Sat
+    const btn = document.createElement('button');
+    btn.className = 'day-btn' + (i === currentSelectedDay ? ' active' : '');
+    btn.textContent = i === today ? `${DAY_NAMES[i]} (today)` : DAY_NAMES[i];
+    btn.onclick = () => { currentSelectedDay = i; renderHome(); };
+    container.appendChild(btn);
+  }
+}
+
+function renderHome() {
+  renderTopbar();
+  renderDayPicker();
+  const list = document.getElementById('classList');
+  list.innerHTML = '';
+  const classes = classesOnDay(currentSelectedDay);
+  const today = new Date().getDay();
+  document.getElementById('homeSubtitle').textContent =
+    currentSelectedDay === today ? 'Tap a class to take the roll' : `Viewing ${DAY_NAMES[currentSelectedDay]}'s classes`;
+
+  if (classes.length === 0) {
+    list.innerHTML = '<div class="empty-state"><span class="emoji">🎪</span>No classes scheduled today. Enjoy the day!</div>';
+    return;
+  }
+  classes.forEach(cls => {
+    const done = currentSelectedDay === today && classDoneToday(cls.id);
+    const enrolled = studentsInClass(cls.id).length;
+    const card = document.createElement('div');
+    card.className = 'class-card' + (done ? ' done' : '');
+    card.onclick = () => openRoll(cls.id);
+    card.innerHTML = `
+      <div class="left">
+        <div class="class-time">${cls.time} · ${cls.discipline}</div>
+        <div class="class-name">${cls.name}</div>
+        <div class="class-meta">${enrolled} enrolled · ${cls.ageRange} · Coach ${cls.coach}${done ? ' · ✅ Done' : ''}</div>
+      </div>
+      <div class="right"><div class="arrow">›</div></div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function openRoll(classId) {
+  currentClassId = classId;
+  const cls = getClass(classId);
+  const students = studentsInClass(classId);
+  currentRollState = {};
+  students.forEach(s => { currentRollState[s.id] = { status: 'unmarked', stars: 0, starReason: null, starNote: '' }; });
+  document.getElementById('rollClassName').textContent = `${cls.name}`;
+  document.getElementById('rollClassMeta').textContent = `${DAY_NAMES[cls.day]} ${cls.time} · ${cls.discipline} · ${cls.ageRange} · Coach ${cls.coach}`;
+  document.getElementById('rollNotes').value = '';
+  currentTab = 'roll';
+  switchScreen('roll');
+  renderTopbar();
+  renderRollStudents();
+}
+
+function renderRollStudents() {
+  const grid = document.getElementById('studentGrid');
+  grid.innerHTML = '';
+  const students = studentsInClass(currentClassId);
+  const counts = { present: 0, absent: 0, late: 0, makeup: 0 };
+
+  students.forEach(s => {
+    const state = currentRollState[s.id];
+    counts[state.status] = (counts[state.status] || 0) + 1;
+    const tile = document.createElement('div');
+    tile.className = 'student-tile s-' + state.status;
+    tile.dataset.studentId = s.id;
+
+    let icon = '⏰', label = 'Unmarked';
+    if (state.status === 'present') { icon = '✅'; label = 'Present'; }
+    if (state.status === 'absent')  { icon = '❌'; label = 'Absent'; }
+    if (state.status === 'late')    { icon = '⏰'; label = 'Late'; }
+    if (state.status === 'makeup')  { icon = '🔄'; label = 'Make-up'; }
+
+    tile.innerHTML = `
+      <div class="student-info">
+        <div class="student-name">${s.firstName} ${s.lastName}</div>
+        <div class="student-status-text">${label}</div>
+      </div>
+      <div class="right">
+        <div class="status-icon">${icon}</div>
+        <div class="star-pill ${state.stars === 0 ? 'empty' : ''}">⭐ ${state.stars}</div>
+      </div>
+    `;
+
+    // Tap = cycle status
+    let pressTimer = null;
+    let longPressed = false;
+    const onPressStart = () => {
+      longPressed = false;
+      pressTimer = setTimeout(() => {
+        longPressed = true;
+        openStarModal(s.id);
+      }, 550);
+    };
+    const onPressEnd = () => { if (pressTimer) clearTimeout(pressTimer); };
+    const onClick = (e) => {
+      if (longPressed) { e.preventDefault(); return; }
+      cycleStatus(s.id);
+    };
+    tile.addEventListener('touchstart', onPressStart, { passive: true });
+    tile.addEventListener('touchend', onPressEnd);
+    tile.addEventListener('touchcancel', onPressEnd);
+    tile.addEventListener('mousedown', onPressStart);
+    tile.addEventListener('mouseup', onPressEnd);
+    tile.addEventListener('mouseleave', onPressEnd);
+    tile.addEventListener('click', onClick);
+    grid.appendChild(tile);
+  });
+
+  document.getElementById('cntPresent').textContent = counts.present;
+  document.getElementById('cntAbsent').textContent = counts.absent;
+  document.getElementById('cntLate').textContent = counts.late;
+  document.getElementById('cntMakeup').textContent = counts.makeup;
+}
+
+function cycleStatus(studentId) {
+  const state = currentRollState[studentId];
+  const order = ['unmarked', 'present', 'absent', 'late', 'makeup'];
+  const idx = order.indexOf(state.status);
+  state.status = order[(idx + 1) % order.length];
+  renderRollStudents();
+}
+
+// ----- STAR MODAL -----
+
+function openStarModal(studentId) {
+  const student = getStudent(studentId);
+  starModalCtx = { studentId };
+  starModalSelectedCount = 1;
+  document.getElementById('starModalName').textContent = `Award stars to ${student.firstName}`;
+  document.getElementById('starReason').value = 'skill_milestone';
+  document.getElementById('starNote').value = '';
+  document.querySelectorAll('.star-opt').forEach(b => {
+    b.style.background = b.dataset.stars === '1' ? 'var(--bsc-yellow)' : 'var(--bsc-yellow-soft)';
+  });
+  document.getElementById('starModal').classList.add('show');
+}
+
+function pickStars(n) {
+  starModalSelectedCount = n;
+  document.querySelectorAll('.star-opt').forEach(b => {
+    b.style.background = parseInt(b.dataset.stars) === n ? 'var(--bsc-yellow)' : 'var(--bsc-yellow-soft)';
+  });
+}
+
+function closeStarModal() {
+  document.getElementById('starModal').classList.remove('show');
+  starModalCtx = null;
+}
+
+function confirmStars() {
+  if (!starModalCtx) return;
+  const state = currentRollState[starModalCtx.studentId];
+  state.stars += starModalSelectedCount;
+  state.starReason = document.getElementById('starReason').value;
+  state.starNote = document.getElementById('starNote').value;
+  const student = getStudent(starModalCtx.studentId);
+  closeStarModal();
+  renderRollStudents();
+  showToast(`⭐ +${starModalSelectedCount} for ${student.firstName}`);
+}
+
+// ----- SUBMIT -----
+
+function submitRoll() {
+  const cls = getClass(currentClassId);
+  const students = studentsInClass(currentClassId);
+  const studentsArr = students.map(s => ({
+    studentId: s.id,
+    name: `${s.firstName} ${s.lastName}`.trim(),
+    status: currentRollState[s.id].status,
+    stars: currentRollState[s.id].stars,
+    starReason: currentRollState[s.id].starReason,
+    starNote: currentRollState[s.id].starNote,
+  }));
+  const roll = {
+    id: 'r-' + Date.now(),
+    classId: currentClassId,
+    className: cls.name,
+    coach: cls.coach,
+    date: todayISO(),
+    submittedAt: new Date().toISOString(),
+    notes: document.getElementById('rollNotes').value,
+    students: studentsArr,
+  };
+  saveRoll(roll);
+  appendStarsForRoll(studentsArr, currentClassId, roll.date);
+  showToast('✅ Roll submitted');
+  setTimeout(() => goHome(), 600);
+}
+
+function goHome() {
+  currentTab = 'home';
+  switchScreen('home');
+  renderTopbar();
+  renderHome();
+}
+
+// ----- TAB NAVIGATION -----
+
+function switchScreen(name) {
+  ['home','roll','history','stars'].forEach(s => {
+    document.getElementById('screen-' + s).style.display = (s === name) ? '' : 'none';
+  });
+}
+
+function showTab(name) {
+  currentTab = name;
+  ['home','history','stars'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === name);
+  });
+  switchScreen(name);
+  renderTopbar();
+  if (name === 'home') renderHome();
+  if (name === 'history') renderHistory();
+  if (name === 'stars') renderStars();
+}
+
+// ----- HISTORY -----
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  const rolls = loadRolls().slice().reverse();
+  if (rolls.length === 0) {
+    list.innerHTML = '<div class="empty-state"><span class="emoji">🗂</span>No rolls yet. Take one in the Roll Call tab.</div>';
+    return;
+  }
+  rolls.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    const p = r.students.filter(s => s.status === 'present').length;
+    const a = r.students.filter(s => s.status === 'absent').length;
+    const totalStars = r.students.reduce((sum, s) => sum + (s.stars || 0), 0);
+    item.innerHTML = `
+      <div>
+        <div class="history-class">${r.className}</div>
+        <div class="history-meta">${r.date} · Coach ${r.coach} · ${p} present, ${a} absent · ⭐ ${totalStars}</div>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+// ----- STARS -----
+
+function renderStars() {
+  const container = document.getElementById('starsList');
+  const stars = loadStars().slice().reverse();
+  // Group by student
+  const byStudent = {};
+  stars.forEach(s => {
+    if (!byStudent[s.studentId]) byStudent[s.studentId] = { total: 0, recent: [] };
+    byStudent[s.studentId].total += s.stars;
+    if (byStudent[s.studentId].recent.length < 5) byStudent[s.studentId].recent.push(s);
+  });
+
+  if (stars.length === 0) {
+    container.innerHTML = '<div class="empty-state"><span class="emoji">⭐</span>No stars awarded yet. Long-press a student during roll call to award.</div>';
+    return;
+  }
+
+  const sorted = Object.entries(byStudent).sort((a,b) => b[1].total - a[1].total);
+  container.innerHTML = sorted.map(([sid, data]) => {
+    const student = getStudent(sid);
+    const tier = data.total >= 76 ? '5 · BigStar Trainee' :
+                 data.total >= 36 ? '4 · Performer-in-Training' :
+                 data.total >= 16 ? '3 · Skilled Star' :
+                 data.total >= 6  ? '2 · Apprentice' : '1 · Spark';
+    return `
+      <div style="background:white;border-radius:12px;padding:16px 20px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-weight:700;font-size:17px;">${student.firstName} ${student.lastName}</div>
+          <div style="background:var(--bsc-yellow);color:#1a1a1a;padding:4px 12px;border-radius:14px;font-weight:800;">⭐ ${data.total}</div>
+        </div>
+        <div style="font-size:12px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Tier ${tier}</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Recent: ${data.recent.map(r => `+${r.stars} ${r.reason.replace('_',' ')}`).join(' · ')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ----- TOAST -----
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ----- INIT -----
+
+document.addEventListener('DOMContentLoaded', () => {
+  goHome();
+});
+
+// Auto-save state any time the page is about to lose focus
+window.addEventListener('beforeunload', () => {
+  if (currentTab === 'roll' && currentClassId) {
+    localStorage.setItem('bsc_inprogress_roll', JSON.stringify({ classId: currentClassId, state: currentRollState, notes: document.getElementById('rollNotes').value }));
+  }
+});
+
+// Disable double-tap zoom on iOS
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e) => {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300) e.preventDefault();
+  lastTouchEnd = now;
+}, false);
+</script>
+
+</body>
+</html>
