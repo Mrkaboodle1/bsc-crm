@@ -1,22 +1,169 @@
-import { StubPage } from '@/lib/stub-page'
+import { verifySession } from '@/lib/dal'
+import { createServerSupabase } from '@/lib/supabase-server'
+import { DashboardShell } from '@/components/dashboard-shell'
 
-export default async function RollCallPage() {
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+function todayInBrisbane() {
+  const now = new Date()
+  const brisbane = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Brisbane' }))
+  return { dow: brisbane.getDay(), iso: brisbane.toISOString().slice(0, 10) }
+}
+
+function formatTime(t: string) {
+  const [h, m] = t.split(':')
+  const hour = parseInt(h, 10)
+  const period = hour >= 12 ? 'pm' : 'am'
+  const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
+  return `${displayHour}:${m}${period}`
+}
+
+const DISCIPLINE_EMOJI: Record<string, string> = {
+  circus_acro: '🤸',
+  aerial: '🎪',
+  fusion: '✨',
+  drama: '🎭',
+  toddler: '🍼',
+  homeschool: '📚',
+  adult: '🏋️',
+  ndis: '💜',
+  private: '🔒',
+  show_programme: '⭐',
+}
+
+export default async function RollCallIndexPage() {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+  const { dow, iso } = todayInBrisbane()
+
+  // Fetch today's classes
+  const { data: classes } = await supabase
+    .from('classes')
+    .select(`
+      id, name, day_of_week, start_time, duration_minutes,
+      discipline, age_min, age_max, capacity,
+      primary_coach:coaches!classes_primary_coach_id_fkey ( full_name )
+    `)
+    .eq('day_of_week', dow)
+    .eq('status', 'active')
+    .order('start_time', { ascending: true })
+
+  // For each class, count enrolments + count attendance already marked today
+  const classIds = (classes ?? []).map((c) => c.id)
+  let enrolByClass: Record<string, number> = {}
+  let attByClass: Record<string, number> = {}
+  if (classIds.length > 0) {
+    const [{ data: enrols }, { data: atts }] = await Promise.all([
+      supabase.from('enrolments').select('class_id').eq('status', 'active').in('class_id', classIds),
+      supabase.from('attendance').select('class_id').eq('date', iso).in('class_id', classIds),
+    ])
+    enrolByClass = (enrols ?? []).reduce<Record<string, number>>(
+      (acc, r) => ((acc[r.class_id] = (acc[r.class_id] ?? 0) + 1), acc),
+      {}
+    )
+    attByClass = (atts ?? []).reduce<Record<string, number>>(
+      (acc, r) => ((acc[r.class_id] = (acc[r.class_id] ?? 0) + 1), acc),
+      {}
+    )
+  }
+
   return (
-    <StubPage
+    <DashboardShell
+      user={user}
       currentPath="/roll-call"
       pageTitle="Roll Call"
-      pageSubtitle="Take attendance on your iPad during class."
-      icon="📋"
-      slice="Slice 2 · Next"
-      title="The killer feature — coming next"
-      description="Open the class, see big tap-tiles for every enrolled student. Tap to cycle status (here / late / absent). Long-press to award a star. Auto-saves on every tap."
-      bullets={[
-        'Day picker — slide between Mon → Sat to find today\'s classes',
-        'Tap-tile per student — green/amber/red for attendance status',
-        'Long-press tile → modal: award 1–3 stars with a note',
-        'Coach-only access — students never see the screen',
-        'Offline-tolerant — keeps a local queue, syncs when Wi-Fi is back',
-      ]}
-    />
+      pageSubtitle={`${DAY_NAMES[dow]} ${formatDate(iso)} — tap a class to start.`}
+    >
+      {(!classes || classes.length === 0) ? (
+        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-10 text-center max-w-2xl">
+          <div className="text-5xl mb-3">🌴</div>
+          <p className="font-bold text-zinc-700">No classes on {DAY_NAMES[dow]}.</p>
+          <p className="text-sm text-zinc-500 mt-1">Enjoy the day off.</p>
+        </div>
+      ) : (
+        <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {classes.map((c) => {
+            const enrolled = enrolByClass[c.id] ?? 0
+            const marked = attByClass[c.id] ?? 0
+            const status = enrolled === 0
+              ? 'empty'
+              : marked === 0
+              ? 'unmarked'
+              : marked >= enrolled
+              ? 'complete'
+              : 'partial'
+            return (
+              <li key={c.id}>
+                <a
+                  href={`/roll-call/${c.id}`}
+                  className="block bg-white rounded-2xl shadow-sm border border-zinc-200 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-4xl">{DISCIPLINE_EMOJI[c.discipline] || '🎪'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-xl font-extrabold text-zinc-900">
+                          {formatTime(c.start_time)}
+                        </span>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">
+                          {c.duration_minutes} min
+                        </span>
+                      </div>
+                      <div className="text-sm font-bold text-zinc-800 mt-1 truncate">{c.name}</div>
+                      <div className="text-xs text-zinc-500 mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                        {(c.age_min !== null || c.age_max !== null) && (
+                          <span>Ages {c.age_min ?? '?'}–{c.age_max ?? '?'}</span>
+                        )}
+                        <span>Cap {c.capacity}</span>
+                        {Array.isArray(c.primary_coach) && c.primary_coach.length > 0 ? (
+                          <span>Coach: {c.primary_coach[0].full_name}</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="text-xs font-bold text-zinc-600 mb-1">
+                        {marked} of {enrolled} marked
+                      </div>
+                      <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            status === 'complete'
+                              ? 'bg-emerald-500'
+                              : status === 'partial'
+                              ? 'bg-amber-500'
+                              : 'bg-zinc-300'
+                          }`}
+                          style={{ width: enrolled === 0 ? '0%' : `${(marked / enrolled) * 100}%` }}
+                          aria-hidden
+                        />
+                      </div>
+                    </div>
+                    <StatusPill status={status} />
+                  </div>
+                </a>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </DashboardShell>
   )
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso + 'T00:00:00')
+  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
+
+function StatusPill({ status }: { status: 'empty' | 'unmarked' | 'partial' | 'complete' }) {
+  const map = {
+    empty: { label: 'No enrolments', cls: 'bg-zinc-100 text-zinc-500' },
+    unmarked: { label: 'Not started', cls: 'bg-amber-100 text-amber-800' },
+    partial: { label: 'In progress', cls: 'bg-blue-100 text-blue-800' },
+    complete: { label: 'Done', cls: 'bg-emerald-100 text-emerald-800' },
+  }
+  const { label, cls } = map[status]
+  return <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${cls}`}>{label}</span>
 }
