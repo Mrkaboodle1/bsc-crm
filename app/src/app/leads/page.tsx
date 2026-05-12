@@ -1,21 +1,44 @@
-import { StubPage } from '@/lib/stub-page'
+import { verifySession } from '@/lib/dal'
+import { createServerSupabase } from '@/lib/supabase-server'
+import { DashboardShell } from '@/components/dashboard-shell'
+import { LeadsKanban, type Lead } from '@/components/leads-kanban'
 
 export default async function LeadsPage() {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+
+  const { data, error } = await supabase
+    .from('families')
+    .select('id, family_name, primary_parent, email, phone, source, lifecycle_stage, created_at, notes, tags')
+    .in('lifecycle_stage', ['lead', 'trial'])
+    .order('created_at', { ascending: false })
+
+  const leads: Lead[] = (data ?? []).map((f) => ({
+    id: f.id,
+    name: f.family_name,
+    parent: f.primary_parent,
+    email: f.email,
+    phone: f.phone,
+    source: f.source,
+    stage: f.lifecycle_stage === 'trial' ? 'trial_booked' : 'new',
+    createdAt: f.created_at,
+    notes: f.notes,
+    tags: f.tags ?? [],
+  }))
+
   return (
-    <StubPage
+    <DashboardShell
+      user={user}
       currentPath="/leads"
       pageTitle="Leads"
-      pageSubtitle="Trial enquiries and new-family pipeline."
-      icon="🎯"
-      slice="Slice 5 · Soon"
-      title="Lead pipeline"
-      description="Replaces Tectonic Opportunities. Every new-family enquiry from website, FB ad, IG DM or walk-in lands here. Auto-emails a welcome pack and tracks them through trial → enrolled."
-      bullets={[
-        'Pipeline stages: new → contacted → trial booked → trialled → enrolled / lost',
-        'Auto welcome email (Resend) on lead creation',
-        'Auto SMS reminder 24h before trial (ClickSend)',
-        'Source attribution — see which channel converts',
-      ]}
-    />
+      pageSubtitle={`${leads.length} active leads & trials`}
+    >
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 text-red-800 rounded-r-xl px-4 py-3 text-sm mb-4">
+          {error.message}
+        </div>
+      )}
+      <LeadsKanban leads={leads} />
+    </DashboardShell>
   )
 }
