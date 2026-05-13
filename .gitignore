@@ -45,3 +45,7 @@ next-env.d.ts
 
 # IDE
 .cursor/
+
+# Media catalog can be regenerated — track in repo but not blow up history
+# (uncomment next line if catalog grows past ~5MB)
+# media-catalog.json

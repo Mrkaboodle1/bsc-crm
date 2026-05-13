@@ -1,22 +1,45 @@
-import { StubPage } from '@/lib/stub-page'
+import { verifySession } from '@/lib/dal'
+import { createServerSupabase } from '@/lib/supabase-server'
+import { DashboardShell } from '@/components/dashboard-shell'
+import { MarketingOverview } from '@/components/marketing-overview'
+import { mediaStats } from '@/data/media-stats'
 
 export default async function MarketingPage() {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+
+  // Posted-media history — tells us what we've used recently
+  const { data: posted } = await supabase
+    .from('posted_media')
+    .select('id, media_hash, platform, posted_at, caption')
+    .order('posted_at', { ascending: false })
+    .limit(20)
+
   return (
-    <StubPage
+    <DashboardShell
+      user={user}
       currentPath="/marketing"
       pageTitle="Marketing"
-      pageSubtitle="Plan, schedule and post to Instagram, Facebook and Threads."
-      icon="📣"
-      slice="Slice 5+ · Soon"
-      title="Social planner"
-      description="Replaces Tectonic Social Planner. Schedule posts across IG, FB and Threads from one calendar. Pulls performance back so you know what works."
-      bullets={[
-        'Already connected: Meta (Instagram + Facebook) MCP, Threads',
-        'Drag-and-drop content calendar — week / month view',
-        'Auto post-engagement pull (reach, likes, saves, comments)',
-        'Auto-reply to DMs from posts with a trigger word',
-        'Termly campaign templates: KNO, holiday programme, term enrolment',
-      ]}
-    />
+      pageSubtitle="Media library, AI image generation, post composer."
+      pageActions={
+        <a
+          href="/marketing/compose"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg"
+        >
+          ✏️ Compose post
+        </a>
+      }
+    >
+      <MarketingOverview
+        stats={mediaStats}
+        recentPosts={(posted ?? []).map((p) => ({
+          id: p.id,
+          mediaHash: p.media_hash,
+          platform: p.platform,
+          postedAt: p.posted_at,
+          caption: p.caption,
+        }))}
+      />
+    </DashboardShell>
   )
 }
