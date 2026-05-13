@@ -44,22 +44,43 @@ export function ComposeForm({
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
-  // Build the Pollinations URL when prompt + seed change
+  const [imgState, setImgState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+
+  // Build the proxied URL when prompt + seed change.
+  // Routing through /api/ai-image so we get caching, better error messages,
+  // and a single same-origin URL (no CORS / Edge-CSP weirdness).
   const pollUrl = useMemo(() => {
     if (!prompt.trim()) return null
-    const safePrompt = encodeURIComponent(prompt.trim().slice(0, 800))
-    return `https://image.pollinations.ai/prompt/${safePrompt}?width=1080&height=1080&seed=${seed}&model=flux&nologo=true`
+    const sp = new URLSearchParams({
+      prompt: prompt.trim().slice(0, 800),
+      seed: String(seed),
+      width: '1080',
+      height: '1080',
+    })
+    return `/api/ai-image?${sp.toString()}`
   }, [prompt, seed])
 
   function generate() {
     if (!pollUrl) return
+    setImgState('loading')
     setGeneratedUrl(pollUrl)
   }
 
   function shuffle() {
     setSeed(Math.floor(Math.random() * 1_000_000))
-    setGeneratedUrl(null) // force regenerate
-    setTimeout(() => setGeneratedUrl(pollUrl), 50)
+    setGeneratedUrl(null)
+    setImgState('idle')
+    setTimeout(() => {
+      const sp = new URLSearchParams({
+        prompt: prompt.trim().slice(0, 800),
+        seed: String(Math.floor(Math.random() * 1_000_000)),
+        width: '1080',
+        height: '1080',
+      })
+      const u = `/api/ai-image?${sp.toString()}`
+      setImgState('loading')
+      setGeneratedUrl(u)
+    }, 50)
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -211,10 +232,26 @@ export function ComposeForm({
             {generatedUrl ? (
               <>
                 <div className="aspect-square bg-zinc-100 relative overflow-hidden">
+                  {imgState === 'loading' && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-amber-100 text-amber-800 z-10">
+                      <div className="text-5xl mb-3 animate-bounce">✨</div>
+                      <p className="font-extrabold text-sm">Generating with Flux…</p>
+                      <p className="text-xs mt-1 text-amber-700">10–30 seconds typically</p>
+                    </div>
+                  )}
+                  {imgState === 'error' && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-50 text-red-800 z-10 px-6 text-center">
+                      <div className="text-4xl mb-2">⚠</div>
+                      <p className="font-extrabold text-sm">Generation failed</p>
+                      <p className="text-xs mt-1">Pollinations may be slow right now — try shuffle or wait 30s.</p>
+                    </div>
+                  )}
                   <img
                     src={generatedUrl}
                     alt="AI-generated preview"
                     className="w-full h-full object-cover"
+                    onLoad={() => setImgState('ready')}
+                    onError={() => setImgState('error')}
                   />
                 </div>
                 <div className="p-4">
