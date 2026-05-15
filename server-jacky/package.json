@@ -16,7 +16,8 @@
     "graph:login": "tsx src/cli/graph-login.ts",
     "graph:test": "tsx src/cli/graph-test.ts",
     "graph:headers": "tsx src/cli/graph-headers.ts",
-    "reset:email": "tsx src/cli/reset-email.ts"
+    "reset:email": "tsx src/cli/reset-email.ts",
+    "test:resend": "tsx src/cli/test-resend.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

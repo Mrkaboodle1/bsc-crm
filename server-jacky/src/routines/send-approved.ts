@@ -1,9 +1,14 @@
 // Picks up rows from pending_actions with status='approved' and sends them
 // via the appropriate channel (email via SMTP for now; SMS / FB / IG later).
 
-// Switched from Titan SMTP (broken) to Microsoft Graph send via rhettbigstar@hotmail.com.
-// Customer replies route back to admin@ via the Reply-To header set inside graph.sendEmail.
-import { sendEmail } from '../tools/graph.js'
+// Send path: Resend (preferred — sends AS admin@bigstarcircus.com.au with DKIM/SPF)
+// falls back to Graph (sends AS rhettbigstar@hotmail.com with Reply-To admin@)
+// when RESEND_API_KEY is missing. Titan SMTP is permanently disabled — auth
+// failures on every method.
+import { sendEmail as sendViaResend } from '../tools/resend.js'
+import { sendEmail as sendViaGraph } from '../tools/graph.js'
+
+const sendEmail = process.env.RESEND_API_KEY ? sendViaResend : sendViaGraph
 import { supabase, getTenantId } from '../tools/supabase.js'
 import { logger } from '../logger.js'
 
