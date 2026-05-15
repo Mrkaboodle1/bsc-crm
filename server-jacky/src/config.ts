@@ -1,6 +1,9 @@
 // Centralised env-var loading + validation.
 
-import 'dotenv/config'
+import * as dotenv from 'dotenv'
+// override: true forces .env to win over any pre-set system env vars
+// (otherwise a shell-level ANTHROPIC_API_KEY would shadow ours).
+dotenv.config({ override: true })
 
 function need(key: string): string {
   const v = process.env[key]
