@@ -1,7 +1,9 @@
 // Picks up rows from pending_actions with status='approved' and sends them
 // via the appropriate channel (email via SMTP for now; SMS / FB / IG later).
 
-import { sendEmail } from '../tools/smtp.js'
+// Switched from Titan SMTP (broken) to Microsoft Graph send via rhettbigstar@hotmail.com.
+// Customer replies route back to admin@ via the Reply-To header set inside graph.sendEmail.
+import { sendEmail } from '../tools/graph.js'
 import { supabase, getTenantId } from '../tools/supabase.js'
 import { logger } from '../logger.js'
 
@@ -9,7 +11,16 @@ export async function sendApprovedActions(): Promise<{
   sent: number
   failed: number
   errors: string[]
+  skipped?: number
 }> {
+  // Safety gate: approved drafts only auto-send when JACKY_AUTO_SEND=true.
+  // Default is OFF because we're sending via rhettbigstar@hotmail.com (Graph)
+  // instead of admin@bigstarcircus.com.au — Rhett should flip this on once
+  // Resend (or another admin@-authenticated outbound) is wired up.
+  const autoSend = (process.env.JACKY_AUTO_SEND ?? 'false').toLowerCase() === 'true'
+  if (!autoSend) {
+    return { sent: 0, failed: 0, errors: [], skipped: 0 }
+  }
   const tenantId = await getTenantId()
   let sent = 0
   let failed = 0
@@ -42,15 +53,13 @@ export async function sendApprovedActions(): Promise<{
           throw new Error('Missing recipient')
         }
         const meta = (action.draft_metadata ?? {}) as Record<string, unknown>
-        const inReplyTo = typeof meta.in_reply_to === 'string' ? meta.in_reply_to : undefined
-        const references = Array.isArray(meta.references) ? (meta.references as string[]) : undefined
+        const inReplyToId = typeof meta.in_reply_to === 'string' ? meta.in_reply_to : undefined
 
         const result = await sendEmail({
           to: action.draft_recipient,
           subject: action.draft_subject ?? '(no subject)',
           bodyText: action.draft_body ?? '',
-          inReplyTo,
-          references,
+          inReplyToId,
         })
 
         if (result.ok) {

@@ -172,6 +172,21 @@ export async function logAgentActivity(input: {
   })
 }
 
+// Cheap dedup probe — returns true if we already have this Graph/IMAP
+// message_id in email_messages. Used before the Claude call to avoid
+// re-paying for already-seen emails on startup re-runs.
+export async function isEmailAlreadyPersisted(messageId: string): Promise<boolean> {
+  if (!messageId) return false
+  const tenantId = await getTenantId()
+  const { data } = await supabase
+    .from('email_messages')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('message_id', messageId)
+    .maybeSingle()
+  return !!data
+}
+
 // Best-effort family matching by sender email.
 export async function findFamilyByEmail(email: string): Promise<string | null> {
   if (!email) return null

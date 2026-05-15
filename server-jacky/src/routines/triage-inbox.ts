@@ -10,6 +10,7 @@ import {
   enqueueAction,
   logAgentActivity,
   findFamilyByEmail,
+  isEmailAlreadyPersisted,
 } from '../tools/supabase.js'
 import { logger } from '../logger.js'
 import { config } from '../config.js'
@@ -107,13 +108,20 @@ async function processEmail(
   // 1. Compute thread key — used to group conversation
   const threadKey = computeThreadKey(email)
 
-  // 2. Match family by sender email (best-effort)
+  // 2. Cheap dedup probe BEFORE the Claude call — saves ~3¢ per startup re-run
+  const alreadySeen = await isEmailAlreadyPersisted(email.messageId)
+  if (alreadySeen) {
+    logger.debug({ messageId: email.messageId, subject: email.subject?.slice(0, 60) }, 'Email already persisted — skipping Claude call')
+    return
+  }
+
+  // 3. Match family by sender email (best-effort)
   const matchedFamilyId = await findFamilyByEmail(email.fromEmail)
 
-  // 3. Build the user prompt for Claude
+  // 4. Build the user prompt for Claude
   const userPrompt = buildEmailTriagePrompt(email)
 
-  // 4. Call Claude — classify + draft reply
+  // 5. Call Claude — classify + draft reply
   const result = await askClaudeJson<ClaudeTriageJson>({
     system: JACKY_SYSTEM_PROMPT,
     user: userPrompt,

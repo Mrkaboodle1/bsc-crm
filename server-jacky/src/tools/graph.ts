@@ -247,14 +247,21 @@ export async function markAsRead(messageId: string): Promise<void> {
   await graphFetch('PATCH', `/me/messages/${messageId}`, { isRead: true })
 }
 
-/** Send an email AS the signed-in user (rhettbigstar@hotmail.com). */
+/**
+ * Send an email via Microsoft Graph as the signed-in user (rhettbigstar@hotmail.com).
+ * For BSC we set Reply-To: admin@bigstarcircus.com.au so customer replies route back to admin.
+ * Returns a synthetic Graph send result. Graph /sendMail returns 202 with no body, so
+ * we don't get a real message-id; we record a synthetic one for our ledger.
+ */
 export async function sendEmail(input: {
   to: string
   subject: string
   bodyText: string
   bodyHtml?: string
+  replyTo?: string
   inReplyToId?: string
-}): Promise<void> {
+}): Promise<{ ok: boolean; messageId?: string; error?: string }> {
+  const replyToAddr = input.replyTo ?? process.env.JACKY_REPLY_TO_ADDRESS ?? 'admin@bigstarcircus.com.au'
   const message = {
     subject: input.subject,
     body: {
@@ -262,8 +269,14 @@ export async function sendEmail(input: {
       content: input.bodyHtml ?? input.bodyText,
     },
     toRecipients: [{ emailAddress: { address: input.to } }],
+    replyTo: [{ emailAddress: { address: replyToAddr } }],
   }
-  await graphFetch('POST', '/me/sendMail', { message, saveToSentItems: true })
+  try {
+    await graphFetch('POST', '/me/sendMail', { message, saveToSentItems: true })
+    return { ok: true, messageId: `graph-sent-${Date.now()}` }
+  } catch (e) {
+    return { ok: false, error: (e as Error).message }
+  }
 }
 
 /** Health check. Personal MSA accounts often 403 on /me, so we probe the inbox instead. */
