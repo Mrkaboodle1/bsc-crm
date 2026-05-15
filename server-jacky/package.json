@@ -12,10 +12,15 @@
     "triage": "tsx src/cli/triage.ts",
     "test:smtp": "tsx src/cli/test-smtp.ts",
     "test:imap": "tsx src/cli/test-imap.ts",
-    "test:claude": "tsx src/cli/test-claude.ts"
+    "test:claude": "tsx src/cli/test-claude.ts",
+    "graph:login": "tsx src/cli/graph-login.ts",
+    "graph:test": "tsx src/cli/graph-test.ts",
+    "graph:headers": "tsx src/cli/graph-headers.ts",
+    "reset:email": "tsx src/cli/reset-email.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
+    "@azure/msal-node": "^5.2.1",
     "@supabase/supabase-js": "^2.46.1",
     "dotenv": "^16.4.5",
     "imapflow": "^1.0.171",

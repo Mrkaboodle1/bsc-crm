@@ -2,7 +2,7 @@
 // draft a reply where appropriate, push everything into the CRM approval queue.
 
 import crypto from 'node:crypto'
-import { fetchUnreadEmails, type ParsedEmail } from '../tools/imap.js'
+import { fetchUnreadEmails, type ParsedEmail } from '../tools/graph.js'
 import { askClaudeJson } from '../tools/claude.js'
 import { JACKY_SYSTEM_PROMPT } from '../prompts/system.js'
 import {
@@ -19,6 +19,8 @@ type ClaudeTriageJson = {
   classification_confidence: number
   classification_notes: string
   priority: 'urgent' | 'high' | 'normal' | 'low'
+  reply_to_email?: string | null
+  reply_to_name?: string | null
   matched_family_name?: string | null
   matched_student_first_name?: string | null
   reasoning: string
@@ -128,6 +130,8 @@ async function processEmail(
     classification,
     confidence,
     priority,
+    reply_to_email: result.output.reply_to_email,
+    reply_to_name: result.output.reply_to_name,
     cost: result.costUsd,
   }, 'Email triaged')
 
@@ -164,10 +168,17 @@ async function processEmail(
     return
   }
 
-  // 7. Otherwise enqueue an email_reply pending action
-  const recipient = email.fromEmail
+  // 7. Otherwise enqueue an email_reply pending action.
+  //    Prefer Claude's parsed reply_to_email (for web-form submissions where
+  //    From = admin@bigstarcircus.com.au). Fall back to the envelope From.
+  const ownAddress = 'admin@bigstarcircus.com.au'
+  const parsedReplyTo = result.output.reply_to_email?.trim() || null
+  let recipient = parsedReplyTo && parsedReplyTo.toLowerCase() !== ownAddress
+    ? parsedReplyTo
+    : (email.fromEmail && email.fromEmail.toLowerCase() !== ownAddress ? email.fromEmail : null)
+
   if (!recipient) {
-    logger.warn({ subject: email.subject }, 'No reply-to address — skipping draft')
+    logger.warn({ subject: email.subject, from: email.fromEmail }, 'No reply-to address — skipping draft')
     countFn('filed')
     return
   }
@@ -183,9 +194,10 @@ async function processEmail(
     draftMetadata: {
       in_reply_to: email.messageId,
       references: email.references,
-      from_name: email.fromName,
+      from_name: result.output.reply_to_name ?? email.fromName,
       classification,
       classification_confidence: confidence,
+      parsed_from_form_body: parsedReplyTo ? true : false,
     },
     priority,
     reasoning: result.output.reasoning,
@@ -211,9 +223,32 @@ function computeThreadKey(email: ParsedEmail): string {
   return crypto.createHash('sha256').update(seed).digest('hex').slice(0, 32)
 }
 
-function buildEmailTriagePrompt(email: ParsedEmail): string {
-  return `An email just landed in admin@bigstarcircus.com.au. Classify it, then draft a reply (unless it's junk / newsletter / supplier).
+function stripHtml(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
 
+function buildEmailTriagePrompt(email: ParsedEmail): string {
+  const adminLower = 'admin@bigstarcircus.com.au'
+  const isFormPattern = email.fromEmail?.toLowerCase() === adminLower
+    && email.toEmails.some((t) => t.toLowerCase() === adminLower)
+  const formHint = isFormPattern
+    ? `\n⚠️ FORM PATTERN DETECTED — this is From=admin@ To=admin@. It is a website lead, NOT junk. Parse the customer's email and name out of the body. See the "Web form submissions" section of your system prompt.\n`
+    : ''
+  return `An email just landed in admin@bigstarcircus.com.au. Classify it, then draft a reply (unless it's junk / newsletter / supplier).
+${formHint}
 ## Email envelope
 From: ${email.fromName ? `${email.fromName} <${email.fromEmail}>` : email.fromEmail}
 To: ${email.toEmails.join(', ')}
@@ -221,8 +256,11 @@ ${email.ccEmails.length > 0 ? `Cc: ${email.ccEmails.join(', ')}\n` : ''}Subject:
 Received: ${email.receivedAt.toISOString()}
 Has attachments: ${email.hasAttachments ? `yes (${email.attachmentNames.join(', ')})` : 'no'}
 
-## Email body (text)
-${(email.bodyText ?? '(no text body — only HTML)').slice(0, 6000)}
+## Email body
+${(email.bodyText && email.bodyText.trim().length > 0
+  ? email.bodyText
+  : email.bodyHtml ? stripHtml(email.bodyHtml) : '(empty body)'
+).slice(0, 6000)}
 
 ---
 
