@@ -1,0 +1,38 @@
+{
+  "name": "server-jacky",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Server-side Jacky — the BSC AI Admin agent running on the VPS.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "triage": "tsx src/cli/triage.ts",
+    "test:smtp": "tsx src/cli/test-smtp.ts",
+    "test:imap": "tsx src/cli/test-imap.ts",
+    "test:claude": "tsx src/cli/test-claude.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@supabase/supabase-js": "^2.46.1",
+    "dotenv": "^16.4.5",
+    "imapflow": "^1.0.171",
+    "mailparser": "^3.7.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,24 @@
+[Unit]
+Description=Jacky · Big Star Circus AI Admin Agent
+Documentation=file:///opt/jacky/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/jacky
+EnvironmentFile=/opt/jacky/.env
+ExecStart=/usr/bin/node /opt/jacky/dist/index.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/var/log/jacky-bsc.log
+StandardError=append:/var/log/jacky-bsc.log
+
+# Resource limits — keep Jacky polite so Sir Cash A Lot has room
+MemoryHigh=300M
+MemoryMax=400M
+CPUQuota=80%
+
+[Install]
+WantedBy=multi-user.target
