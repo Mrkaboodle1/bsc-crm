@@ -70,11 +70,16 @@ export function JackyChat({ userName }: { userName: string | null }) {
   const [error, setError] = useState<string | null>(null)
   const [listening, setListening] = useState(false)
   const [voiceSupported, setVoiceSupported] = useState(false)
+  // Live transcript — what we're hearing right now (finals + tentative interim).
+  // Shown in a big overlay above the input so Rhett can see his words as he speaks.
+  const [liveFinal, setLiveFinal] = useState('')
+  const [liveInterim, setLiveInterim] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
-  // Snapshot of what was in the textarea BEFORE we started this recognition pass,
-  // so interim results don't keep concatenating with already-typed text.
+  // Refs for state we read inside the recogniser callbacks (closures capture stale state otherwise).
   const baseInputRef = useRef<string>('')
+  const userStoppedRef = useRef<boolean>(false)
+  const finalTranscriptRef = useRef<string>('')
 
   // One-time set-up: feature-detect Speech Recognition and prep an instance.
   useEffect(() => {
@@ -82,34 +87,67 @@ export function JackyChat({ userName }: { userName: string | null }) {
     if (!SR) return
     setVoiceSupported(true)
     const rec = new SR()
-    rec.continuous = false
+    // continuous=true keeps the mic open until the user taps stop (rather than
+    // auto-ending after a silence). interimResults=true gives us partial words
+    // as they're recognised, which we render live in the overlay.
+    rec.continuous = true
     rec.interimResults = true
     rec.lang = 'en-AU'
 
     rec.onstart = () => setListening(true)
-    rec.onend = () => setListening(false)
-    rec.onerror = (e) => {
-      setListening(false)
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        setError('Microphone blocked. Allow mic access in your browser settings and try again.')
-      } else if (e.error === 'no-speech') {
-        // Common — user pressed the button then didn't talk. Silently ignore.
-      } else {
-        setError(`Voice input error: ${e.error}`)
+
+    rec.onend = () => {
+      // If we ended because the user clicked stop, fine. If the engine ended on
+      // us (Chrome does this after silence, even with continuous=true), and the
+      // user hadn't tapped stop, restart so the session keeps going.
+      if (userStoppedRef.current) {
+        setListening(false)
+        return
       }
+      try { rec.start() } catch { setListening(false) }
     }
-    rec.onresult = (event) => {
-      let transcript = ''
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i]![0]!.transcript
+
+    rec.onerror = (e) => {
+      if (e.error === 'no-speech' || e.error === 'aborted') {
+        // Benign — Chrome fires these often. Don't surface.
+        return
       }
-      const base = baseInputRef.current
-      const joined = base ? `${base.trimEnd()} ${transcript.trim()}` : transcript.trim()
-      setInput(joined)
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        userStoppedRef.current = true
+        setListening(false)
+        setError('Microphone blocked. Click the 🔒 in the address bar and allow Microphone for this site.')
+        return
+      }
+      if (e.error === 'network') {
+        // Chrome's speech API uses a Google cloud endpoint that occasionally fails.
+        userStoppedRef.current = true
+        setListening(false)
+        setError("Voice service unreachable. Try again — or if it keeps happening, the Edge browser handles voice more reliably than Chrome here.")
+        return
+      }
+      setError(`Voice input error: ${e.error}`)
+    }
+
+    rec.onresult = (event) => {
+      let interim = ''
+      let final = finalTranscriptRef.current
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i]!
+        const text = result[0]!.transcript
+        if (result.isFinal) {
+          final = (final + ' ' + text).trim()
+        } else {
+          interim += text
+        }
+      }
+      finalTranscriptRef.current = final
+      setLiveFinal(final)
+      setLiveInterim(interim.trim())
     }
 
     recognitionRef.current = rec
     return () => {
+      userStoppedRef.current = true
       try { rec.stop() } catch { /* ignore */ }
     }
   }, [])
@@ -119,10 +157,25 @@ export function JackyChat({ userName }: { userName: string | null }) {
     if (!rec) return
     setError(null)
     if (listening) {
+      // User-initiated stop — commit whatever was captured into the textarea.
+      userStoppedRef.current = true
       try { rec.stop() } catch { /* ignore */ }
+      const captured = (finalTranscriptRef.current + ' ' + liveInterim).trim()
+      if (captured) {
+        const base = baseInputRef.current
+        setInput(base ? `${base.trimEnd()} ${captured}` : captured)
+      }
+      finalTranscriptRef.current = ''
+      setLiveFinal('')
+      setLiveInterim('')
       return
     }
+    // Starting a new session
+    userStoppedRef.current = false
     baseInputRef.current = input
+    finalTranscriptRef.current = ''
+    setLiveFinal('')
+    setLiveInterim('')
     try { rec.start() } catch { /* "already started" — ignore */ }
   }
 
@@ -203,6 +256,26 @@ export function JackyChat({ userName }: { userName: string | null }) {
               {p}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Live transcript banner — shows up while the mic is recording so the user
+          can see Jacky catching their words in real time. */}
+      {listening && (
+        <div className="border-t-2 border-red-500 bg-red-50 px-4 py-3 flex gap-3 items-start">
+          <span className="inline-flex w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse mt-1.5 shrink-0" aria-hidden />
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase tracking-wider font-extrabold text-red-700 mb-1">
+              🎤 Listening… tap mic again to stop
+            </div>
+            <div className="text-base text-zinc-900 leading-snug">
+              {liveFinal && <span>{liveFinal} </span>}
+              {liveInterim && <span className="text-zinc-500 italic">{liveInterim}</span>}
+              {!liveFinal && !liveInterim && (
+                <span className="text-zinc-400 italic">Say something…</span>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
