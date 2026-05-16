@@ -2,6 +2,41 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+// Web Speech API — built into Chrome, Edge, Safari (incl. iOS Safari 14.1+).
+// No external service, no API key, runs entirely in the browser.
+type SpeechRecognitionAlternative = { transcript: string; confidence: number }
+type SpeechRecognitionResult = {
+  isFinal: boolean
+  length: number
+  [index: number]: SpeechRecognitionAlternative
+}
+type SpeechRecognitionResultList = { length: number; [index: number]: SpeechRecognitionResult }
+type SpeechRecognitionEvent = { resultIndex: number; results: SpeechRecognitionResultList }
+type SpeechRecognitionErrorEvent = { error: string; message?: string }
+
+type SpeechRecognitionInstance = {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  start: () => void
+  stop: () => void
+  onstart: (() => void) | null
+  onend: (() => void) | null
+  onresult: ((e: SpeechRecognitionEvent) => void) | null
+  onerror: ((e: SpeechRecognitionErrorEvent) => void) | null
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance
+
+function getSpeechRecognition(): SpeechRecognitionConstructor | null {
+  if (typeof window === 'undefined') return null
+  const w = window as unknown as {
+    SpeechRecognition?: SpeechRecognitionConstructor
+    webkitSpeechRecognition?: SpeechRecognitionConstructor
+  }
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
+}
+
 type UserMessage = { role: 'user'; content: string }
 type AssistantMessage = {
   role: 'assistant'
@@ -33,7 +68,63 @@ export function JackyChat({ userName }: { userName: string | null }) {
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [listening, setListening] = useState(false)
+  const [voiceSupported, setVoiceSupported] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
+  // Snapshot of what was in the textarea BEFORE we started this recognition pass,
+  // so interim results don't keep concatenating with already-typed text.
+  const baseInputRef = useRef<string>('')
+
+  // One-time set-up: feature-detect Speech Recognition and prep an instance.
+  useEffect(() => {
+    const SR = getSpeechRecognition()
+    if (!SR) return
+    setVoiceSupported(true)
+    const rec = new SR()
+    rec.continuous = false
+    rec.interimResults = true
+    rec.lang = 'en-AU'
+
+    rec.onstart = () => setListening(true)
+    rec.onend = () => setListening(false)
+    rec.onerror = (e) => {
+      setListening(false)
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        setError('Microphone blocked. Allow mic access in your browser settings and try again.')
+      } else if (e.error === 'no-speech') {
+        // Common — user pressed the button then didn't talk. Silently ignore.
+      } else {
+        setError(`Voice input error: ${e.error}`)
+      }
+    }
+    rec.onresult = (event) => {
+      let transcript = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i]![0]!.transcript
+      }
+      const base = baseInputRef.current
+      const joined = base ? `${base.trimEnd()} ${transcript.trim()}` : transcript.trim()
+      setInput(joined)
+    }
+
+    recognitionRef.current = rec
+    return () => {
+      try { rec.stop() } catch { /* ignore */ }
+    }
+  }, [])
+
+  function toggleListening() {
+    const rec = recognitionRef.current
+    if (!rec) return
+    setError(null)
+    if (listening) {
+      try { rec.stop() } catch { /* ignore */ }
+      return
+    }
+    baseInputRef.current = input
+    try { rec.start() } catch { /* "already started" — ignore */ }
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -131,11 +222,46 @@ export function JackyChat({ userName }: { userName: string | null }) {
               send(input)
             }
           }}
-          placeholder="Ask Jacky to do something… (Shift+Enter for new line)"
+          placeholder={
+            listening
+              ? '🎤 Listening… speak now'
+              : voiceSupported
+              ? 'Type, or tap the mic to speak…'
+              : 'Ask Jacky to do something… (Shift+Enter for new line)'
+          }
           rows={1}
           disabled={busy}
           className="flex-1 resize-none px-4 py-3 border-2 border-zinc-200 rounded-xl text-sm focus:border-[#D72027] focus:outline-none disabled:opacity-50"
         />
+        {voiceSupported && (
+          <button
+            type="button"
+            onClick={toggleListening}
+            disabled={busy}
+            aria-label={listening ? 'Stop listening' : 'Start voice input'}
+            title={listening ? 'Stop listening' : 'Speak your message'}
+            className={`flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all ${
+              listening
+                ? 'bg-red-500 border-red-600 text-white animate-pulse shadow-lg shadow-red-500/40'
+                : 'bg-white border-zinc-200 text-zinc-700 hover:border-[#D72027] hover:text-[#D72027]'
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+          >
+            {listening ? (
+              // Stop square
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="2" />
+              </svg>
+            ) : (
+              // Mic icon
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            )}
+          </button>
+        )}
         <button
           type="submit"
           disabled={busy || !input.trim()}

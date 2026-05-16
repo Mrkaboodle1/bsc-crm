@@ -55,7 +55,28 @@ export default async function DashboardPage() {
   const now = new Date()
   const horizon = new Date(now.getTime() + 6 * 3600_000) // 6h window for "next up"
 
-  const [classesResult, familyCountRes, studentCountRes, classCountRes, leadCountRes, upcomingApptsRes, allClassesRes] = await Promise.all([
+  // Window for "today" Jacky activity — Brisbane midnight to now
+  const brisbaneMidnight = (() => {
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Brisbane', year: 'numeric', month: '2-digit', day: '2-digit' })
+    const today = fmt.format(new Date())
+    return new Date(`${today}T00:00:00+10:00`).toISOString()
+  })()
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000).toISOString()
+
+  const [
+    classesResult,
+    familyCountRes,
+    studentCountRes,
+    classCountRes,
+    leadCountRes,
+    upcomingApptsRes,
+    allClassesRes,
+    pendingActionsCountRes,
+    recentLeadsRes,
+    jackyTodayRes,
+    lastTriageRes,
+  ] = await Promise.all([
     supabase
       .from('classes')
       .select(`
@@ -91,10 +112,48 @@ export default async function DashboardPage() {
         primary_coach:coaches!classes_primary_coach_id_fkey ( full_name )
       `)
       .eq('status', 'active'),
+    supabase.from('pending_actions').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase
+      .from('email_messages')
+      .select('id, from_email, from_name, subject, received_at, classification, classification_confidence')
+      .gte('received_at', sevenDaysAgo)
+      .in('classification', ['trial_enquiry', 'birthday_party', 'ndis_enquiry', 'school_gig', 'corporate_gig', 'other'])
+      .order('received_at', { ascending: false })
+      .limit(6),
+    supabase
+      .from('agent_activity')
+      .select('emails_read, drafts_created, ai_cost_usd, finished_at, status')
+      .gte('finished_at', brisbaneMidnight)
+      .order('finished_at', { ascending: false }),
+    supabase
+      .from('agent_activity')
+      .select('finished_at, status')
+      .order('finished_at', { ascending: false })
+      .limit(1),
   ])
 
   const classes = classesResult.data ?? []
   const classError = classesResult.error
+
+  // Roll up Jacky's day for the activity card
+  const jackyToday = (jackyTodayRes.data ?? []).reduce(
+    (acc, r) => ({
+      emailsRead: acc.emailsRead + (r.emails_read ?? 0),
+      draftsCreated: acc.draftsCreated + (r.drafts_created ?? 0),
+      costUsd: acc.costUsd + Number(r.ai_cost_usd ?? 0),
+      runs: acc.runs + 1,
+      failures: acc.failures + (r.status === 'failure' ? 1 : 0),
+    }),
+    { emailsRead: 0, draftsCreated: 0, costUsd: 0, runs: 0, failures: 0 }
+  )
+  const lastTriageAt = lastTriageRes.data?.[0]?.finished_at ?? null
+  const lastTriageStatus = lastTriageRes.data?.[0]?.status ?? null
+  const minutesSinceLastTriage = lastTriageAt
+    ? Math.floor((Date.now() - new Date(lastTriageAt).getTime()) / 60_000)
+    : null
+  const jackyAlive = minutesSinceLastTriage !== null && minutesSinceLastTriage < 30 && lastTriageStatus !== 'failure'
+  const recentLeads = recentLeadsRes.data ?? []
+  const pendingCount = pendingActionsCountRes.count ?? 0
 
   // Build "next up" candidate from BOTH appointments + recurring classes in next 6h
   const nextUpCandidates: CalendarItem[] = []
@@ -151,30 +210,42 @@ export default async function DashboardPage() {
         {nextUp && <NextUpBanner item={nextUp} now={now} />}
 
         {/* KPI tiles */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <section className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+          <KpiTile
+            icon="✉️"
+            label="Pending approval"
+            value={pendingCount}
+            accent="from-[#D72027] to-[#A0151B]"
+            href="/inbox?filter=pending"
+            pulse={pendingCount > 0}
+          />
           <KpiTile
             icon="👨‍👩‍👧"
             label="Families"
             value={familyCountRes.count ?? 0}
-            accent="from-[#D72027] to-[#A0151B]"
+            accent="from-pink-500 to-rose-600"
+            href="/families"
           />
           <KpiTile
             icon="🧒"
             label="Students"
             value={studentCountRes.count ?? 0}
             accent="from-amber-500 to-amber-600"
+            href="/students"
           />
           <KpiTile
             icon="📅"
             label="Active classes"
             value={classCountRes.count ?? 0}
             accent="from-blue-500 to-blue-700"
+            href="/classes"
           />
           <KpiTile
             icon="🎯"
             label="Open leads"
             value={leadCountRes.count ?? 0}
             accent="from-emerald-500 to-emerald-700"
+            href="/leads"
           />
         </section>
 
@@ -243,30 +314,106 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          {/* Build progress + quick actions */}
+          {/* Quick actions + Jacky status */}
           <aside className="space-y-6">
             <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
               <SectionHeader title="Quick actions" />
               <div className="space-y-2">
+                <QuickAction href="/jacky" icon="🎪" label="Ask Jacky" />
+                <QuickAction href="/inbox" icon="✉️" label="Approval queue" />
+                <QuickAction href="/marketing/bulk-send" icon="📨" label="Bulk send (email / SMS)" />
                 <QuickAction href="/roll-call" icon="📋" label="Take attendance" />
                 <QuickAction href="/families" icon="➕" label="Add a new family" />
-                <QuickAction href="/leads" icon="🎯" label="View leads" />
                 <QuickAction href="/marketing" icon="📣" label="Plan a post" />
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
-              <SectionHeader title="Build progress" />
-              <ul className="space-y-2.5 text-sm">
-                <BuildRow status="live" label="Slice 1 — Sign in + dashboard" />
-                <BuildRow status="next" label="Slice 2 — Roll Call on iPad ⭐" />
-                <BuildRow status="soon" label="Slice 3 — Star Ledger" />
-                <BuildRow status="soon" label="Slice 4 — Stripe sync" />
-                <BuildRow status="soon" label="Slice 5 — Lead capture" />
+            {/* Jacky's day card — what the AI did today */}
+            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 text-white rounded-2xl shadow-md p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h2 className="text-lg font-extrabold flex items-center gap-2">
+                    🎪 Jacky today
+                  </h2>
+                  <p className="text-[10px] uppercase tracking-wider opacity-60 font-bold mt-0.5">
+                    Server-Jacky 24/7
+                  </p>
+                </div>
+                <span
+                  className={`text-[10px] font-extrabold px-2 py-1 rounded ${
+                    jackyAlive ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-zinc-900'
+                  }`}
+                >
+                  {jackyAlive ? '● LIVE' : minutesSinceLastTriage === null ? '— UNKNOWN' : '⚠ STALE'}
+                </span>
+              </div>
+              <ul className="space-y-2 text-sm">
+                <li className="flex justify-between">
+                  <span className="opacity-70">Emails read</span>
+                  <span className="font-extrabold">{jackyToday.emailsRead}</span>
+                </li>
+                <li className="flex justify-between">
+                  <span className="opacity-70">Drafts queued</span>
+                  <span className="font-extrabold">{jackyToday.draftsCreated}</span>
+                </li>
+                <li className="flex justify-between">
+                  <span className="opacity-70">Triage runs</span>
+                  <span className="font-extrabold">{jackyToday.runs}</span>
+                </li>
+                <li className="flex justify-between border-t border-white/10 pt-2 mt-2">
+                  <span className="opacity-70">AI spend today</span>
+                  <span className="font-extrabold">${jackyToday.costUsd.toFixed(2)}</span>
+                </li>
               </ul>
+              {minutesSinceLastTriage !== null && (
+                <p className="text-[10px] opacity-50 mt-3">
+                  Last triage: {minutesSinceLastTriage < 1 ? 'just now' : `${minutesSinceLastTriage} min ago`}
+                </p>
+              )}
             </div>
           </aside>
         </section>
+
+        {/* Recent leads — the highest-intent emails Jacky's seen in last 7 days */}
+        {recentLeads.length > 0 && (
+          <section>
+            <SectionHeader
+              title="Recent leads"
+              subtitle={`Last ${Math.min(recentLeads.length, 6)} high-intent emails to admin@`}
+              action={
+                <a href="/leads" className="text-xs font-bold text-[#D72027] hover:underline">
+                  All leads →
+                </a>
+              }
+            />
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              {recentLeads.map((lead) => (
+                <li
+                  key={lead.id}
+                  className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-4 sm:p-5 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl shrink-0">{LEAD_EMOJI[lead.classification ?? 'other'] ?? '✨'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-[#D72027]">
+                          {(lead.classification ?? 'other').replace('_', ' ')}
+                        </span>
+                        <span className="text-[10px] text-zinc-400">
+                          {relativeTime(lead.received_at)}
+                        </span>
+                      </div>
+                      <div className="text-sm font-bold text-zinc-900 mt-0.5 truncate">
+                        {lead.from_name ?? lead.from_email ?? 'Unknown sender'}
+                      </div>
+                      <div className="text-xs text-zinc-500 mt-0.5 truncate">{lead.subject ?? '(no subject)'}</div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     </DashboardShell>
   )
@@ -277,14 +424,18 @@ function KpiTile({
   label,
   value,
   accent,
+  href,
+  pulse,
 }: {
   icon: string
   label: string
   value: number
   accent: string
+  href?: string
+  pulse?: boolean
 }) {
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-4 sm:p-5 relative overflow-hidden">
+  const inner = (
+    <>
       <div
         className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accent}`}
         aria-hidden
@@ -292,7 +443,7 @@ function KpiTile({
       <div className="flex items-center gap-3">
         <span className="text-2xl sm:text-3xl">{icon}</span>
         <div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-zinc-900 leading-none">
+          <div className={`text-2xl sm:text-3xl font-extrabold text-zinc-900 leading-none ${pulse ? 'animate-pulse' : ''}`}>
             {value}
           </div>
           <div className="text-[10px] sm:text-xs uppercase tracking-wider text-zinc-500 font-bold mt-1">
@@ -300,8 +451,40 @@ function KpiTile({
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
+  const baseClass = 'bg-white rounded-2xl shadow-sm border border-zinc-200 p-4 sm:p-5 relative overflow-hidden'
+  if (href) {
+    return (
+      <a href={href} className={`${baseClass} hover:shadow-md hover:-translate-y-0.5 transition-all block`}>
+        {inner}
+      </a>
+    )
+  }
+  return <div className={baseClass}>{inner}</div>
+}
+
+const LEAD_EMOJI: Record<string, string> = {
+  trial_enquiry: '🎯',
+  birthday_party: '🎉',
+  ndis_enquiry: '💜',
+  school_gig: '🏫',
+  corporate_gig: '🏢',
+  cancel_or_pause: '⏸',
+  invoice_question: '💳',
+  existing_parent: '👨‍👩‍👧',
+  other: '✨',
+}
+
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const minutes = Math.floor(diff / 60_000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
 }
 
 function SectionHeader({
@@ -334,29 +517,6 @@ function QuickAction({ href, icon, label }: { href: string; icon: string; label:
       <span>{label}</span>
       <span className="ml-auto text-zinc-300">→</span>
     </a>
-  )
-}
-
-function BuildRow({ status, label }: { status: 'live' | 'next' | 'soon'; label: string }) {
-  const dot =
-    status === 'live'
-      ? 'bg-emerald-500'
-      : status === 'next'
-      ? 'bg-amber-500 animate-pulse'
-      : 'bg-zinc-300'
-  const tag =
-    status === 'live'
-      ? 'bg-emerald-100 text-emerald-800'
-      : status === 'next'
-      ? 'bg-amber-100 text-amber-800'
-      : 'bg-zinc-100 text-zinc-500'
-  const tagText = status === 'live' ? 'LIVE' : status === 'next' ? 'NEXT' : 'SOON'
-  return (
-    <li className="flex items-center gap-3">
-      <span className={`inline-block w-2 h-2 rounded-full ${dot}`} aria-hidden />
-      <span className="text-zinc-700 flex-1">{label}</span>
-      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${tag}`}>{tagText}</span>
-    </li>
   )
 }
 

@@ -59,19 +59,19 @@ export function DashboardShell({
     <div className="min-h-screen bg-zinc-100 flex">
       {/* Sidebar */}
       <aside className="hidden lg:flex w-60 bg-zinc-900 text-zinc-300 flex-col fixed inset-y-0 left-0 z-30">
-        {/* Brand mark */}
-        <div className="px-5 py-5 border-b border-zinc-800">
-          <a href="/dashboard" className="flex items-center gap-2.5 hover:opacity-90">
-            <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-[#D72027] to-[#A0151B] text-white text-lg shadow-md">
-              🎪
-            </span>
-            <div className="leading-tight">
-              <div className="font-extrabold text-white text-sm">Big Star Circus</div>
-              <div className="text-[10px] uppercase tracking-widest text-zinc-500">
-                CRM v0.1
-              </div>
-            </div>
+        {/* Brand mark — Big Star Circus logo */}
+        <div className="px-4 py-5 border-b border-zinc-800 flex flex-col items-center text-center">
+          <a href="/dashboard" className="block hover:opacity-90">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/bigstar-logo.png"
+              alt="Big Star Circus"
+              className="w-32 h-32 object-contain drop-shadow-[0_0_8px_rgba(215,32,39,0.35)]"
+            />
           </a>
+          <div className="mt-1 text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
+            CRM v0.1
+          </div>
         </div>
 
         {/* Tenant pill */}
@@ -132,9 +132,8 @@ export function DashboardShell({
       <header className="lg:hidden fixed top-0 inset-x-0 z-30 bg-zinc-900 text-white shadow-lg">
         <div className="flex items-center justify-between px-4 py-3">
           <a href="/dashboard" className="flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-[#D72027] to-[#A0151B] text-white text-base">
-              🎪
-            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/bigstar-logo.png" alt="Big Star Circus" className="w-8 h-8 object-contain" />
             <span className="font-extrabold text-sm">BSC CRM</span>
           </a>
           <form action="/auth/sign-out" method="post">
