@@ -50,6 +50,14 @@ export default async function FamiliesPage({
       currentPath="/families"
       pageTitle="Families"
       pageSubtitle={`${rows.length} families${q ? ` matching "${q}"` : ''}${stage ? ` · ${stage}` : ''}`}
+      pageActions={
+        <a
+          href="/families/import"
+          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg"
+        >
+          📥 Import CSV
+        </a>
+      }
     >
       {error && (
         <div className="bg-red-50 border-l-4 border-red-500 text-red-800 rounded-r-xl px-4 py-3 text-sm mb-4">

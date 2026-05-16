@@ -58,14 +58,14 @@ const STARTER_PROMPTS = [
   'Move Alannah Bodman to trial stage',
 ] as const
 
-export function JackyChat({ userName }: { userName: string | null }) {
+export function JackyChat({ userName, initialPrompt }: { userName: string | null; initialPrompt?: string | null }) {
   const [messages, setMessages] = useState<UiMessage[]>([
     {
       role: 'assistant',
       content: `Hey ${userName ?? 'Rhett'}! 🎪 I'm here. I can read your families, check the approval queue, look at recent leads, and queue email/SMS drafts for you to approve. What do you want to do?`,
     },
   ])
-  const [input, setInput] = useState('')
+  const [input, setInput] = useState(initialPrompt ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [listening, setListening] = useState(false)
