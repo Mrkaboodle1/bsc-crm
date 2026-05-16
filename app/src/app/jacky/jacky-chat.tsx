@@ -80,6 +80,9 @@ export function JackyChat({ userName }: { userName: string | null }) {
   const baseInputRef = useRef<string>('')
   const userStoppedRef = useRef<boolean>(false)
   const finalTranscriptRef = useRef<string>('')
+  // Counts consecutive 'network' errors so we can silently retry a few times
+  // before surfacing the error. Reset to 0 whenever we get a result back.
+  const networkRetriesRef = useRef<number>(0)
 
   // One-time set-up: feature-detect Speech Recognition and prep an instance.
   useEffect(() => {
@@ -119,16 +122,25 @@ export function JackyChat({ userName }: { userName: string | null }) {
         return
       }
       if (e.error === 'network') {
-        // Chrome's speech API uses a Google cloud endpoint that occasionally fails.
+        // Chrome's speech API uses a Google cloud endpoint that occasionally fails
+        // mid-session. Retry silently up to 3 times before showing the user anything.
+        networkRetriesRef.current += 1
+        if (networkRetriesRef.current <= 3 && !userStoppedRef.current) {
+          // onend will fire after this and our restart logic will reopen the session.
+          return
+        }
         userStoppedRef.current = true
         setListening(false)
-        setError("Voice service unreachable. Try again — or if it keeps happening, the Edge browser handles voice more reliably than Chrome here.")
+        setError("Voice service keeps dropping in Chrome. Edge browser usually handles voice more reliably — try opening this page there.")
+        networkRetriesRef.current = 0
         return
       }
       setError(`Voice input error: ${e.error}`)
     }
 
     rec.onresult = (event) => {
+      // Any successful result means the network is healthy again — clear the retry counter.
+      networkRetriesRef.current = 0
       let interim = ''
       let final = finalTranscriptRef.current
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -174,6 +186,7 @@ export function JackyChat({ userName }: { userName: string | null }) {
     userStoppedRef.current = false
     baseInputRef.current = input
     finalTranscriptRef.current = ''
+    networkRetriesRef.current = 0
     setLiveFinal('')
     setLiveInterim('')
     try { rec.start() } catch { /* "already started" — ignore */ }
