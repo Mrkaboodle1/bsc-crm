@@ -16,6 +16,7 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { href: '/dashboard', label: 'Today', icon: '🏠', section: 'main' },
+  { href: '/jacky', label: 'Ask Jacky', icon: '🎪', section: 'main' },
   { href: '/inbox', label: 'Inbox', icon: '✉️', section: 'main' },
   { href: '/roll-call', label: 'Roll Call', icon: '📋', badge: 'Soon', section: 'main' },
   { href: '/conversations', label: 'Conversations', icon: '💬', badge: 'Soon', section: 'main' },

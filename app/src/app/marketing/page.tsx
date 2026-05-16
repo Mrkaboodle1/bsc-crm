@@ -22,12 +22,20 @@ export default async function MarketingPage() {
       pageTitle="Marketing"
       pageSubtitle="Media library, AI image generation, post composer."
       pageActions={
-        <a
-          href="/marketing/compose"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg"
-        >
-          ✏️ Compose post
-        </a>
+        <div className="flex items-center gap-2">
+          <a
+            href="/marketing/bulk-send"
+            className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-50"
+          >
+            📨 Bulk send
+          </a>
+          <a
+            href="/marketing/compose"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg"
+          >
+            ✏️ Compose post
+          </a>
+        </div>
       }
     >
       <MarketingOverview

@@ -70,9 +70,11 @@ export function InboxList({ rows }: { rows: InboxRow[] }) {
 
 function InboxItem({ row }: { row: InboxRow }) {
   const style = PRIORITY_STYLE[row.priority] ?? PRIORITY_STYLE.normal!
+  const isSms = row.kind === 'sms_reply' || row.kind === 'sms_outbound'
+  const isBulk = row.triggeredBy === 'campaign'
   const classificationEmoji = row.sourceEmail?.classification
     ? CLASSIFICATION_EMOJI[row.sourceEmail.classification] ?? '✨'
-    : '✉️'
+    : isSms ? '📱' : isBulk ? '📨' : '✉️'
 
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
