@@ -7,6 +7,7 @@
 // failures on every method.
 import { sendEmail as sendViaResend } from '../tools/resend.js'
 import { sendEmail as sendViaGraph } from '../tools/graph.js'
+import { sendSms } from '../tools/clicksend.js'
 
 const sendEmail = process.env.RESEND_API_KEY ? sendViaResend : sendViaGraph
 import { supabase, getTenantId } from '../tools/supabase.js'
@@ -90,8 +91,39 @@ export async function sendApprovedActions(): Promise<{
           errors.push(`Send failed for ${action.id}: ${result.error}`)
           logger.error({ id: action.id, err: result.error }, '❌ Email send failed')
         }
+      } else if (action.kind === 'sms_reply' || action.kind === 'sms_outbound') {
+        if (!action.draft_recipient) {
+          throw new Error('Missing recipient phone number')
+        }
+        const result = await sendSms({
+          to: action.draft_recipient,
+          body: action.draft_body ?? '',
+        })
+        if (result.ok) {
+          await supabase
+            .from('pending_actions')
+            .update({
+              status: 'sent',
+              sent_at: new Date().toISOString(),
+              delivery_metadata: { message_id: result.messageId, channel: 'sms' },
+            })
+            .eq('id', action.id)
+          sent++
+          logger.info({ id: action.id, to: action.draft_recipient }, '✅ SMS sent')
+        } else {
+          await supabase
+            .from('pending_actions')
+            .update({
+              status: 'failed',
+              delivery_metadata: { error: result.error, channel: 'sms' },
+            })
+            .eq('id', action.id)
+          failed++
+          errors.push(`SMS send failed for ${action.id}: ${result.error}`)
+          logger.error({ id: action.id, err: result.error }, '❌ SMS send failed')
+        }
       } else {
-        // Other kinds (SMS, FB, IG) — not implemented yet
+        // Other kinds (FB DM, IG DM) — not implemented yet
         logger.warn({ kind: action.kind, id: action.id }, 'Action kind not yet implemented')
       }
     } catch (e) {
