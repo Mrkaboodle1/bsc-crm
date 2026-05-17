@@ -22,7 +22,7 @@ const NAV: NavItem[] = [
   { href: '/roll-call', label: 'Roll Call', icon: '📋', section: 'main' },
   { href: '/conversations', label: 'Conversations', icon: '💬', badge: 'Soon', section: 'main' },
   { href: '/calendar', label: 'Calendar', icon: '📅', badge: 'Soon', section: 'main' },
-  { href: '/families', label: 'Families', icon: '👨‍👩‍👧', section: 'main' },
+  { href: '/contacts', label: 'Contacts', icon: '👤', section: 'main' },
   { href: '/students', label: 'Students', icon: '🧒', section: 'main' },
   { href: '/classes', label: 'Classes', icon: '🎪', section: 'main' },
   { href: '/stars', label: 'Star Ledger', icon: '⭐', badge: 'Soon', section: 'main' },
