@@ -9,16 +9,28 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-type Station = {
-  id: string
-  name: string
-  vibe: string
-  url: string
-  emoji: string
-}
+// A station is either an HTML5 <audio> stream OR a YouTube playlist iframe.
+// SomaFM stations are direct audio (ad-free, listener-supported, free).
+// YouTube stations carry occasional short ads but unlock current-pop /
+// KidzBop content that isn't on any free Icecast stream.
+type AudioStation = { kind: 'audio'; id: string; name: string; vibe: string; emoji: string; url: string }
+type YouTubeStation = { kind: 'youtube'; id: string; name: string; vibe: string; emoji: string; playlistId: string }
+type Station = AudioStation | YouTubeStation
 
 const STATIONS: Station[] = [
+  // ── Current Top 40 sung by kids / family-friendly (via YouTube) ──
   {
+    kind: 'youtube',
+    id: 'kidzbop',
+    name: 'KIDZ BOP Hits',
+    vibe: 'Top 40 sung by kids — official music videos · brief ads',
+    emoji: '🎤',
+    playlistId: 'PL5pvzdXbuo26GIkkkLvSu2oNR8ZwP8GIe', // KIDZ BOP Official Music Videos
+  },
+
+  // ── SomaFM (ad-free, listener-supported, always clean) ──
+  {
+    kind: 'audio',
     id: 'poptron',
     name: 'PopTron',
     vibe: 'Electro indie pop — energetic, clean, perfect for warm-up',
@@ -26,6 +38,7 @@ const STATIONS: Station[] = [
     emoji: '🎉',
   },
   {
+    kind: 'audio',
     id: 'indiepop',
     name: 'Indie Pop Rocks',
     vibe: 'Curated indie pop — singable, upbeat, no swearing',
@@ -33,6 +46,7 @@ const STATIONS: Station[] = [
     emoji: '🎸',
   },
   {
+    kind: 'audio',
     id: 'beatblender',
     name: 'Beat Blender',
     vibe: 'Mellow downtempo grooves — relaxed class energy',
@@ -40,6 +54,7 @@ const STATIONS: Station[] = [
     emoji: '🌊',
   },
   {
+    kind: 'audio',
     id: 'groovesalad',
     name: 'Groove Salad',
     vibe: 'Ambient chill — backgroundy, low pressure',
@@ -47,6 +62,7 @@ const STATIONS: Station[] = [
     emoji: '🪴',
   },
   {
+    kind: 'audio',
     id: 'thetrip',
     name: 'The Trip',
     vibe: 'Progressive house — high energy, no vocals to worry about',
@@ -54,6 +70,7 @@ const STATIONS: Station[] = [
     emoji: '⚡',
   },
   {
+    kind: 'audio',
     id: 'underground80s',
     name: 'Underground 80s',
     vibe: 'Synthwave + 80s pop — nostalgic, clean classics',
@@ -137,6 +154,13 @@ export function MusicPlayer() {
 
   function toggle() {
     setError(null)
+    // YouTube stations are visually-controlled by the iframe itself — clicking
+    // play/pause here just shows/hides the embed. The iframe's autoplay does
+    // the rest.
+    if (station.kind === 'youtube') {
+      setPlaying((p) => !p)
+      return
+    }
     const audio = audioRef.current
     if (!audio) return
     if (playing) {
@@ -155,11 +179,17 @@ export function MusicPlayer() {
   function pick(id: string) {
     const target = STATIONS.find((s) => s.id === id)
     if (!target) return
+    const wasPlaying = playing
     setStationId(id)
     setError(null)
     const audio = audioRef.current
+    if (target.kind === 'youtube') {
+      // Stop any audio-stream playback so we don't double-play
+      if (audio) audio.pause()
+      setPlaying(wasPlaying) // keep playing-state through the swap
+      return
+    }
     if (!audio) return
-    const wasPlaying = playing
     audio.pause()
     audio.src = target.url
     audio.load()
@@ -172,15 +202,17 @@ export function MusicPlayer() {
 
   return (
     <>
-      {/* Hidden audio element — single source of truth */}
-      <audio
-        ref={audioRef}
-        src={station.url}
-        preload="none"
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onError={() => setError('Station went off-air — try another.')}
-      />
+      {/* Hidden audio element — only used for audio-stream stations */}
+      {station.kind === 'audio' && (
+        <audio
+          ref={audioRef}
+          src={station.url}
+          preload="none"
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onError={() => setError('Station went off-air — try another.')}
+        />
+      )}
 
       {/* Floating widget — bottom-right */}
       <div className="fixed bottom-4 right-4 z-50">
@@ -219,26 +251,43 @@ export function MusicPlayer() {
                 <div className="flex-1">
                   <div className="text-xs font-bold text-zinc-600">{playing ? 'Now playing' : 'Paused'}</div>
                   <div className="text-[10px] text-zinc-400 mt-0.5">
-                    {playing ? 'Streaming live' : 'Tap play'}
+                    {station.kind === 'youtube' && playing
+                      ? 'YouTube playlist · use volume on the video'
+                      : playing ? 'Streaming live' : 'Tap play'}
                   </div>
                 </div>
               </div>
 
-              {/* Volume */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-zinc-500">🔈</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={volume}
-                  onChange={(e) => setVolume(parseFloat(e.target.value))}
-                  className="flex-1 accent-[#D72027]"
-                  aria-label="Volume"
-                />
-                <span className="text-[10px] text-zinc-500 w-7 text-right">{Math.round(volume * 100)}%</span>
-              </div>
+              {/* YouTube iframe — only when a YouTube station is active and playing */}
+              {station.kind === 'youtube' && playing && (
+                <div className="rounded-xl overflow-hidden border-2 border-amber-200">
+                  <iframe
+                    title={station.name}
+                    width="100%"
+                    height="160"
+                    src={`https://www.youtube-nocookie.com/embed/videoseries?list=${station.playlistId}&autoplay=1&modestbranding=1&rel=0`}
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                  />
+                </div>
+              )}
+
+              {/* Volume — only for audio streams; YouTube uses its own controls */}
+              {station.kind === 'audio' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-zinc-500">🔈</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={volume}
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                    className="flex-1 accent-[#D72027]"
+                    aria-label="Volume"
+                  />
+                  <span className="text-[10px] text-zinc-500 w-7 text-right">{Math.round(volume * 100)}%</span>
+                </div>
+              )}
 
               {/* Station picker */}
               <div className="border-t border-zinc-100 pt-3">
