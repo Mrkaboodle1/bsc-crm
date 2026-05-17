@@ -31,24 +31,36 @@ const DISCIPLINE_EMOJI: Record<string, string> = {
   show_programme: '⭐',
 }
 
-export default async function RollCallIndexPage() {
+export default async function RollCallIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ day?: string; all?: string }>
+}) {
+  const { day: dayParam, all } = await searchParams
   const user = await verifySession()
   const supabase = await createServerSupabase()
-  const { dow, iso } = todayInBrisbane()
+  const { dow: todayDow, iso } = todayInBrisbane()
 
-  // Fetch today's classes
-  const { data: classes } = await supabase
+  // If ?day=N supplied, use it. If ?all=1 supplied, show every active class.
+  // Otherwise default to today's day-of-week.
+  const showAll = all === '1'
+  const dow = dayParam !== undefined ? parseInt(dayParam, 10) : todayDow
+  const validDow = dow >= 0 && dow <= 6 ? dow : todayDow
+
+  let query = supabase
     .from('classes')
     .select(`
       id, name, day_of_week, start_time, duration_minutes,
       discipline, age_min, age_max, capacity,
       primary_coach:coaches!classes_primary_coach_id_fkey ( full_name )
     `)
-    .eq('day_of_week', dow)
     .eq('status', 'active')
+    .order('day_of_week', { ascending: true })
     .order('start_time', { ascending: true })
+  if (!showAll) query = query.eq('day_of_week', validDow)
 
-  // For each class, count enrolments + count attendance already marked today
+  const { data: classes } = await query
+
   const classIds = (classes ?? []).map((c) => c.id)
   let enrolByClass: Record<string, number> = {}
   let attByClass: Record<string, number> = {}
@@ -67,22 +79,64 @@ export default async function RollCallIndexPage() {
     )
   }
 
+  const dayHasClasses = (classes?.length ?? 0) > 0
+
   return (
     <DashboardShell
       user={user}
       currentPath="/roll-call"
       pageTitle="Roll Call"
-      pageSubtitle={`${DAY_NAMES[dow]} ${formatDate(iso)} — tap a class to start.`}
+      pageSubtitle={
+        showAll
+          ? `All active classes — tap one to start.`
+          : `${DAY_NAMES[validDow]} — tap a class to start.`
+      }
+      pageActions={
+        <a
+          href={showAll ? '/roll-call' : '/roll-call?all=1'}
+          className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-50"
+        >
+          {showAll ? '← Today' : '📋 Show all classes'}
+        </a>
+      }
     >
-      {(!classes || classes.length === 0) ? (
+      {/* Day picker — quick taps on iPad */}
+      <div className="flex flex-wrap gap-2 mb-5">
+        {DAY_NAMES.map((label, idx) => {
+          const active = !showAll && idx === validDow
+          const isToday = idx === todayDow
+          return (
+            <a
+              key={idx}
+              href={`/roll-call?day=${idx}`}
+              className={`px-4 py-2.5 rounded-xl text-sm font-extrabold transition-colors ${
+                active
+                  ? 'bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white shadow-md'
+                  : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+              }`}
+            >
+              {label.slice(0, 3)}
+              {isToday && <span className="ml-1 text-[10px] opacity-70">·today</span>}
+            </a>
+          )
+        })}
+      </div>
+
+      {!dayHasClasses ? (
         <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-10 text-center max-w-2xl">
           <div className="text-5xl mb-3">🌴</div>
-          <p className="font-bold text-zinc-700">No classes on {DAY_NAMES[dow]}.</p>
-          <p className="text-sm text-zinc-500 mt-1">Enjoy the day off.</p>
+          <p className="font-bold text-zinc-700">No classes on {DAY_NAMES[validDow]}.</p>
+          <p className="text-sm text-zinc-500 mt-1">Pick another day above, or browse all classes.</p>
+          <a
+            href="/roll-call?all=1"
+            className="inline-flex items-center gap-2 mt-4 bg-zinc-900 text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-800"
+          >
+            Browse all classes
+          </a>
         </div>
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {classes.map((c) => {
+          {classes!.map((c) => {
             const enrolled = enrolByClass[c.id] ?? 0
             const marked = attByClass[c.id] ?? 0
             const status = enrolled === 0
@@ -105,6 +159,11 @@ export default async function RollCallIndexPage() {
                         <span className="text-xl font-extrabold text-zinc-900">
                           {formatTime(c.start_time)}
                         </span>
+                        {showAll && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#D72027]">
+                            {DAY_NAMES[c.day_of_week].slice(0, 3)}
+                          </span>
+                        )}
                         <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">
                           {c.duration_minutes} min
                         </span>
@@ -150,11 +209,6 @@ export default async function RollCallIndexPage() {
       )}
     </DashboardShell>
   )
-}
-
-function formatDate(iso: string) {
-  const d = new Date(iso + 'T00:00:00')
-  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
 }
 
 function StatusPill({ status }: { status: 'empty' | 'unmarked' | 'partial' | 'complete' }) {

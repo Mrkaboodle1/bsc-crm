@@ -1,0 +1,100 @@
+# Students whose family couldn't be auto-matched
+
+These got a placeholder family created. Search them in /families and link to the real parent record.
+
+- [T1 Monday Acro] CHILD NAME
+- [T1 Monday Acro] Isla
+- [T1 Monday Acro] Robina College
+- [T1 Monday Acro] Specialise
+- [T1 Monday Acro] Naomi Duggan 3pm
+- [T1 Monday Acro] Amelia
+- [T1 Monday Acro] Archie
+- [T1 Monday Acro] Isabelle pike 5yr
+- [T1 Monday Acro] Arianna & Aurelia
+- [T1 Monday Acro] Eleia -
+- [T1 Monday Acro] Yuki Carey
+- [T1 Monday Acro] Bella Rowell 9yr
+- [T1 Monday Acro] nicky
+- [T1 Tuesday Aerial] Weekly Roll Call
+- [T1 Tuesday Aerial] CHILD NAME (AGE
+- [T1 Tuesday Aerial] Privates
+- [T1 Tuesday Aerial] Llaton
+- [T1 Tuesday Aerial] Carry 3pm
+- [T1 Tuesday Aerial] Tues 9am-
+- [T1 Tuesday Aerial] Tues
+- [T1 Tuesday Aerial] Charli Menger
+- [T1 Tuesday Aerial] Donniella
+- [T1 Tuesday Aerial] Lydia
+- [T1 Tuesday Aerial] Lauren
+- [T1 Tuesday Aerial] Matilda
+- [T1 Tuesday Aerial] Azzurra
+- [T1 Tuesday Aerial] Tues 5pm-6pm SENIOR AERIAL
+- [T1 Tuesday Aerial] Mary Donnerly
+- [T1 Tuesday Aerial] Ayla friend of Lexi
+- [T1 Tuesday Aerial] Eleia
+- [T1 Tuesday Aerial] Lola Ebed
+- [T1 Tuesday Aerial] Lylah Weller
+- [T1 Tuesday Aerial] Lily
+- [T1 Wednesday AM HS Circus] Weekly Roll Call
+- [T1 Wednesday AM HS Circus] CHILD NAME
+- [T1 Wednesday AM HS Circus] Wed
+- [T1 Wednesday AM HS Circus] Eleia
+- [T1 Wednesday AM HS Circus] Louis
+- [T1 Wednesday AM HS Circus] Tilda Bingham
+- [T1 Wednesday AM HS Circus] Andre Horne
+- [T1 Wednesday AM HS Circus] Phoenix Horne
+- [T1 Wednesday AM HS Circus] Zola and Juni
+- [T1 Wednesday PM Circus] Weekly Roll Call
+- [T1 Wednesday PM Circus] CHILD NAME
+- [T1 Wednesday PM Circus] Privates
+- [T1 Wednesday PM Circus] Specialise
+- [T1 Wednesday PM Circus] Ashton Private lesson 3pm-
+- [T1 Wednesday PM Circus] Wed
+- [T1 Wednesday PM Circus] Jackson Maybury
+- [T1 Wednesday PM Circus] Lily
+- [T1 Wednesday PM Circus] India
+- [T1 Wednesday PM Circus] Tyrell
+- [T1 Wednesday PM Circus] Iona
+- [T1 Wednesday PM Circus] Stirling
+- [T1 Wednesday PM Circus] scralett
+- [T1 Wednesday PM Circus] Ruby
+- [T1 Wednesday PM Circus] Aurelia
+- [T1 Wednesday PM Circus] Archer
+- [T1 Wednesday PM Circus] matilda
+- [T1 Wednesday PM Circus] Kendall Okeefey
+- [T1 Wednesday PM Circus] Elkie Barnett
+- [T1 Wednesday PM Circus] bella free trail
+- [T1 Wednesday PM Circus] Kera
+- [T1 Thursday AM HS Circus] Weekly Roll Call
+- [T1 Thursday AM HS Circus] CHILD NAME
+- [T1 Thursday AM HS Circus] Lucas
+- [T1 Thursday PM Circus Fusion] Weekly Roll Call
+- [T1 Thursday PM Circus Fusion] Lucus NDIS
+- [T1 Thursday PM Circus Fusion] Lana
+- [T1 Thursday PM Circus Fusion] Eden
+- [T1 Thursday PM Circus Fusion] Lola-rose Holt Younger
+- [T1 Thursday PM Circus Fusion] Aisha
+- [T1 Thursday PM Circus Fusion] Louis Levar Levar
+- [T1 Thursday PM Circus Fusion] Eleia Levar Levar
+- [T1 Friday Circus & Aerial] Weekly Roll Call
+- [T1 Friday Circus & Aerial] CHILD NAME
+- [T1 Friday Circus & Aerial] Rize group
+- [T1 Friday Circus & Aerial] Robina collage 5 weeks
+- [T1 Friday Circus & Aerial] Axel
+- [T1 Friday Circus & Aerial] Theodore
+- [T1 Friday Circus & Aerial] Yuki Carey
+- [T1 Friday Circus & Aerial] Isabella
+- [T1 Friday Circus & Aerial] Alya
+- [T1 Friday Circus & Aerial] Quil
+- [T2 Saturday AM Fusion] CHILD NAME
+- [T2 Saturday AM Fusion] Moo Moo
+- [T2 Saturday AM Fusion] Tom
+- [T2 Saturday AM Fusion] CIRCUS FUSION 9am - 10am
+- [T2 Saturday AM Fusion] Maple & Rosie
+- [T2 Saturday AM Fusion] Maleah
+- [T2 Saturday AM Fusion] Alexander Crichton
+- [T2 Saturday AM Fusion] Abrahan
+- [T2 Saturday AM Fusion] Avid
+- [T2 Saturday AM Fusion] Isabella
+- [T2 Saturday AM Fusion] laya
+- [T2 Saturday AM Fusion] phenix
