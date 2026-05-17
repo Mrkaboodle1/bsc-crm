@@ -23,7 +23,8 @@
     "stripe:sync:dry": "tsx src/cli/stripe-sync.ts --dry",
     "import:tectonic": "tsx src/cli/import-tectonic-csv.ts",
     "import:rollsheet": "tsx src/cli/import-rollsheet.ts",
-    "report:roll": "tsx src/cli/report-roll-vs-stripe.ts"
+    "report:roll": "tsx src/cli/report-roll-vs-stripe.ts",
+    "fetch:term-dates": "tsx src/cli/fetch-term-dates.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

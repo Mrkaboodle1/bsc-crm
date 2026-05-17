@@ -115,7 +115,8 @@ console.log(`Deduped to ${uniqStudents.length} unique student × class entries.`
 const tenantId = await getTenantId()
 // Paginate — Supabase default page size is 1000, and we have ~1700 families.
 const PAGE = 1000
-let allFamilies: NonNullable<Awaited<ReturnType<typeof supabase.from>['select']>['data']> = []
+type FamilyRow = { id: string; family_name: string; primary_parent: string | null; email: string | null; phone: string | null; lifecycle_stage: string | null; stripe_customer_id: string | null; weekly_fee_total: number | null; tags: string[] | null }
+let allFamilies: FamilyRow[] = []
 let famErr: { message: string } | null = null
 for (let offset = 0; ; offset += PAGE) {
   const { data, error } = await supabase

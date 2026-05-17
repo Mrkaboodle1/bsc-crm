@@ -4,6 +4,7 @@
 import cron from 'node-cron'
 import { triageInbox } from './routines/triage-inbox.js'
 import { sendApprovedActions } from './routines/send-approved.js'
+import { fetchTermDates } from './routines/fetch-term-dates.js'
 import { logger } from './logger.js'
 import { config } from './config.js'
 
@@ -46,6 +47,21 @@ cron.schedule('*/1 * * * *', async () => {
 cron.schedule('30 7 * * *', () => {
   logger.info('🌅 Morning summary cron fired (not yet implemented)')
 }, { timezone: config.timezone })
+
+// Once a year — fetch new QLD school term dates from education.qld.gov.au.
+// 01:00 on 1 December (next year's dates are typically up by then). Also
+// refresh once on 1 February as a safety net for late-published years.
+async function refreshTermDates(reason: string) {
+  logger.info({ reason }, '📅 Yearly QLD term-dates refresh starting')
+  try {
+    const result = await fetchTermDates()
+    logger.info(result, '✅ Term dates refreshed')
+  } catch (e) {
+    logger.error({ err: (e as Error).message }, '❌ Term dates refresh failed')
+  }
+}
+cron.schedule('0 1 1 12 *', () => refreshTermDates('annual-dec'), { timezone: config.timezone })
+cron.schedule('0 1 1 2 *',  () => refreshTermDates('annual-feb-fallback'), { timezone: config.timezone })
 
 // Keep the process alive — graceful shutdown on SIGTERM (systemd)
 process.on('SIGTERM', () => {

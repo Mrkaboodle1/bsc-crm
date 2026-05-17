@@ -2,16 +2,11 @@ import { notFound } from 'next/navigation'
 import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
-import { AttendanceGrid, type RosterEntry } from './attendance-grid'
-import { markAttendance, awardStar, removeFromClass, searchStudents, addToClass } from './actions'
+import { AttendanceTable, type RosterRow } from './attendance-table'
+import { markAttendance, removeFromClass, searchStudents, addToClass } from './actions'
+import { TERM_DATES, type Term, currentTerm, getTerm, termWeekDates, termsForYear, brisbaneToday } from '@/lib/term-dates'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
-function todayInBrisbane() {
-  const now = new Date()
-  const brisbane = new Date(now.toLocaleString('en-US', { timeZone: 'Australia/Brisbane' }))
-  return brisbane.toISOString().slice(0, 10)
-}
 
 function formatTime(t: string) {
   const [h, m] = t.split(':')
@@ -23,13 +18,22 @@ function formatTime(t: string) {
 
 export default async function RollCallClassPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ classId: string }>
+  searchParams: Promise<{ term?: string; year?: string }>
 }) {
   const { classId } = await params
+  const sp = await searchParams
   const user = await verifySession()
   const supabase = await createServerSupabase()
-  const todayIso = todayInBrisbane()
+  const todayIso = brisbaneToday()
+
+  // Pick the term — query string ?term=2&year=2026 wins, else default to today's term
+  const fallback = currentTerm(todayIso)
+  const requestedTerm = sp.term ? (parseInt(sp.term, 10) as Term) : fallback.term
+  const requestedYear = sp.year ? parseInt(sp.year, 10) : fallback.year
+  const termRange = getTerm(requestedYear, requestedTerm) ?? fallback
 
   // 1. Class details
   const { data: cls, error: classErr } = await supabase
@@ -44,12 +48,14 @@ export default async function RollCallClassPage({
 
   if (classErr || !cls) notFound()
 
-  // 2. Enrolled students (active enrolments only) — now with family + payment
-  //    info so the iPad can show parent name, DOB, subscription / Play On status.
+  // 2. Week dates for the selected term, anchored to this class's day-of-week
+  const weekDates = termWeekDates(termRange, cls.day_of_week)
+
+  // 3. Enrolled students (active enrolments only) + family context
   const { data: enrolments } = await supabase
     .from('enrolments')
     .select(`
-      id, notes,
+      id, notes, start_date,
       student:students!enrolments_student_id_fkey (
         id, first_name, last_name, date_of_birth, medical_notes, total_stars, star_tier,
         family:families!students_family_id_fkey (
@@ -62,6 +68,7 @@ export default async function RollCallClassPage({
     .returns<Array<{
       id: string
       notes: string | null
+      start_date: string
       student: {
         id: string
         first_name: string
@@ -74,30 +81,50 @@ export default async function RollCallClassPage({
       }
     }>>()
 
-  // 3. Today's attendance for this class
+  // 4. Attendance across ALL the weeks in the selected term
   const { data: attendance } = await supabase
     .from('attendance')
-    .select('id, student_id, status, stars_awarded_today, coach_notes')
+    .select('id, student_id, date, status, stars_awarded_today')
     .eq('class_id', classId)
-    .eq('date', todayIso)
+    .in('date', weekDates)
 
-  const attByStudent = new Map((attendance ?? []).map((a) => [a.student_id, a]))
+  // Index attendance by studentId+date for quick lookup
+  const attByKey = new Map<string, { id: string; status: string }>()
+  for (const a of attendance ?? []) {
+    attByKey.set(`${a.student_id}::${a.date}`, { id: a.id, status: a.status })
+  }
 
-  const roster: RosterEntry[] = (enrolments ?? []).map((e) => {
-    const att = attByStudent.get(e.student.id)
+  const roster: RosterRow[] = (enrolments ?? []).map((e, idx) => {
     const fam = Array.isArray(e.student.family) ? e.student.family[0] : e.student.family
-    // Derive payment status: roll-sheet commitment text in enrolment.notes
-    // is the most specific signal; family lifecycle + weekly_fee_total is the fallback.
-    const commitment = (e.notes ?? '').toLowerCase()
-    let paymentStatus: RosterEntry['paymentStatus'] = 'unknown'
-    if (/play\s*on|playon|\bpo\b/i.test(commitment)) paymentStatus = 'play_on'
-    else if (/\bndis\b/i.test(commitment)) paymentStatus = 'ndis'
-    else if (/\bcasual\b/i.test(commitment)) paymentStatus = 'casual'
-    else if (/^(ft|free trial)$/i.test(commitment.trim())) paymentStatus = 'free_trial'
-    else if (/\bsub(scription)?\b/i.test(commitment)) paymentStatus = 'subscribed'
+    const commitment = (e.notes ?? '').replace(/^Commitment:\s*/, '').trim()
+    const commitLower = commitment.toLowerCase()
+    let paymentStatus: RosterRow['paymentStatus'] = 'unknown'
+    if (/play\s*on|playon|\bpo\b/i.test(commitLower)) paymentStatus = 'play_on'
+    else if (/\bndis\b/i.test(commitLower)) paymentStatus = 'ndis'
+    else if (/\bcasual\b/i.test(commitLower)) paymentStatus = 'casual'
+    else if (/^(ft|free trial)$/i.test(commitLower)) paymentStatus = 'free_trial'
+    else if (/\bsub(scription)?\b/i.test(commitLower)) paymentStatus = 'subscribed'
     else if (fam?.lifecycle_stage === 'active' || (fam?.weekly_fee_total ?? 0) > 0) paymentStatus = 'subscribed'
     else if (fam?.lifecycle_stage === 'past' || fam?.lifecycle_stage === 'lost') paymentStatus = 'not_paying'
+
+    // Pay style: derive from Stripe presence + commitment
+    let payStyle: RosterRow['payStyle'] = '—'
+    if (fam?.stripe_customer_id) payStyle = 'DD'
+    else if (paymentStatus === 'play_on') payStyle = 'Voucher'
+    else if (paymentStatus === 'ndis') payStyle = 'NDIS'
+    else if (paymentStatus === 'casual') payStyle = 'Cash'
+    else if (paymentStatus === 'subscribed') payStyle = 'DD'
+
+    // Build the week-by-week attendance map for this row
+    const weeks: RosterRow['weeks'] = weekDates.map((date) => {
+      const att = attByKey.get(`${e.student.id}::${date}`)
+      return { date, status: (att?.status as RosterRow['weeks'][number]['status']) ?? null, attendanceId: att?.id ?? null }
+    })
+
+    const totalAttended = weeks.filter((w) => w.status === 'present' || w.status === 'late' || w.status === 'makeup').length
+
     return {
+      rowNumber: idx + 1,
       enrolmentId: e.id,
       studentId: e.student.id,
       firstName: e.student.first_name,
@@ -107,9 +134,6 @@ export default async function RollCallClassPage({
       medical: e.student.medical_notes,
       starTier: e.student.star_tier,
       totalStars: e.student.total_stars,
-      attendanceId: att?.id ?? null,
-      status: (att?.status as RosterEntry['status']) ?? null,
-      starsToday: att?.stars_awarded_today ?? 0,
       familyId: fam?.id ?? null,
       familyName: fam?.family_name ?? null,
       primaryParent: fam?.primary_parent ?? null,
@@ -117,9 +141,16 @@ export default async function RollCallClassPage({
       parentPhone: fam?.phone ?? null,
       weeklyFee: fam?.weekly_fee_total ?? 0,
       paymentStatus,
-      commitment: e.notes ?? null,
+      commitment,
+      payStyle,
+      startDate: e.start_date,
+      weeks,
+      totalAttended,
     }
   }).sort((a, b) => a.firstName.localeCompare(b.firstName))
+
+  const allYears = Array.from(new Set(TERM_DATES.map((t) => t.year))).sort()
+  const termsThisYear = termsForYear(termRange.year)
 
   return (
     <DashboardShell
@@ -136,12 +167,54 @@ export default async function RollCallClassPage({
         </a>
       }
     >
-      <AttendanceGrid
-        classId={cls.id}
-        date={todayIso}
+      {/* Term + year picker — BSC red/yellow brand */}
+      <div className="bg-white rounded-2xl shadow-sm border-2 border-amber-200 p-3 mb-5 flex items-center gap-3 flex-wrap">
+        <span className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">Year</span>
+        <div className="flex gap-1">
+          {allYears.map((y) => (
+            <a
+              key={y}
+              href={`/roll-call/${classId}?year=${y}&term=${termRange.term}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold ${
+                y === termRange.year
+                  ? 'bg-gradient-to-br from-[#D72027] to-[#A0151B] text-white shadow'
+                  : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+              }`}
+            >
+              {y}
+            </a>
+          ))}
+        </div>
+        <span className="text-zinc-300 mx-1">·</span>
+        <span className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">Term</span>
+        <div className="flex gap-1">
+          {termsThisYear.map((t) => (
+            <a
+              key={t.term}
+              href={`/roll-call/${classId}?year=${t.year}&term=${t.term}`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold ${
+                t.term === termRange.term
+                  ? 'bg-gradient-to-br from-[#FFC107] to-amber-500 text-zinc-900 shadow'
+                  : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+              }`}
+            >
+              T{t.term}
+            </a>
+          ))}
+        </div>
+        <span className="ml-auto text-xs text-zinc-500">
+          {weekDates.length > 0 && (
+            <>W1 = <strong>{shortDate(weekDates[0]!)}</strong> · {weekDates.length} weeks</>
+          )}
+        </span>
+      </div>
+
+      <AttendanceTable
+        classId={classId}
         roster={roster}
+        weekDates={weekDates}
+        termLabel={`Term ${termRange.term} ${termRange.year}`}
         onMark={markAttendance}
-        onAward={awardStar}
         onRemove={removeFromClass}
         onSearch={searchStudents}
         onAdd={addToClass}
@@ -158,4 +231,9 @@ function yearsOld(dob: string | null): number | null {
   const m = now.getMonth() - birth.getMonth()
   if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--
   return age
+}
+
+function shortDate(iso: string): string {
+  const d = new Date(iso + 'T00:00:00+10:00')
+  return `${d.getDate()}.${d.getMonth() + 1}`
 }
