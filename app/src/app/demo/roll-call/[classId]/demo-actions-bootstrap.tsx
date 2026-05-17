@@ -4,7 +4,7 @@
 // so the /demo route works without a Supabase session.
 
 import { useMemo } from 'react'
-import { AttendanceGrid, type RosterEntry, type MarkFn, type AwardFn } from '@/app/roll-call/[classId]/attendance-grid'
+import { AttendanceGrid, type RosterEntry, type MarkFn, type AwardFn, type RemoveFn, type SearchFn, type AddFn } from '@/app/roll-call/[classId]/attendance-grid'
 
 export function DemoActionsBootstrap({
   classId,
@@ -41,6 +41,11 @@ export function DemoActionsBootstrap({
     [roster]
   )
 
+  // Demo-mode stubs — actions are no-ops with friendly responses
+  const onRemove: RemoveFn = useMemo(() => async () => ({ ok: true as const }), [])
+  const onSearch: SearchFn = useMemo(() => async () => ({ ok: true as const, results: [] }), [])
+  const onAdd: AddFn = useMemo(() => async () => ({ ok: true as const }), [])
+
   return (
     <AttendanceGrid
       classId={classId}
@@ -48,6 +53,9 @@ export function DemoActionsBootstrap({
       roster={roster}
       onMark={onMark}
       onAward={onAward}
+      onRemove={onRemove}
+      onSearch={onSearch}
+      onAdd={onAdd}
     />
   )
 }

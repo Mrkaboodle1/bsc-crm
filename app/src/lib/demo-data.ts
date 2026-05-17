@@ -40,6 +40,7 @@ export type DemoRosterEntry = {
   studentId: string
   firstName: string
   lastName: string | null
+  dob: string | null
   age: number | null
   medical: string | null
   starTier: number
@@ -47,6 +48,14 @@ export type DemoRosterEntry = {
   attendanceId: string | null
   status: null | 'present' | 'late' | 'absent' | 'makeup' | 'excused'
   starsToday: number
+  familyId: string | null
+  familyName: string | null
+  primaryParent: string | null
+  parentEmail: string | null
+  parentPhone: string | null
+  weeklyFee: number
+  paymentStatus: 'subscribed' | 'play_on' | 'ndis' | 'casual' | 'free_trial' | 'not_paying' | 'unknown'
+  commitment: string | null
 }
 
 // Rosters keyed by class id — only populate a few for demo purposes
@@ -107,11 +116,13 @@ function roster(
   totalStars: number,
   status: DemoRosterEntry['status']
 ): DemoRosterEntry {
+  const year = new Date().getFullYear() - age
   return {
     enrolmentId: `e-${id}`,
     studentId: id,
     firstName,
     lastName,
+    dob: `${year}-06-30`,
     age,
     medical,
     starTier,
@@ -119,6 +130,14 @@ function roster(
     attendanceId: status ? `a-${id}` : null,
     status,
     starsToday: 0,
+    familyId: `demo-fam-${id}`,
+    familyName: lastName,
+    primaryParent: `${firstName.endsWith('a') ? 'Sarah' : 'Michael'} ${lastName}`,
+    parentEmail: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`,
+    parentPhone: '+61 4XX XXX XXX',
+    weeklyFee: 28,
+    paymentStatus: 'subscribed',
+    commitment: 'FT - SUB',
   }
 }
 

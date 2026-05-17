@@ -2,7 +2,13 @@ import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+// /roll-call now mirrors the BSC weekly-schedule poster — Mon→Sun columns,
+// Morning + Afternoon row bands, alternating red/yellow class cards. Each
+// card is a button that opens the class roll on iPad.
+
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const
+// In our schema: 0=Sun, 1=Mon...6=Sat. Reorder to start with Monday.
+const DAY_INDEX_FROM_SCHEMA = [1, 2, 3, 4, 5, 6, 0]
 
 function todayInBrisbane() {
   const now = new Date()
@@ -18,6 +24,185 @@ function formatTime(t: string) {
   return `${displayHour}:${m}${period}`
 }
 
+function formatTimeRange(start: string, durationMin: number) {
+  const [h, m] = start.split(':')
+  const startH = parseInt(h, 10)
+  const startM = parseInt(m, 10)
+  const totalMin = startH * 60 + startM + durationMin
+  const endH = Math.floor(totalMin / 60)
+  const endM = totalMin % 60
+  const fmt = (hh: number, mm: number) => {
+    const period = hh >= 12 ? 'pm' : 'am'
+    const dh = hh > 12 ? hh - 12 : hh === 0 ? 12 : hh
+    return `${dh}:${String(mm).padStart(2, '0')}${period}`
+  }
+  return `${fmt(startH, startM)}-${fmt(endH, endM)}`
+}
+
+type ClassRow = {
+  id: string
+  name: string
+  day_of_week: number
+  start_time: string
+  duration_minutes: number
+  discipline: string
+  age_min: number | null
+  age_max: number | null
+  capacity: number
+  primary_coach: { full_name: string }[] | { full_name: string } | null
+}
+
+export default async function RollCallIndexPage() {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+  const { dow: todayDow, iso } = todayInBrisbane()
+
+  const { data: classes } = await supabase
+    .from('classes')
+    .select(`
+      id, name, day_of_week, start_time, duration_minutes,
+      discipline, age_min, age_max, capacity,
+      primary_coach:coaches!classes_primary_coach_id_fkey ( full_name )
+    `)
+    .eq('status', 'active')
+    .order('day_of_week', { ascending: true })
+    .order('start_time', { ascending: true })
+    .returns<ClassRow[]>()
+
+  // Enrolment counts (so cards can show "5 / 8 here")
+  const classIds = (classes ?? []).map((c) => c.id)
+  let enrolByClass: Record<string, number> = {}
+  let attByClass: Record<string, number> = {}
+  if (classIds.length > 0) {
+    const [{ data: enrols }, { data: atts }] = await Promise.all([
+      supabase.from('enrolments').select('class_id').eq('status', 'active').in('class_id', classIds),
+      supabase.from('attendance').select('class_id').eq('date', iso).in('class_id', classIds),
+    ])
+    enrolByClass = (enrols ?? []).reduce<Record<string, number>>((acc, r) => { acc[r.class_id] = (acc[r.class_id] ?? 0) + 1; return acc }, {})
+    attByClass = (atts ?? []).reduce<Record<string, number>>((acc, r) => { acc[r.class_id] = (acc[r.class_id] ?? 0) + 1; return acc }, {})
+  }
+
+  // Split into morning (before 12:00) and afternoon (12:00+), grouped by day-of-week
+  type DayBucket = { morning: ClassRow[]; afternoon: ClassRow[] }
+  const empty = (): DayBucket => ({ morning: [], afternoon: [] })
+  const grid: Record<number, DayBucket> = { 0: empty(), 1: empty(), 2: empty(), 3: empty(), 4: empty(), 5: empty(), 6: empty() }
+  for (const c of classes ?? []) {
+    const h = parseInt(c.start_time.split(':')[0]!, 10)
+    const bucket = h < 12 ? 'morning' : 'afternoon'
+    grid[c.day_of_week]![bucket].push(c)
+  }
+
+  return (
+    <DashboardShell
+      user={user}
+      currentPath="/roll-call"
+      pageTitle="Roll Call"
+      pageSubtitle="Tap a class to start the roll."
+    >
+      <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-[#D72027] bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100">
+
+        {/* MORNING band */}
+        <BandHeader label="Morning" />
+
+        {/* Day columns — morning row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 p-2 sm:p-3">
+          {DAY_INDEX_FROM_SCHEMA.map((dow, idx) => (
+            <DayColumn key={`am-${dow}`} dow={dow} dayName={DAYS[idx]!} isToday={dow === todayDow}>
+              {grid[dow]!.morning.length === 0 ? (
+                <EmptyCard />
+              ) : (
+                grid[dow]!.morning.map((c, i) => (
+                  <ClassCard
+                    key={c.id}
+                    cls={c}
+                    paletteIndex={i}
+                    enrolled={enrolByClass[c.id] ?? 0}
+                    marked={attByClass[c.id] ?? 0}
+                  />
+                ))
+              )}
+            </DayColumn>
+          ))}
+        </div>
+
+        {/* AFTERNOON band */}
+        <BandHeader label="Afternoon" />
+
+        {/* Day columns — afternoon row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 p-2 sm:p-3">
+          {DAY_INDEX_FROM_SCHEMA.map((dow, idx) => (
+            <DayColumn key={`pm-${dow}`} dow={dow} dayName={DAYS[idx]!} isToday={dow === todayDow} hideHeader>
+              {grid[dow]!.afternoon.length === 0 ? (
+                <EmptyCard />
+              ) : (
+                grid[dow]!.afternoon.map((c, i) => (
+                  <ClassCard
+                    key={c.id}
+                    cls={c}
+                    paletteIndex={i}
+                    enrolled={enrolByClass[c.id] ?? 0}
+                    marked={attByClass[c.id] ?? 0}
+                  />
+                ))
+              )}
+            </DayColumn>
+          ))}
+        </div>
+
+      </div>
+
+      <div className="text-center mt-4 text-xs text-zinc-400">
+        Each card is tappable — opens that class&apos;s roll for attendance + stars.
+      </div>
+    </DashboardShell>
+  )
+}
+
+function BandHeader({ label }: { label: string }) {
+  return (
+    <div className="bg-gradient-to-r from-[#D72027] via-orange-500 to-[#D72027] py-3 px-4 text-center">
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-wide drop-shadow-md">
+        {label}
+      </h2>
+    </div>
+  )
+}
+
+function DayColumn({
+  dow,
+  dayName,
+  isToday,
+  hideHeader = false,
+  children,
+}: {
+  dow: number
+  dayName: string
+  isToday: boolean
+  hideHeader?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col gap-2 min-w-0">
+      {!hideHeader && (
+        <div
+          className={`rounded-2xl py-2 px-3 text-center shadow-md border-2 ${
+            isToday
+              ? 'bg-gradient-to-br from-[#FFC107] to-amber-500 text-zinc-900 border-amber-600 ring-2 ring-[#D72027]'
+              : 'bg-gradient-to-br from-amber-300 to-amber-400 text-zinc-900 border-amber-500'
+          }`}
+        >
+          <div className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider">
+            {dayName.toUpperCase()}
+          </div>
+          {isToday && <div className="text-[9px] font-bold mt-0.5 text-[#D72027]">TODAY</div>}
+        </div>
+      )}
+      {children}
+    </div>
+  )
+}
+
+// Discipline → emoji for the card
 const DISCIPLINE_EMOJI: Record<string, string> = {
   circus_acro: '🤸',
   aerial: '🎪',
@@ -31,193 +216,77 @@ const DISCIPLINE_EMOJI: Record<string, string> = {
   show_programme: '⭐',
 }
 
-export default async function RollCallIndexPage({
-  searchParams,
+// Alternating red/yellow palette matching BSC's poster
+const PALETTE = [
+  // Red card
+  {
+    bg: 'bg-gradient-to-br from-[#FF6B73] to-[#D72027]',
+    text: 'text-white',
+    sub: 'text-amber-100',
+    badge: 'bg-amber-200 text-zinc-900',
+  },
+  // Yellow card
+  {
+    bg: 'bg-gradient-to-br from-[#FFD54F] to-[#FFC107]',
+    text: 'text-zinc-900',
+    sub: 'text-zinc-800',
+    badge: 'bg-[#D72027] text-white',
+  },
+]
+
+function ClassCard({
+  cls,
+  paletteIndex,
+  enrolled,
+  marked,
 }: {
-  searchParams: Promise<{ day?: string; all?: string }>
+  cls: ClassRow
+  paletteIndex: number
+  enrolled: number
+  marked: number
 }) {
-  const { day: dayParam, all } = await searchParams
-  const user = await verifySession()
-  const supabase = await createServerSupabase()
-  const { dow: todayDow, iso } = todayInBrisbane()
-
-  // If ?day=N supplied, use it. If ?all=1 supplied, show every active class.
-  // Otherwise default to today's day-of-week.
-  const showAll = all === '1'
-  const dow = dayParam !== undefined ? parseInt(dayParam, 10) : todayDow
-  const validDow = dow >= 0 && dow <= 6 ? dow : todayDow
-
-  let query = supabase
-    .from('classes')
-    .select(`
-      id, name, day_of_week, start_time, duration_minutes,
-      discipline, age_min, age_max, capacity,
-      primary_coach:coaches!classes_primary_coach_id_fkey ( full_name )
-    `)
-    .eq('status', 'active')
-    .order('day_of_week', { ascending: true })
-    .order('start_time', { ascending: true })
-  if (!showAll) query = query.eq('day_of_week', validDow)
-
-  const { data: classes } = await query
-
-  const classIds = (classes ?? []).map((c) => c.id)
-  let enrolByClass: Record<string, number> = {}
-  let attByClass: Record<string, number> = {}
-  if (classIds.length > 0) {
-    const [{ data: enrols }, { data: atts }] = await Promise.all([
-      supabase.from('enrolments').select('class_id').eq('status', 'active').in('class_id', classIds),
-      supabase.from('attendance').select('class_id').eq('date', iso).in('class_id', classIds),
-    ])
-    enrolByClass = (enrols ?? []).reduce<Record<string, number>>(
-      (acc, r) => ((acc[r.class_id] = (acc[r.class_id] ?? 0) + 1), acc),
-      {}
-    )
-    attByClass = (atts ?? []).reduce<Record<string, number>>(
-      (acc, r) => ((acc[r.class_id] = (acc[r.class_id] ?? 0) + 1), acc),
-      {}
-    )
-  }
-
-  const dayHasClasses = (classes?.length ?? 0) > 0
-
+  const palette = PALETTE[paletteIndex % 2]!
+  const emoji = DISCIPLINE_EMOJI[cls.discipline] || '🎪'
+  const allMarked = enrolled > 0 && marked >= enrolled
+  const someMarked = marked > 0 && marked < enrolled
+  // Show a cleaner display name: strip any "Mon "/"Tue " prefix since the column gives that context
+  const displayName = cls.name.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+\d{1,2}:\d{2}\s*/i, '').trim() || cls.name
   return (
-    <DashboardShell
-      user={user}
-      currentPath="/roll-call"
-      pageTitle="Roll Call"
-      pageSubtitle={
-        showAll
-          ? `All active classes — tap one to start.`
-          : `${DAY_NAMES[validDow]} — tap a class to start.`
-      }
-      pageActions={
-        <a
-          href={showAll ? '/roll-call' : '/roll-call?all=1'}
-          className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-50"
-        >
-          {showAll ? '← Today' : '📋 Show all classes'}
-        </a>
-      }
+    <a
+      href={`/roll-call/${cls.id}`}
+      className={`block rounded-2xl ${palette.bg} ${palette.text} px-3 py-3 shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all border-2 border-white/30`}
     >
-      {/* Day picker — quick taps on iPad */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        {DAY_NAMES.map((label, idx) => {
-          const active = !showAll && idx === validDow
-          const isToday = idx === todayDow
-          return (
-            <a
-              key={idx}
-              href={`/roll-call?day=${idx}`}
-              className={`px-4 py-2.5 rounded-xl text-sm font-extrabold transition-colors ${
-                active
-                  ? 'bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white shadow-md'
-                  : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50'
-              }`}
-            >
-              {label.slice(0, 3)}
-              {isToday && <span className="ml-1 text-[10px] opacity-70">·today</span>}
-            </a>
-          )
-        })}
-      </div>
-
-      {!dayHasClasses ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-10 text-center max-w-2xl">
-          <div className="text-5xl mb-3">🌴</div>
-          <p className="font-bold text-zinc-700">No classes on {DAY_NAMES[validDow]}.</p>
-          <p className="text-sm text-zinc-500 mt-1">Pick another day above, or browse all classes.</p>
-          <a
-            href="/roll-call?all=1"
-            className="inline-flex items-center gap-2 mt-4 bg-zinc-900 text-white font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-800"
-          >
-            Browse all classes
-          </a>
+      <div className="flex items-start gap-1.5">
+        <span className="text-lg sm:text-xl">{emoji}</span>
+        <div className="flex-1 min-w-0">
+          <div className={`text-[10px] sm:text-xs font-extrabold uppercase tracking-wide leading-tight ${palette.text} line-clamp-2`}>
+            {displayName}
+          </div>
         </div>
-      ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {classes!.map((c) => {
-            const enrolled = enrolByClass[c.id] ?? 0
-            const marked = attByClass[c.id] ?? 0
-            const status = enrolled === 0
-              ? 'empty'
-              : marked === 0
-              ? 'unmarked'
-              : marked >= enrolled
-              ? 'complete'
-              : 'partial'
-            return (
-              <li key={c.id}>
-                <a
-                  href={`/roll-call/${c.id}`}
-                  className="block bg-white rounded-2xl shadow-sm border border-zinc-200 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-4xl">{DISCIPLINE_EMOJI[c.discipline] || '🎪'}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <span className="text-xl font-extrabold text-zinc-900">
-                          {formatTime(c.start_time)}
-                        </span>
-                        {showAll && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#D72027]">
-                            {DAY_NAMES[c.day_of_week].slice(0, 3)}
-                          </span>
-                        )}
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">
-                          {c.duration_minutes} min
-                        </span>
-                      </div>
-                      <div className="text-sm font-bold text-zinc-800 mt-1 truncate">{c.name}</div>
-                      <div className="text-xs text-zinc-500 mt-2 flex flex-wrap gap-x-3 gap-y-1">
-                        {(c.age_min !== null || c.age_max !== null) && (
-                          <span>Ages {c.age_min ?? '?'}–{c.age_max ?? '?'}</span>
-                        )}
-                        <span>Cap {c.capacity}</span>
-                        {Array.isArray(c.primary_coach) && c.primary_coach.length > 0 ? (
-                          <span>Coach: {c.primary_coach[0].full_name}</span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="text-xs font-bold text-zinc-600 mb-1">
-                        {marked} of {enrolled} marked
-                      </div>
-                      <div className="h-2 bg-zinc-100 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            status === 'complete'
-                              ? 'bg-emerald-500'
-                              : status === 'partial'
-                              ? 'bg-amber-500'
-                              : 'bg-zinc-300'
-                          }`}
-                          style={{ width: enrolled === 0 ? '0%' : `${(marked / enrolled) * 100}%` }}
-                          aria-hidden
-                        />
-                      </div>
-                    </div>
-                    <StatusPill status={status} />
-                  </div>
-                </a>
-              </li>
-            )
-          })}
-        </ul>
+      </div>
+      {(cls.age_min !== null || cls.age_max !== null) && (
+        <div className={`text-[9px] font-bold mt-1.5 uppercase tracking-wider ${palette.sub}`}>
+          Age {cls.age_min ?? '?'}–{cls.age_max ?? '?'}yr
+        </div>
       )}
-    </DashboardShell>
+      <div className={`text-[10px] sm:text-xs font-extrabold mt-1 ${palette.sub}`}>
+        {formatTimeRange(cls.start_time, cls.duration_minutes)}
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-1.5">
+        <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${palette.badge}`}>
+          {enrolled === 0 ? 'EMPTY' : `${marked}/${enrolled}`}
+        </span>
+        {allMarked && <span className="text-[10px]">✅</span>}
+        {someMarked && <span className="text-[10px]">⏳</span>}
+      </div>
+    </a>
   )
 }
 
-function StatusPill({ status }: { status: 'empty' | 'unmarked' | 'partial' | 'complete' }) {
-  const map = {
-    empty: { label: 'No enrolments', cls: 'bg-zinc-100 text-zinc-500' },
-    unmarked: { label: 'Not started', cls: 'bg-amber-100 text-amber-800' },
-    partial: { label: 'In progress', cls: 'bg-blue-100 text-blue-800' },
-    complete: { label: 'Done', cls: 'bg-emerald-100 text-emerald-800' },
-  }
-  const { label, cls } = map[status]
-  return <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${cls}`}>{label}</span>
+function EmptyCard() {
+  return (
+    <div className="rounded-2xl bg-white/40 border-2 border-dashed border-amber-300 px-3 py-6 text-center text-[10px] text-zinc-400 font-bold">
+      —
+    </div>
+  )
 }

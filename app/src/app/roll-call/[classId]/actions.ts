@@ -147,3 +147,100 @@ export async function awardStar(input: {
     newTier: stu?.star_tier ?? 1,
   }
 }
+
+// ────────────────────────────────────────────────────────────────────
+// Enrolment management — add/remove students from a class
+// ────────────────────────────────────────────────────────────────────
+
+type EnrolResult = { ok: true } | { ok: false; error: string }
+
+export async function removeFromClass(input: { enrolmentId: string; classId: string }): Promise<EnrolResult> {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+  // We "cancel" rather than delete so historical attendance keeps the link.
+  const { error } = await supabase
+    .from('enrolments')
+    .update({ status: 'cancelled', end_date: new Date().toISOString().slice(0, 10) })
+    .eq('id', input.enrolmentId)
+    .eq('tenant_id', user.tenantId)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath(`/roll-call/${input.classId}`)
+  return { ok: true }
+}
+
+/**
+ * Search students by first or last name (substring), excluding those already
+ * enrolled in this class.
+ */
+export async function searchStudents(input: { classId: string; query: string }): Promise<
+  { ok: true; results: Array<{ studentId: string; firstName: string; lastName: string | null; familyName: string; primaryParent: string | null }> }
+  | { ok: false; error: string }
+> {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+  const q = input.query.trim()
+  if (q.length < 2) return { ok: true, results: [] }
+
+  // 1. Find already-enrolled student ids so we can exclude them
+  const { data: existing } = await supabase
+    .from('enrolments')
+    .select('student_id')
+    .eq('class_id', input.classId)
+    .eq('status', 'active')
+  const excludeIds = new Set((existing ?? []).map((e) => e.student_id))
+
+  const { data, error } = await supabase
+    .from('students')
+    .select('id, first_name, last_name, family:families!students_family_id_fkey(id, family_name, primary_parent)')
+    .eq('tenant_id', user.tenantId)
+    .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%`)
+    .limit(20)
+  if (error) return { ok: false, error: error.message }
+
+  const results = (data ?? [])
+    .filter((s) => !excludeIds.has(s.id))
+    .map((s) => {
+      const fam = Array.isArray(s.family) ? s.family[0] : s.family
+      return {
+        studentId: s.id,
+        firstName: s.first_name,
+        lastName: s.last_name,
+        familyName: fam?.family_name ?? '?',
+        primaryParent: fam?.primary_parent ?? null,
+      }
+    })
+  return { ok: true, results }
+}
+
+export async function addToClass(input: { studentId: string; classId: string }): Promise<EnrolResult> {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+  // Reactivate a cancelled enrolment if it exists, otherwise insert a fresh one.
+  const today = new Date().toISOString().slice(0, 10)
+  const { data: existing } = await supabase
+    .from('enrolments')
+    .select('id')
+    .eq('tenant_id', user.tenantId)
+    .eq('student_id', input.studentId)
+    .eq('class_id', input.classId)
+    .maybeSingle()
+  if (existing) {
+    const { error } = await supabase
+      .from('enrolments')
+      .update({ status: 'active', end_date: null })
+      .eq('id', existing.id)
+    if (error) return { ok: false, error: error.message }
+  } else {
+    const { error } = await supabase.from('enrolments').insert({
+      tenant_id: user.tenantId,
+      student_id: input.studentId,
+      class_id: input.classId,
+      start_date: today,
+      status: 'active',
+      term: 'Term 2 2026',
+    })
+    if (error) return { ok: false, error: error.message }
+  }
+  revalidatePath(`/roll-call/${input.classId}`)
+  return { ok: true }
+}

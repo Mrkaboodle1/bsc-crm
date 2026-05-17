@@ -20,11 +20,14 @@ export type AwardFn = (input: {
   notes: string | null
 }) => Promise<{ ok: true; newTotal: number; newTier: number } | { ok: false; error: string }>
 
+export type PaymentStatus = 'subscribed' | 'play_on' | 'ndis' | 'casual' | 'free_trial' | 'not_paying' | 'unknown'
+
 export type RosterEntry = {
   enrolmentId: string
   studentId: string
   firstName: string
   lastName: string | null
+  dob: string | null
   age: number | null
   medical: string | null
   starTier: number
@@ -32,6 +35,39 @@ export type RosterEntry = {
   attendanceId: string | null
   status: Status | null
   starsToday: number
+  // Family + payment context
+  familyId: string | null
+  familyName: string | null
+  primaryParent: string | null
+  parentEmail: string | null
+  parentPhone: string | null
+  weeklyFee: number
+  paymentStatus: PaymentStatus
+  commitment: string | null
+}
+
+export type RemoveFn = (input: { enrolmentId: string; classId: string }) => Promise<{ ok: true } | { ok: false; error: string }>
+export type SearchFn = (input: { classId: string; query: string }) => Promise<
+  { ok: true; results: Array<{ studentId: string; firstName: string; lastName: string | null; familyName: string; primaryParent: string | null }> }
+  | { ok: false; error: string }
+>
+export type AddFn = (input: { studentId: string; classId: string }) => Promise<{ ok: true } | { ok: false; error: string }>
+
+const PAYMENT_STYLE: Record<PaymentStatus, { label: string; cls: string; icon: string }> = {
+  subscribed: { label: 'Subscribed', cls: 'bg-emerald-100 text-emerald-900', icon: '💚' },
+  play_on:    { label: 'Play On voucher', cls: 'bg-violet-100 text-violet-900', icon: '🎟' },
+  ndis:       { label: 'NDIS', cls: 'bg-purple-100 text-purple-900', icon: '💜' },
+  casual:     { label: 'Casual', cls: 'bg-blue-100 text-blue-900', icon: '🎒' },
+  free_trial: { label: 'Free trial', cls: 'bg-amber-100 text-amber-900', icon: '🆓' },
+  not_paying: { label: 'Not paying', cls: 'bg-red-100 text-red-900', icon: '⚠️' },
+  unknown:    { label: 'Unknown', cls: 'bg-zinc-100 text-zinc-700', icon: '❓' },
+}
+
+function birthdayLabel(dob: string | null): string | null {
+  if (!dob) return null
+  const d = new Date(dob)
+  if (isNaN(d.getTime())) return null
+  return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })
 }
 
 const STATUS_CYCLE: (Status | null)[] = [null, 'present', 'late', 'absent']
@@ -61,15 +97,23 @@ export function AttendanceGrid({
   roster: initialRoster,
   onMark,
   onAward,
+  onRemove,
+  onSearch,
+  onAdd,
 }: {
   classId: string
   date: string
   roster: RosterEntry[]
   onMark: MarkFn
   onAward: AwardFn
+  onRemove: RemoveFn
+  onSearch: SearchFn
+  onAdd: AddFn
 }) {
   const [roster, setRoster] = useState(initialRoster)
   const [starModal, setStarModal] = useState<RosterEntry | null>(null)
+  const [detailModal, setDetailModal] = useState<RosterEntry | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
   const [, startTransition] = useTransition()
   const [savingMap, setSavingMap] = useState<Record<string, boolean>>({})
 
@@ -134,6 +178,12 @@ export function AttendanceGrid({
         )}
         <div className="ml-auto flex items-center gap-2">
           <button
+            onClick={() => setAddOpen(true)}
+            className="bg-white border-2 border-zinc-200 text-zinc-700 font-extrabold text-sm px-4 py-2.5 rounded-lg hover:border-[#D72027] hover:text-[#D72027]"
+          >
+            ➕ Add student
+          </button>
+          <button
             onClick={markAllPresent}
             disabled={roster.every((r) => r.status !== null)}
             className="bg-emerald-600 text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -171,12 +221,30 @@ export function AttendanceGrid({
                     ⭐
                   </button>
 
+                  {/* Info / detail pill (just under the star) */}
+                  <button
+                    type="button"
+                    onClick={() => setDetailModal(student)}
+                    className="absolute top-12 right-2 z-10 bg-white shadow-md rounded-full w-9 h-9 flex items-center justify-center text-sm font-extrabold hover:scale-110 transition-transform"
+                    title="Parent / DOB / payment / remove"
+                  >
+                    ℹ
+                  </button>
+
                   {/* Medical badge */}
                   {student.medical && (
                     <div className="absolute top-2 left-2 z-10 bg-red-100 text-red-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-extrabold" title={student.medical}>
                       ⚕
                     </div>
                   )}
+
+                  {/* Payment status mini-pill (bottom-left) */}
+                  <div
+                    className={`absolute bottom-1 left-1 z-10 text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded ${PAYMENT_STYLE[student.paymentStatus].cls}`}
+                    title={`${PAYMENT_STYLE[student.paymentStatus].label} — $${student.weeklyFee}/wk`}
+                  >
+                    {PAYMENT_STYLE[student.paymentStatus].icon}
+                  </div>
 
                   {/* Main tap area */}
                   <button
@@ -240,9 +308,234 @@ export function AttendanceGrid({
         />
       )}
 
+      {/* Detail / Remove modal */}
+      {detailModal && (
+        <DetailModal
+          student={detailModal}
+          classId={classId}
+          onRemove={onRemove}
+          onClose={() => setDetailModal(null)}
+          onRemoved={() => {
+            setRoster((rs) => rs.filter((r) => r.studentId !== detailModal.studentId))
+            setDetailModal(null)
+          }}
+        />
+      )}
+
+      {/* Add-student modal */}
+      {addOpen && (
+        <AddModal
+          classId={classId}
+          onSearch={onSearch}
+          onAdd={onAdd}
+          onClose={() => setAddOpen(false)}
+        />
+      )}
+
       {/* Help footer */}
       <div className="text-xs text-zinc-400 text-center pt-4">
-        Tap a tile to cycle: not marked → here → late → absent. Tap the ⭐ to award a star.
+        Tap a tile to cycle: not marked → here → late → absent. Tap ⭐ to award a star. Tap ℹ for parent / payment / remove.
+      </div>
+    </div>
+  )
+}
+
+function DetailModal({
+  student,
+  classId,
+  onRemove,
+  onClose,
+  onRemoved,
+}: {
+  student: RosterEntry
+  classId: string
+  onRemove: RemoveFn
+  onClose: () => void
+  onRemoved: () => void
+}) {
+  const [removing, setRemoving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const bday = birthdayLabel(student.dob)
+  const paymentStyle = PAYMENT_STYLE[student.paymentStatus]
+
+  async function handleRemove() {
+    if (!confirm(`Remove ${student.firstName} from this class? The student stays in the CRM — just unenrolled from here.`)) return
+    setRemoving(true)
+    setError(null)
+    const result = await onRemove({ enrolmentId: student.enrolmentId, classId })
+    if (!result.ok) { setError(result.error); setRemoving(false); return }
+    onRemoved()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start gap-3 mb-4">
+          <span className="w-14 h-14 rounded-full bg-gradient-to-br from-[#D72027] to-[#FFC107] text-white flex items-center justify-center text-lg font-extrabold shrink-0">
+            {student.firstName[0]}{student.lastName?.[0] ?? ''}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-xl font-extrabold text-zinc-900">{student.firstName} {student.lastName ?? ''}</div>
+            <div className="text-xs text-zinc-500 mt-0.5">
+              {student.age !== null ? `${student.age}y` : 'age unknown'}
+              {bday && ` · birthday ${bday}`}
+            </div>
+          </div>
+        </div>
+
+        <dl className="space-y-2 text-sm border-t border-zinc-200 pt-3">
+          <Row label="Parent" value={student.primaryParent ?? '—'} />
+          <Row label="Family" value={student.familyName ?? '—'} />
+          <Row label="Email" value={student.parentEmail ?? '—'} />
+          <Row label="Phone" value={student.parentPhone ?? '—'} />
+        </dl>
+
+        <div className="mt-4 border-t border-zinc-200 pt-3">
+          <div className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500 mb-2">Payment</div>
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold ${paymentStyle.cls}`}>
+            <span>{paymentStyle.icon}</span>
+            <span>{paymentStyle.label}</span>
+            {student.weeklyFee > 0 && <span className="opacity-70">· ${student.weeklyFee}/wk</span>}
+          </div>
+          {student.commitment && (
+            <div className="text-xs text-zinc-500 mt-2">
+              Roll sheet says: <span className="font-bold text-zinc-700">{student.commitment.replace(/^Commitment:\s*/, '')}</span>
+            </div>
+          )}
+        </div>
+
+        {student.medical && (
+          <div className="mt-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl px-4 py-3 text-sm">
+            <div className="text-[10px] uppercase tracking-wider font-extrabold text-red-700 mb-1">⚕ Medical note</div>
+            <div className="text-red-900">{student.medical}</div>
+          </div>
+        )}
+
+        {error && <div className="mt-3 text-sm text-red-700 bg-red-50 px-3 py-2 rounded">{error}</div>}
+
+        <div className="mt-5 flex items-center justify-between gap-2 border-t border-zinc-200 pt-4">
+          {student.familyId && (
+            <a
+              href={`/families/${student.familyId}`}
+              className="text-xs font-bold text-[#D72027] hover:underline"
+            >
+              Open family page →
+            </a>
+          )}
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-sm font-bold text-zinc-600 px-3 py-2 rounded-lg hover:bg-zinc-100"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={removing}
+              className="bg-red-600 text-white text-sm font-extrabold px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
+            >
+              {removing ? 'Removing…' : '✖ Remove from class'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-[10px] uppercase tracking-wider font-bold text-zinc-500 shrink-0">{label}</dt>
+      <dd className="text-zinc-900 text-right text-sm font-bold truncate">{value}</dd>
+    </div>
+  )
+}
+
+function AddModal({
+  classId,
+  onSearch,
+  onAdd,
+  onClose,
+}: {
+  classId: string
+  onSearch: SearchFn
+  onAdd: AddFn
+  onClose: () => void
+}) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<Array<{ studentId: string; firstName: string; lastName: string | null; familyName: string; primaryParent: string | null }>>([])
+  const [searching, setSearching] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [adding, setAdding] = useState<string | null>(null)
+
+  async function doSearch(q: string) {
+    setQuery(q)
+    if (q.trim().length < 2) { setResults([]); return }
+    setSearching(true)
+    const result = await onSearch({ classId, query: q })
+    setSearching(false)
+    if (result.ok) setResults(result.results)
+    else setError(result.error)
+  }
+
+  async function doAdd(studentId: string) {
+    setAdding(studentId)
+    setError(null)
+    const result = await onAdd({ studentId, classId })
+    setAdding(null)
+    if (!result.ok) { setError(result.error); return }
+    // Server-action revalidates the path, so a hard reload refreshes the roster cleanly.
+    window.location.reload()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4">
+          <div className="text-xl font-extrabold text-zinc-900">Add a student to this class</div>
+          <div className="text-xs text-zinc-500 mt-1">Search by first name or last name. Already-enrolled students are hidden.</div>
+        </div>
+        <input
+          type="search"
+          autoFocus
+          placeholder="Type a student name…"
+          value={query}
+          onChange={(e) => doSearch(e.target.value)}
+          className="w-full px-4 py-3 border-2 border-zinc-200 rounded-xl text-sm focus:border-[#D72027] focus:outline-none"
+        />
+        {error && <div className="mt-3 text-sm text-red-700 bg-red-50 px-3 py-2 rounded">{error}</div>}
+        <ul className="mt-4 max-h-72 overflow-y-auto divide-y divide-zinc-100 border border-zinc-200 rounded-xl">
+          {searching && <li className="px-3 py-2 text-xs text-zinc-400 italic">Searching…</li>}
+          {!searching && query.length >= 2 && results.length === 0 && (
+            <li className="px-3 py-2 text-xs text-zinc-400 italic">No matches.</li>
+          )}
+          {results.map((r) => (
+            <li key={r.studentId} className="flex items-center gap-3 px-3 py-2">
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-zinc-900 truncate">
+                  {r.firstName} {r.lastName ?? ''}
+                </div>
+                <div className="text-[10px] text-zinc-500 truncate">
+                  {r.familyName}{r.primaryParent ? ` · ${r.primaryParent}` : ''}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => doAdd(r.studentId)}
+                disabled={adding === r.studentId}
+                className="bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white text-xs font-extrabold px-3 py-2 rounded-lg disabled:opacity-50"
+              >
+                {adding === r.studentId ? 'Adding…' : '+ Add'}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-4 flex justify-end">
+          <button onClick={onClose} className="text-sm font-bold text-zinc-600 px-3 py-2 rounded-lg hover:bg-zinc-100">Close</button>
+        </div>
       </div>
     </div>
   )
