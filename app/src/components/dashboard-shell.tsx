@@ -4,6 +4,7 @@
 
 import type { ReactNode } from 'react'
 import type { BscUser } from '@/lib/dal'
+import { MusicPlayer } from './music-player'
 
 type NavItem = {
   href: string
@@ -168,6 +169,9 @@ export function DashboardShell({
         {/* Page body */}
         <div className="px-4 sm:px-8 py-6 sm:py-8">{children}</div>
       </div>
+
+      {/* Floating studio music player — clean, ad-free, always on top */}
+      <MusicPlayer />
     </div>
   )
 }
