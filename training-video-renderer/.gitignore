@@ -1,0 +1,7 @@
+node_modules/
+.remotion/
+out/
+# Renderer assets are duplicated from app/public/ at render time —
+# don't track the duplicates.
+public/*.mp3
+public/jacky-avatar.png
