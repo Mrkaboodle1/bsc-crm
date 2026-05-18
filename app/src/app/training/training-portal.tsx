@@ -71,7 +71,7 @@ export function TrainingPortal({
         }} />
         <div className="relative p-8 sm:p-10 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
           <div className="md:col-span-1 flex justify-center">
-            <JackyMascot size={180} />
+            <JackyAvatar size={180} />
           </div>
           <div className="md:col-span-2 text-white">
             <div className="text-xs uppercase tracking-widest text-amber-300 font-extrabold mb-2">
@@ -154,46 +154,25 @@ export function TrainingPortal({
 // Jacky mascot — a CSS+SVG character. No external image needed.
 // ────────────────────────────────────────────────────────────────────
 
-function JackyMascot({ size = 120 }: { size?: number }) {
+// The Jacky portrait — one master image baked into /public, used consistently
+// across the hero, module cards, and as the brand avatar everywhere. Pre-
+// fetched via Pollinations.ai with a fixed seed so it never changes
+// between visits. To swap her: replace /public/jacky-avatar.png.
+function JackyAvatar({ size = 120, ringless = false }: { size?: number; ringless?: boolean }) {
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      {/* Glow ring */}
-      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#D72027] to-amber-500 blur-2xl opacity-50" />
-      <svg viewBox="0 0 200 200" className="relative drop-shadow-2xl" width={size} height={size} aria-hidden>
-        {/* Tent body */}
-        <defs>
-          <linearGradient id="hatGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FFC107" />
-            <stop offset="100%" stopColor="#D72027" />
-          </linearGradient>
-          <radialGradient id="faceGrad" cx="0.5" cy="0.4" r="0.6">
-            <stop offset="0%" stopColor="#FFE8C8" />
-            <stop offset="100%" stopColor="#F4C788" />
-          </radialGradient>
-        </defs>
-        {/* Big top hat */}
-        <path d="M40 80 L100 20 L160 80 Z" fill="url(#hatGrad)" stroke="#A0151B" strokeWidth="2" />
-        {/* hat stripes */}
-        <path d="M55 70 L100 30 M75 75 L100 45 M125 75 L100 45 M145 70 L100 30" stroke="#FFC107" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
-        {/* hat band */}
-        <rect x="40" y="78" width="120" height="12" fill="#1f1f1f" />
-        {/* yellow star on band */}
-        <path d="M100 79 l3 6 6 0.5 -4.5 4 1 6 -5.5 -3 -5.5 3 1 -6 -4.5 -4 6 -0.5 z" fill="#FFC107" />
-        {/* Face */}
-        <circle cx="100" cy="120" r="50" fill="url(#faceGrad)" stroke="#A0151B" strokeWidth="2" />
-        {/* eyes */}
-        <circle cx="83" cy="115" r="4" fill="#1f1f1f" />
-        <circle cx="117" cy="115" r="4" fill="#1f1f1f" />
-        <circle cx="84.5" cy="113.5" r="1.5" fill="#fff" />
-        <circle cx="118.5" cy="113.5" r="1.5" fill="#fff" />
-        {/* rosy cheeks */}
-        <circle cx="75" cy="130" r="6" fill="#FF6B6B" opacity="0.4" />
-        <circle cx="125" cy="130" r="6" fill="#FF6B6B" opacity="0.4" />
-        {/* smile */}
-        <path d="M85 140 Q100 152 115 140" stroke="#A0151B" strokeWidth="3" strokeLinecap="round" fill="none" />
-        {/* bow tie */}
-        <path d="M90 170 L100 165 L110 170 L110 178 L100 175 L90 178 Z" fill="#D72027" stroke="#A0151B" strokeWidth="1.5" />
-      </svg>
+      {!ringless && (
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#D72027] to-amber-500 blur-2xl opacity-50" />
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/jacky-avatar.png"
+        alt="Jacky — your BSC AI admin"
+        width={size}
+        height={size}
+        className={`relative rounded-full object-cover border-4 border-white shadow-2xl ${ringless ? '' : 'ring-4 ring-amber-300/40'}`}
+        style={{ width: size, height: size }}
+      />
     </div>
   )
 }
@@ -269,11 +248,9 @@ function ModuleCard({
 }) {
   const [speaking, setSpeaking] = useState(false)
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null)
-  const [seed] = useState(() => Math.floor(Math.random() * 1_000_000))
 
   useEffect(() => {
     return () => {
-      // Stop any in-flight speech when this card unmounts
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel()
       }
@@ -293,12 +270,39 @@ function ModuleCard({
     }
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(module.script)
-    // Try to pick an Australian English voice if available
+    // Premium voice picker — prefer high-quality named female English voices.
+    // The browser ships dozens; ordering matters because some are robotic
+    // (espeak, Google US/UK default) while others (Microsoft Aria, Samantha,
+    // Karen, Catherine, Google UK English Female) are studio-grade.
     const voices = window.speechSynthesis.getVoices()
-    const auVoice = voices.find((v) => v.lang === 'en-AU') || voices.find((v) => v.lang.startsWith('en')) || null
-    if (auVoice) u.voice = auVoice
-    u.rate = 1.0
-    u.pitch = 1.05
+    const preferred = [
+      // Microsoft Edge premium female voices (en-AU / en-GB / en-US)
+      'Microsoft Natasha Online (Natural) - English (Australia)',
+      'Microsoft Catherine - English (Australia)',
+      'Microsoft Sonia Online (Natural) - English (United Kingdom)',
+      'Microsoft Libby Online (Natural) - English (United Kingdom)',
+      'Microsoft Aria Online (Natural) - English (United States)',
+      'Microsoft Jenny Online (Natural) - English (United States)',
+      // Chrome / Safari natural-sounding female voices
+      'Google UK English Female',
+      'Google US English',
+      'Karen',         // macOS en-AU
+      'Samantha',      // macOS en-US
+      'Catherine',     // older macOS en-AU
+      'Tessa',         // macOS en-ZA but pleasant
+    ]
+    let chosen = null
+    for (const name of preferred) {
+      const v = voices.find((vv) => vv.name === name)
+      if (v) { chosen = v; break }
+    }
+    // Fallback: any en-AU first, then any en-GB, then any English
+    if (!chosen) chosen = voices.find((v) => v.lang === 'en-AU') ?? null
+    if (!chosen) chosen = voices.find((v) => v.lang === 'en-GB') ?? null
+    if (!chosen) chosen = voices.find((v) => v.lang.startsWith('en')) ?? null
+    if (chosen) u.voice = chosen
+    u.rate = 0.97   // slightly slower = clearer
+    u.pitch = 1.0
     u.volume = 1
     u.onend = () => { setSpeaking(false); onSpeakStateChange(false) }
     u.onerror = () => { setSpeaking(false); onSpeakStateChange(false) }
@@ -308,8 +312,6 @@ function ModuleCard({
     onSpeakStateChange(true)
   }
 
-  const imgUrl = `/api/ai-image?prompt=${encodeURIComponent(module.imagePrompt)}&seed=${seed}&width=600&height=400`
-
   return (
     <section
       id={`module-${module.number}`}
@@ -318,17 +320,18 @@ function ModuleCard({
       }`}
     >
       <div className="grid grid-cols-1 md:grid-cols-5 gap-0">
-        {/* Cover image */}
-        <div className="md:col-span-2 bg-zinc-100 relative min-h-[200px] md:min-h-[280px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imgUrl}
-            alt={module.title}
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+        {/* Consistent Jacky panel — same portrait every module, big module
+            emoji + number as the visual hook. No more shape-shifting AI scenes. */}
+        <div className="md:col-span-2 relative min-h-[200px] md:min-h-[280px] bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B] flex items-center justify-center p-6 overflow-hidden">
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: 'radial-gradient(circle at 30% 20%, #FFC107 0%, transparent 35%), radial-gradient(circle at 70% 80%, #D72027 0%, transparent 40%)',
+          }} />
+          <div className="relative flex flex-col items-center gap-3">
+            <JackyAvatar size={140} />
+            <div className="text-7xl drop-shadow-lg" aria-hidden>{module.emoji}</div>
+          </div>
           <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-extrabold text-zinc-700 shadow">
-            {module.emoji} Module {module.number} of 11
+            Module {module.number} of {/* total computed by parent doesn't reach here — keep static */}11
           </div>
         </div>
 
