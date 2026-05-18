@@ -34,6 +34,7 @@ const NAV: NavItem[] = [
   { href: '/reporting', label: 'Reporting', icon: '📈', badge: 'Soon', section: 'growth' },
 
   { href: '/coaches', label: 'Coaches', icon: '🤝', badge: 'Soon', section: 'admin' },
+  { href: '/training', label: 'Training', icon: '🎓', section: 'admin' },
   { href: '/settings', label: 'Settings', icon: '⚙️', badge: 'Soon', section: 'admin' },
 ]
 
