@@ -11,8 +11,23 @@
 // The whole portal is now really just a video gallery + checklist.
 
 import { useMemo, useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import type { TrainingModule } from './modules'
 import { submitSupportTicket } from './actions'
+
+// TalkingHead touches `window` at parse time — load the live avatar only
+// in the browser. SSR would crash otherwise.
+const JackyLiveAvatar = dynamic(
+  () => import('./jacky-live-avatar').then((m) => m.JackyLiveAvatar),
+  { ssr: false, loading: () => (
+    <div className="w-full aspect-video min-h-[340px] bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B] rounded-xl flex items-center justify-center text-white">
+      <div className="text-center">
+        <div className="text-4xl mb-2 animate-pulse">🎪</div>
+        <div className="text-sm font-extrabold">Loading 3D Jacky…</div>
+      </div>
+    </div>
+  )},
+)
 
 const PROGRESS_KEY = 'bsc-training-progress-v1'
 
@@ -239,6 +254,11 @@ function ModuleVideoCard({
   done: boolean
   onToggleDone: () => void
 }) {
+  // Render the avatar lazily — only when the user expands the module —
+  // because each instance loads a 3D model + audio buffer (~5–10 MB).
+  // Eleven simultaneous avatars on mount would be brutal on first paint.
+  const [active, setActive] = useState(false)
+
   return (
     <section
       id={`module-${module.number}`}
@@ -246,16 +266,32 @@ function ModuleVideoCard({
         done ? 'border-emerald-300' : 'border-zinc-200'
       }`}
     >
-      {/* Video — full-bleed on top, like a YouTube card */}
-      <div className="relative bg-black aspect-video">
-        <video
-          src={`/training/video/${module.id}.mp4`}
-          controls
-          preload="metadata"
-          poster="/jacky-avatar.png"
-          playsInline
-          className="w-full h-full"
-        />
+      {/* Avatar — full-bleed on top. Click to load 3D Jacky for this module. */}
+      <div className="relative bg-black">
+        {active ? (
+          <JackyLiveAvatar
+            audioUrl={`/training/audio/${module.id}.mp3`}
+            script={module.script}
+            mood="happy"
+          />
+        ) : (
+          <button
+            onClick={() => setActive(true)}
+            className="w-full aspect-video min-h-[340px] bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B] flex flex-col items-center justify-center text-white p-6 hover:brightness-110 transition-all relative overflow-hidden"
+          >
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: 'radial-gradient(circle at 30% 20%, #FFC107 0%, transparent 35%), radial-gradient(circle at 70% 80%, #D72027 0%, transparent 40%)',
+            }} />
+            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#FFC107] to-amber-500 flex items-center justify-center text-3xl shadow-2xl mb-3 group-hover:scale-105 transition-transform">
+              ▶
+            </div>
+            <div className="relative text-2xl font-extrabold tracking-tight">{module.title}</div>
+            <div className="relative text-sm text-amber-300 mt-1">{module.subtitle}</div>
+            <div className="relative text-[10px] uppercase tracking-widest text-zinc-400 mt-4">
+              Click to load 3D Jacky
+            </div>
+          </button>
+        )}
         <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-extrabold text-zinc-700 shadow pointer-events-none">
           Module {module.number} of 11
         </div>
