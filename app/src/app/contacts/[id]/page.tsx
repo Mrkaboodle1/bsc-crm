@@ -15,6 +15,7 @@ import { DashboardShell } from '@/components/dashboard-shell'
 import { TagPicker } from './tag-picker'
 import { Composer } from './composer'
 import { DndPanel, type DndState } from './dnd-panel'
+import { ContactTasksPanel, type ContactTask } from './contact-tasks-panel'
 
 const LIFECYCLE_CLS: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-800',
@@ -137,6 +138,27 @@ export default async function ContactDetailPage({
     .eq('related_family_id', family.id)
     .order('start_at', { ascending: false })
     .limit(5)
+
+  // Tasks for this contact — degrade gracefully if migration 008 not applied
+  const { data: tasksData, error: tasksErr } = await supabase
+    .from('tasks')
+    .select('id, title, description, status, priority, due_at, created_at')
+    .eq('related_family_id', family.id)
+    .eq('tenant_id', user.tenantId)
+    .order('status', { ascending: true }) // 'cancelled' < 'done' < 'in_progress' < 'open' alpha
+    .order('due_at', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(50)
+  const tasksTableMissing =
+    !!tasksErr && (tasksErr.message.includes('does not exist') || tasksErr.message.includes('relation'))
+  const contactTasks: ContactTask[] = (tasksData ?? []).map((t) => ({
+    id: t.id,
+    title: t.title,
+    description: t.description,
+    status: t.status,
+    priority: t.priority,
+    dueAt: t.due_at,
+  }))
 
   return (
     <DashboardShell
@@ -320,7 +342,11 @@ export default async function ContactDetailPage({
 
         {/* RIGHT — quick rail */}
         <aside className="xl:col-span-3 space-y-3">
-          <RailPanel icon="✅" label="Tasks" count={0} body="Coming soon — phase 2." />
+          <ContactTasksPanel
+            contactId={family.id}
+            initial={contactTasks}
+            tableMissing={tasksTableMissing}
+          />
           <RailPanel icon="📅" label="Appointments" count={upcomingAppts?.length ?? 0}>
             {!upcomingAppts || upcomingAppts.length === 0 ? (
               <p className="text-xs text-zinc-500">None on file.</p>
