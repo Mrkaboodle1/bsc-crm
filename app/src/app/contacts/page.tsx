@@ -11,9 +11,10 @@ import { ContactsListView, type ContactRow } from './contacts-list-view'
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; stage?: string; tag?: string; source?: string }>
+  searchParams: Promise<{ q?: string; stage?: string; tag?: string; source?: string; show?: string }>
 }) {
-  const { q, stage, tag, source } = await searchParams
+  const { q, stage, tag, source, show } = await searchParams
+  const showPlaceholders = show === 'placeholders'
   const user = await verifySession()
   const supabase = await createServerSupabase()
 
@@ -37,6 +38,12 @@ export default async function ContactsPage({
   if (stage && stage.trim()) query = query.eq('lifecycle_stage', stage)
   if (source && source.trim()) query = query.eq('source', source)
   if (tag && tag.trim()) query = query.contains('tags', [tag])
+  // By default hide the kid-derived placeholder families from the import.
+  // They're tagged 'from-roll-sheet' + 'needs-parent-link' and don't
+  // represent real parent contacts. Show them only with ?show=placeholders.
+  if (!showPlaceholders && !tag) {
+    query = query.not('tags', 'cs', '{"from-roll-sheet"}')
+  }
 
   const { data, error } = await query
 
@@ -73,19 +80,41 @@ export default async function ContactsPage({
     }
   })
 
+  // Count placeholders so the banner can tell Rhett how many need linking.
+  const { count: placeholderCount } = await supabase
+    .from('families')
+    .select('id', { count: 'exact', head: true })
+    .eq('tenant_id', user.tenantId)
+    .contains('tags', ['from-roll-sheet'])
+
   return (
     <DashboardShell
       user={user}
       currentPath="/contacts"
-      pageTitle="Contacts"
-      pageSubtitle={`${rows.length} ${rows.length === 1 ? 'contact' : 'contacts'}${q ? ` matching "${q}"` : ''}${stage ? ` · ${stage}` : ''}${tag ? ` · #${tag}` : ''}${source ? ` · source: ${source}` : ''}`}
+      pageTitle={showPlaceholders ? 'Contacts · Placeholders' : 'Contacts'}
+      pageSubtitle={
+        showPlaceholders
+          ? `${rows.length} kid-derived placeholder${rows.length === 1 ? '' : 's'} from the roll-sheet import — link each to a real parent.`
+          : `${rows.length} ${rows.length === 1 ? 'contact' : 'contacts'}${q ? ` matching "${q}"` : ''}${stage ? ` · ${stage}` : ''}${tag ? ` · #${tag}` : ''}${source ? ` · source: ${source}` : ''}`
+      }
       pageActions={
-        <a
-          href="/families/import"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg"
-        >
-          📥 Import CSV
-        </a>
+        <div className="flex items-center gap-2">
+          {showPlaceholders ? (
+            <a
+              href="/contacts"
+              className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-50"
+            >
+              ← Back to Contacts
+            </a>
+          ) : (
+            <a
+              href="/families/import"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg"
+            >
+              📥 Import CSV
+            </a>
+          )}
+        </div>
       }
     >
       {error && (
@@ -93,6 +122,22 @@ export default async function ContactsPage({
           {error.message}
         </div>
       )}
+
+      {/* Placeholder banner — visible on the default contacts view */}
+      {!showPlaceholders && (placeholderCount ?? 0) > 0 && (
+        <div className="bg-amber-50 border-l-4 border-amber-400 rounded-r-xl px-4 py-3 mb-4 flex items-center justify-between gap-3 flex-wrap">
+          <div className="text-sm text-amber-900">
+            <strong>{placeholderCount}</strong> kid-derived placeholder contact{placeholderCount === 1 ? '' : 's'} hidden — these are students whose parent we couldn&apos;t auto-match during roll-sheet import.
+          </div>
+          <a
+            href="/contacts?show=placeholders"
+            className="text-xs font-extrabold bg-amber-200 text-amber-900 px-3 py-1.5 rounded-lg hover:bg-amber-300"
+          >
+            Review placeholders →
+          </a>
+        </div>
+      )}
+
       <ContactsListView
         rows={rows}
         q={q ?? ''}
