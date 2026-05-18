@@ -6,17 +6,49 @@
 import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
+import { ContactsSubnav } from '@/components/contacts-subnav'
 import { ContactsListView, type ContactRow } from './contacts-list-view'
+import { SmartListTabs } from './smart-list-tabs'
 
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; stage?: string; tag?: string; source?: string; show?: string }>
+  searchParams: Promise<{ q?: string; stage?: string; tag?: string; source?: string; show?: string; list?: string }>
 }) {
-  const { q, stage, tag, source, show } = await searchParams
-  const showPlaceholders = show === 'placeholders'
+  const rawParams = await searchParams
+  const showPlaceholders = rawParams.show === 'placeholders'
   const user = await verifySession()
   const supabase = await createServerSupabase()
+
+  // Smart Lists — fetch all saved ones for the tab strip
+  const { data: savedListsRaw } = await supabase
+    .from('smart_lists')
+    .select('id, name, criteria')
+    .eq('tenant_id', user.tenantId)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+  const savedLists = (savedListsRaw ?? []).map((s) => ({
+    id: s.id,
+    name: s.name,
+    criteria: (s.criteria ?? {}) as Record<string, unknown>,
+  }))
+  const activeList = rawParams.list ? savedLists.find((l) => l.id === rawParams.list) ?? null : null
+
+  // Merge active smart list criteria with URL params (URL wins on conflict)
+  const merged: Record<string, string> = {}
+  if (activeList) {
+    for (const [k, v] of Object.entries(activeList.criteria)) {
+      if (typeof v === 'string') merged[k] = v
+    }
+  }
+  for (const [k, v] of Object.entries(rawParams)) {
+    if (typeof v === 'string') merged[k] = v
+  }
+  const q = merged.q
+  const stage = merged.stage
+  const tag = merged.tag
+  const source = merged.source
+  const payment = merged.payment // smart-list-only: subscribed / trial / lead / not_paying
 
   // Pull a generous page of families. Pagination can come later — for now
   // limit to 500 rows in the UI; the search box narrows the list quickly.
@@ -38,6 +70,8 @@ export default async function ContactsPage({
   if (stage && stage.trim()) query = query.eq('lifecycle_stage', stage)
   if (source && source.trim()) query = query.eq('source', source)
   if (tag && tag.trim()) query = query.contains('tags', [tag])
+  if (payment === 'subscribed') query = query.gt('weekly_fee_total', 0)
+  if (payment === 'not_paying') query = query.or('weekly_fee_total.eq.0,weekly_fee_total.is.null')
   // By default hide the kid-derived placeholder families from the import.
   // They're tagged 'from-roll-sheet' + 'needs-parent-link' and don't
   // represent real parent contacts. Show them only with ?show=placeholders.
@@ -117,6 +151,17 @@ export default async function ContactsPage({
         </div>
       }
     >
+      <ContactsSubnav active="/contacts" />
+
+      {/* Smart list tabs (saved segments) */}
+      <div className="mb-4">
+        <SmartListTabs
+          lists={savedLists}
+          activeId={activeList?.id ?? null}
+          currentParams={Object.fromEntries(Object.entries(rawParams).filter(([, v]) => typeof v === 'string')) as Record<string, string>}
+        />
+      </div>
+
       {error && (
         <div className="bg-red-50 border-l-4 border-red-500 text-red-800 rounded-r-xl px-4 py-3 text-sm mb-4">
           {error.message}
