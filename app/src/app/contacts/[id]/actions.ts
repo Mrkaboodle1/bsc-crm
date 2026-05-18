@@ -174,3 +174,62 @@ export async function updateSource(input: { contactId: string; source: string | 
   revalidatePath(`/contacts/${input.contactId}`)
   return { ok: true }
 }
+
+// ────────────────────────────────────────────────────────────────────
+// Do-Not-Disturb / opt-out toggles. Honored by server-jacky's
+// send-approved pipeline — a draft approved for a DND'd contact is
+// skipped at send time, not silently sent.
+// ────────────────────────────────────────────────────────────────────
+
+export type DndChannels = {
+  email?: boolean
+  sms?: boolean
+  calls?: boolean
+  all?: boolean
+}
+
+export async function setDnd(input: { contactId: string; dnd: DndChannels }): Promise<Result> {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+  const update: Record<string, unknown> = { dnd_set_at: new Date().toISOString() }
+  if (input.dnd.email !== undefined) update.dnd_email = input.dnd.email
+  if (input.dnd.sms !== undefined)   update.dnd_sms = input.dnd.sms
+  if (input.dnd.calls !== undefined) update.dnd_calls = input.dnd.calls
+  if (input.dnd.all !== undefined)   update.dnd_all = input.dnd.all
+  const { error } = await supabase
+    .from('families')
+    .update(update)
+    .eq('id', input.contactId)
+    .eq('tenant_id', user.tenantId)
+  if (error) {
+    // If columns don't exist yet (migration 007 not applied), surface a
+    // friendly message rather than the raw "column does not exist" error.
+    const msg = error.message
+    if (msg.includes('does not exist') || msg.includes('column')) {
+      return { ok: false, error: 'DND columns missing — apply schema/007_contact_preferences.sql in Supabase SQL editor.' }
+    }
+    return { ok: false, error: msg }
+  }
+  revalidatePath(`/contacts/${input.contactId}`)
+  return { ok: true }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Permanent delete. Cascades via FK constraints: students → enrolments
+// → attendance all clean up. pending_actions + email_messages keep
+// their references nulled (ON DELETE SET NULL) so the audit trail of
+// what was sent / received is preserved.
+// ────────────────────────────────────────────────────────────────────
+
+export async function deleteContact(input: { contactId: string }): Promise<Result> {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+  const { error } = await supabase
+    .from('families')
+    .delete()
+    .eq('id', input.contactId)
+    .eq('tenant_id', user.tenantId)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath('/contacts')
+  return { ok: true }
+}

@@ -32,10 +32,12 @@ export async function sendApprovedActions(): Promise<{
   let failed = 0
   const errors: string[] = []
 
-  // Fetch approved actions, oldest first
+  // Fetch approved actions, oldest first. Pull the DND flags on the
+  // related family so we can suppress sends for opt-outs at send-time
+  // (rather than at draft-time — Rhett may flip DND after approving).
   const { data, error } = await supabase
     .from('pending_actions')
-    .select('id, kind, draft_subject, draft_body, draft_recipient, draft_metadata')
+    .select('id, kind, draft_subject, draft_body, draft_recipient, draft_metadata, related_family_id, family:families!pending_actions_related_family_id_fkey ( dnd_email, dnd_sms, dnd_calls, dnd_all )')
     .eq('tenant_id', tenantId)
     .eq('status', 'approved')
     .is('sent_at', null)
@@ -54,6 +56,28 @@ export async function sendApprovedActions(): Promise<{
 
   for (const action of data) {
     try {
+      // DND gate — silently skip + mark as "rejected" with a clear reason
+      // so it doesn't queue forever. Internal notes never reach send-approved
+      // because they're inserted with status='sent', so no gate needed for them.
+      const fam = (Array.isArray(action.family) ? action.family[0] : action.family) as
+        | { dnd_email?: boolean; dnd_sms?: boolean; dnd_calls?: boolean; dnd_all?: boolean }
+        | null
+      const dnd = fam ?? {}
+      const isEmail = action.kind === 'email_reply' || action.kind === 'email_forward' || action.kind === 'email_outbound'
+      const isSms = action.kind === 'sms_reply' || action.kind === 'sms_outbound'
+      const blocked = dnd.dnd_all || (isEmail && dnd.dnd_email) || (isSms && dnd.dnd_sms)
+      if (blocked) {
+        await supabase
+          .from('pending_actions')
+          .update({
+            status: 'rejected',
+            rejected_reason: 'Recipient opted out (DND)',
+            delivery_metadata: { dnd_blocked: true, channel: isSms ? 'sms' : 'email' },
+          })
+          .eq('id', action.id)
+        logger.info({ id: action.id, kind: action.kind }, '⏭ Skipped — recipient DND')
+        continue
+      }
       if (action.kind === 'email_reply' || action.kind === 'email_forward') {
         if (!action.draft_recipient) {
           throw new Error('Missing recipient')

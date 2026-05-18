@@ -14,6 +14,7 @@ import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { TagPicker } from './tag-picker'
 import { Composer } from './composer'
+import { DndPanel, type DndState } from './dnd-panel'
 
 const LIFECYCLE_CLS: Record<string, string> = {
   active: 'bg-emerald-100 text-emerald-800',
@@ -60,6 +61,20 @@ export default async function ContactDetailPage({
     .maybeSingle()
 
   if (error || !family) notFound()
+
+  // DND state — pulled in a SEPARATE query so the page still renders if
+  // migration 007 hasn't been applied yet (columns not present → defaults).
+  const { data: dndRow } = await supabase
+    .from('families')
+    .select('dnd_email, dnd_sms, dnd_calls, dnd_all')
+    .eq('id', id)
+    .maybeSingle()
+  const dnd: DndState = {
+    email: Boolean(dndRow && (dndRow as Record<string, unknown>).dnd_email),
+    sms:   Boolean(dndRow && (dndRow as Record<string, unknown>).dnd_sms),
+    calls: Boolean(dndRow && (dndRow as Record<string, unknown>).dnd_calls),
+    all:   Boolean(dndRow && (dndRow as Record<string, unknown>).dnd_all),
+  }
 
   const students = (family.students ?? []) as Array<{ id: string; first_name: string; last_name: string | null; date_of_birth: string | null }>
   const subs = (family.subscriptions ?? []) as Array<{ id: string; plan: string | null; weekly_amount: number | null; status: string; current_period_end: string | null; next_charge_date: string | null }>
@@ -335,6 +350,13 @@ export default async function ContactDetailPage({
             )}
           </RailPanel>
           <RailPanel icon="🔗" label="Attribution" body="Page-tracking pixel comes in phase 3. First / latest source will appear here." />
+
+          {/* DND + delete — Tectonic equivalent of the DND tab */}
+          <DndPanel
+            contactId={family.id}
+            contactName={family.primary_parent ?? family.family_name}
+            initial={dnd}
+          />
         </aside>
       </div>
 
