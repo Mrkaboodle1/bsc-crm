@@ -2,7 +2,7 @@
 // Renders the page with slug='' (the bootstrapped Home page).
 
 import { notFound } from 'next/navigation'
-import { createServerSupabaseAdmin } from '@/lib/supabase-server'
+import { createServerSupabase } from '@/lib/supabase-server'
 import { PageBody } from '@/components/sites/block-view'
 import { type Block } from '@/lib/sites/blocks'
 
@@ -18,8 +18,13 @@ export default async function PublicSiteHome({
 }
 
 // Exported so /s/[siteSlug]/[pageSlug] can reuse the same renderer.
+//
+// Note: this uses the regular anon-key client. The sites_public_read /
+// site_pages_public_read RLS policies (migration 009c) let anonymous
+// visitors SELECT rows where is_published = TRUE. No service-role key
+// required, and security stays scoped to published content only.
 export async function PublicRenderer({ siteSlug, pageSlug }: { siteSlug: string; pageSlug: string }) {
-  const supabase = await createServerSupabaseAdmin()
+  const supabase = await createServerSupabase()
 
   // 1. Find the site by slug — must be published.
   const { data: site } = await supabase
