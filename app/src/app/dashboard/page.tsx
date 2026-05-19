@@ -3,6 +3,7 @@ import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { NextUpBanner } from '@/components/calendar-view'
 import { expandClass, type CalendarItem } from '@/lib/calendar'
+import { Inbox, Users, Baby, Tent, Target } from 'lucide-react'
 
 type ClassRow = {
   id: string
@@ -194,14 +195,14 @@ export default async function DashboardPage() {
     <DashboardShell
       user={user}
       currentPath="/dashboard"
-      pageTitle={`${greeting()}, ${firstName(user.fullName, user.email)} 👋`}
+      pageTitle={`${greeting()}, ${firstName(user.fullName, user.email)}`}
       pageSubtitle={`It's ${DAY_NAMES[today]} — here's what's on today.`}
       pageActions={
         <a
           href="/roll-call"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+          className="inline-flex items-center gap-2 bg-[#D72027] hover:bg-[#A0151B] text-white font-semibold text-sm px-4 py-2 rounded-lg shadow-sm hover:shadow transition-colors"
         >
-          📋 Open Roll Call
+          Open Roll Call →
         </a>
       }
     >
@@ -213,7 +214,7 @@ export default async function DashboardPage() {
         <section data-tour="kpi-row" className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
           <div data-tour="kpi-pending">
           <KpiTile
-            icon="✉️"
+            icon={<Inbox size={22} strokeWidth={1.75} />}
             label="Pending approval"
             value={pendingCount}
             accent="from-[#D72027] to-[#A0151B]"
@@ -222,28 +223,28 @@ export default async function DashboardPage() {
           />
           </div>
           <KpiTile
-            icon="👨‍👩‍👧"
-            label="Families"
+            icon={<Users size={22} strokeWidth={1.75} />}
+            label="Contacts"
             value={familyCountRes.count ?? 0}
             accent="from-pink-500 to-rose-600"
-            href="/families"
+            href="/contacts"
           />
           <KpiTile
-            icon="🧒"
+            icon={<Baby size={22} strokeWidth={1.75} />}
             label="Students"
             value={studentCountRes.count ?? 0}
             accent="from-amber-500 to-amber-600"
             href="/students"
           />
           <KpiTile
-            icon="📅"
+            icon={<Tent size={22} strokeWidth={1.75} />}
             label="Active classes"
             value={classCountRes.count ?? 0}
             accent="from-blue-500 to-blue-700"
             href="/classes"
           />
           <KpiTile
-            icon="🎯"
+            icon={<Target size={22} strokeWidth={1.75} />}
             label="Open leads"
             value={leadCountRes.count ?? 0}
             accent="from-emerald-500 to-emerald-700"
@@ -421,6 +422,7 @@ export default async function DashboardPage() {
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function KpiTile({
   icon,
   label,
@@ -429,7 +431,7 @@ function KpiTile({
   href,
   pulse,
 }: {
-  icon: string
+  icon: string | React.ReactNode
   label: string
   value: number
   accent: string
@@ -438,27 +440,24 @@ function KpiTile({
 }) {
   const inner = (
     <>
-      <div
-        className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accent}`}
-        aria-hidden
-      />
-      <div className="flex items-center gap-3">
-        <span className="text-2xl sm:text-3xl">{icon}</span>
-        <div>
-          <div className={`text-2xl sm:text-3xl font-extrabold text-zinc-900 leading-none ${pulse ? 'animate-pulse' : ''}`}>
-            {value}
-          </div>
-          <div className="text-[10px] sm:text-xs uppercase tracking-wider text-zinc-500 font-bold mt-1">
+      <div className={`absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r ${accent}`} aria-hidden />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-xs uppercase tracking-wider text-zinc-500 font-medium mb-1.5">
             {label}
           </div>
+          <div className={`text-3xl font-bold text-zinc-900 leading-none tracking-tight ${pulse ? 'animate-pulse' : ''}`}>
+            {value}
+          </div>
         </div>
+        <span className="text-zinc-300 group-hover:text-zinc-600 transition-colors">{icon}</span>
       </div>
     </>
   )
-  const baseClass = 'bg-white rounded-2xl shadow-sm border border-zinc-200 p-4 sm:p-5 relative overflow-hidden'
+  const baseClass = 'group bg-white rounded-xl border border-zinc-200 p-5 relative overflow-hidden'
   if (href) {
     return (
-      <a href={href} className={`${baseClass} hover:shadow-md hover:-translate-y-0.5 transition-all block`}>
+      <a href={href} className={`${baseClass} hover:border-zinc-300 hover:shadow-md transition-all block`}>
         {inner}
       </a>
     )
