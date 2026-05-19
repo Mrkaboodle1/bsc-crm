@@ -16,6 +16,9 @@ export type TrainingModule = {
   script: string
   /** bullet-point summary you can read at a glance */
   bullets: string[]
+  /** demo page to show in the background of the module card while Jacky
+   *  presents — must be a static / no-auth route (everything under /demo/* is). */
+  previewPath?: string
 }
 
 export const TRAINING_MODULES: TrainingModule[] = [
@@ -26,6 +29,7 @@ export const TRAINING_MODULES: TrainingModule[] = [
     title: 'Welcome to the Big Star Circus CRM',
     subtitle: 'Meet Jacky — your AI admin partner.',
     tryItPath: '/dashboard',
+    previewPath: '/demo/dashboard',
     imagePrompt: 'a friendly circus mascot character wearing a red top hat with a yellow star on it, smiling, cartoon illustration, bright warm colours, family friendly, against a soft cream background',
     script: `Welcome to the Big Star Circus CRM. I'm Jacky, your AI admin partner. I work twenty-four hours a day on the server, reading your admin email, drafting replies, and pushing them to an approval queue. You're always in charge. Nothing goes out without your tap. This training takes about fifteen minutes. By the end, you'll know how to use every part of the system. Take your time. There's no rush.`,
     bullets: [
@@ -42,6 +46,7 @@ export const TRAINING_MODULES: TrainingModule[] = [
     title: 'The Dashboard — your daily starting point',
     subtitle: 'Open this first thing every morning.',
     tryItPath: '/dashboard',
+    previewPath: '/demo/dashboard',
     imagePrompt: 'a flat illustration of a sunny morning at a circus school, coffee mug on a desk next to a laptop showing a dashboard, friendly warm style, red and yellow accent colours, family friendly',
     script: `Open the dashboard each morning. The top five tiles show what matters: pending approvals waiting for your tap, families, students, active classes, and open leads. If the red number on Pending Approval is more than zero, that's where you start. Below the tiles you'll see today's classes — tap any to take attendance. On the right you'll see Jacky Today, which shows how many emails I read overnight, how many drafts I queued, and what it cost in AI spend. Usually a few cents.`,
     bullets: [
@@ -58,6 +63,7 @@ export const TRAINING_MODULES: TrainingModule[] = [
     title: 'Roll Call on iPad — mark attendance',
     subtitle: 'The Excel-style sheet your coaches use during class.',
     tryItPath: '/roll-call',
+    previewPath: '/demo/roll-call',
     imagePrompt: 'an iPad propped up at a circus studio with kids in the background doing acrobatics, the screen showing a colourful class register, red and yellow brand colours, photorealistic, warm afternoon light',
     script: `Roll call lives at slash roll-call. The grid shows your whole week in the Big Star colour scheme — morning at the top, afternoon at the bottom, days running left to right. Today is highlighted in red. Tap any class to open it. Each student gets a row. Tap a week cell to cycle: blank, here with a tick, late with a clock, absent with a cross. Hit Mark All Here Today if everyone showed. Tap the info bubble on a student to see their parent details, payment status, and birthday. Tap the star to award a star for a milestone or great behaviour.`,
     bullets: [
@@ -76,6 +82,7 @@ export const TRAINING_MODULES: TrainingModule[] = [
     title: 'Contacts — every family, lead, and parent',
     subtitle: 'Search, tag, segment, communicate.',
     tryItPath: '/contacts',
+    previewPath: '/demo/families',
     imagePrompt: 'a friendly illustration of a Rolodex card file overflowing with colourful contact cards, each card showing a parent and child silhouette, family friendly cartoon style, warm cream and red palette',
     script: `Contacts is where every family, lead, and parent lives. There are roughly seventeen hundred in here right now — pulled in from Stripe customers, Tectonic exports, and inbound emails. Use the search bar to find anyone in seconds. Use the filter pills for lifecycle, source, or tag. Smart Lists are saved searches you can pin as tabs along the top — try Add Smart List to save your current filter under a name like Friday Aerial parents. Click any contact to open their detail page.`,
     bullets: [
@@ -127,6 +134,7 @@ export const TRAINING_MODULES: TrainingModule[] = [
     title: 'Ask Jacky — natural-language CRM control',
     subtitle: 'Talk to your CRM like a friend who happens to run a circus.',
     tryItPath: '/jacky',
+    previewPath: '/demo/dashboard',
     imagePrompt: 'a circus performer holding a magical glowing chat bubble that contains tools and tickets, whimsical illustration, family friendly, warm BSC red and gold palette',
     script: `Ask Jacky is at slash jacky. It's a chat with me where I can actually do things. Ask me to draft a follow-up to a specific family. Ask me who's not subscribed yet. Ask me to look up Alannah Bodman. Ask me to send a Saturday class reminder. I'll use real tools — read your families, queue drafts, update lifecycle stages — and I'll tell you exactly what I did. There's a microphone button too. Tap it, speak naturally. I'll listen and respond.`,
     bullets: [
@@ -144,6 +152,7 @@ export const TRAINING_MODULES: TrainingModule[] = [
     title: 'Tasks — never forget a follow-up',
     subtitle: 'To-do list, attached to families.',
     tryItPath: '/contacts/tasks',
+    previewPath: '/demo/families',
     imagePrompt: 'a clipboard with cheerful coloured checkboxes ticking themselves off, sunlight streaming over the desk, productive cosy vibe, BSC red and yellow palette',
     script: `Tasks live at slash contacts slash tasks. Add a task with a title, due date, and priority. Tasks can be linked to a specific contact so you can chase them from their family page. Filter by Open, Due Today, Overdue, Upcoming, or Done. Tap the checkbox to mark complete. Use this for everything: pay chasing, call-backs, follow-ups after a trial.`,
     bullets: [

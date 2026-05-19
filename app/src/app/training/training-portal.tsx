@@ -267,14 +267,59 @@ function ModuleVideoCard({
         done ? 'border-emerald-300' : 'border-zinc-200'
       }`}
     >
-      {/* Avatar — full-bleed on top. Click to load 3D Jacky for this module. */}
-      <div className="relative bg-black">
+      {/* Avatar — full-bleed on top. Click to load 3D Jacky for this module.
+          When playing, the layout becomes a "presenter":
+              Background = live iframe of a demo page (the CRM Jacky is
+              talking about), heavily dimmed so the avatar reads.
+              Foreground left = transparent Jacky avatar, smaller. */}
+      <div className="relative bg-black aspect-video min-h-[340px] overflow-hidden">
         {active ? (
-          <JackyLiveAvatar
-            audioUrl={`/training/audio/${module.id}.mp3`}
-            script={module.script}
-            mood="happy"
-          />
+          <>
+            {/* Backdrop — actual CRM page rendered live via iframe. We use
+                /demo/* routes so no auth is needed and the iframe loads
+                immediately. pointer-events disabled because clicks should
+                interact with the avatar, not the demo. */}
+            {module.previewPath ? (
+              <iframe
+                src={module.previewPath}
+                title={`${module.title} preview`}
+                className="absolute inset-0 w-full h-full border-0"
+                style={{ pointerEvents: 'none', filter: 'brightness(0.55) contrast(1.05)' }}
+                loading="lazy"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B]" />
+            )}
+            {/* Soft red+gold vignette to focus the eye on Jacky */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  'radial-gradient(circle at 22% 50%, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 35%, transparent 65%), radial-gradient(circle at 25% 50%, rgba(215,32,39,0.25) 0%, transparent 50%)',
+              }}
+            />
+            {/* Jacky overlay — anchored to the left, ~40% width */}
+            <div
+              className="absolute top-0 bottom-0 left-0 z-10 pointer-events-auto"
+              style={{ width: 'min(46%, 480px)' }}
+            >
+              <JackyLiveAvatar
+                audioUrl={`/training/audio/${module.id}.mp3`}
+                script={module.script}
+                mood="happy"
+                transparent
+              />
+            </div>
+            {/* Module title overlaid bottom-right — the "presenter notes" */}
+            <div className="absolute bottom-4 right-4 max-w-[55%] text-right pointer-events-none">
+              <div className="text-[10px] uppercase tracking-widest text-amber-300 font-extrabold mb-1">
+                Module {module.number} · {module.subtitle}
+              </div>
+              <div className="text-xl sm:text-2xl font-extrabold text-white leading-tight drop-shadow-lg">
+                {module.title}
+              </div>
+            </div>
+          </>
         ) : (
           <button
             onClick={() => setActive(true)}

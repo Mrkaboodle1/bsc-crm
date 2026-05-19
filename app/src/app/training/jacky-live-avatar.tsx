@@ -72,11 +72,15 @@ export function JackyLiveAvatar({
   audioUrl,
   script,
   mood = 'happy',
+  transparent = false,
   onStateChange,
 }: {
   audioUrl: string
   script: string
   mood?: Mood
+  /** When true, the avatar container has no background — useful when
+   *  overlaying the avatar on top of an iframe / screenshot. */
+  transparent?: boolean
   onStateChange?: (speaking: boolean) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -254,7 +258,11 @@ export function JackyLiveAvatar({
   }
 
   return (
-    <div className="relative w-full bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B] rounded-xl overflow-hidden">
+    <div
+      className={`relative w-full overflow-hidden ${
+        transparent ? '' : 'bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B] rounded-xl'
+      }`}
+    >
       <div
         ref={containerRef}
         className="w-full"
