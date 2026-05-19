@@ -136,16 +136,16 @@ export default async function ContactsPage({
           {showPlaceholders ? (
             <a
               href="/contacts"
-              className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-50"
+              className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-zinc-50"
             >
               ← Back to Contacts
             </a>
           ) : (
             <a
               href="/families/import"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg"
+              className="inline-flex items-center gap-2 bg-[#D72027] hover:bg-[#A0151B] text-white font-semibold text-sm px-4 py-2 rounded-lg shadow-sm hover:shadow transition-colors"
             >
-              📥 Import CSV
+              Import CSV
             </a>
           )}
         </div>
@@ -176,7 +176,7 @@ export default async function ContactsPage({
           </div>
           <a
             href="/contacts?show=placeholders"
-            className="text-xs font-extrabold bg-amber-200 text-amber-900 px-3 py-1.5 rounded-lg hover:bg-amber-300"
+            className="text-xs font-semibold bg-amber-200 text-amber-900 px-3 py-1.5 rounded-md hover:bg-amber-300"
           >
             Review placeholders →
           </a>

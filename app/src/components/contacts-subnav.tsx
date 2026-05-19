@@ -18,10 +18,10 @@ export function ContactsSubnav({ active }: { active: typeof TABS[number]['href']
             <a
               key={tab.href}
               href={tab.href}
-              className={`px-4 py-2.5 text-sm font-extrabold rounded-t-lg transition-colors border-b-2 -mb-px ${
+              className={`px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
                 isActive
-                  ? 'border-[#D72027] text-[#D72027]'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'
+                  ? 'border-[#D72027] text-zinc-900'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-900'
               }`}
             >
               {tab.label}

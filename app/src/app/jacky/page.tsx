@@ -14,8 +14,8 @@ export default async function JackyPage({
     <DashboardShell
       user={user}
       currentPath="/jacky"
-      pageTitle="Ask Jacky 🎪"
-      pageSubtitle="Your AI with hands. Tell her what to do — she reads, drafts, queues. You approve in /inbox."
+      pageTitle="Ask Jacky"
+      pageSubtitle="Your AI assistant. Ask her to read your inbox, draft replies, find contacts — she queues every send to /inbox for your approval."
     >
       <JackyChat userName={user.fullName?.split(' ')[0] ?? null} initialPrompt={prefill ?? null} />
     </DashboardShell>

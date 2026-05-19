@@ -20,32 +20,34 @@ export type ContactRow = {
 }
 
 const LIFECYCLE_CLS: Record<string, string> = {
-  active: 'bg-emerald-100 text-emerald-800',
-  trial: 'bg-blue-100 text-blue-800',
-  lead: 'bg-amber-100 text-amber-800',
-  paused: 'bg-zinc-100 text-zinc-600',
-  past: 'bg-zinc-100 text-zinc-500',
-  lost: 'bg-red-50 text-red-700',
+  active: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200',
+  trial:  'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200',
+  lead:   'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200',
+  paused: 'bg-zinc-50 text-zinc-600 ring-1 ring-inset ring-zinc-200',
+  past:   'bg-zinc-50 text-zinc-500 ring-1 ring-inset ring-zinc-200',
+  lost:   'bg-red-50 text-red-700 ring-1 ring-inset ring-red-200',
 }
 
-const PAYMENT_STYLE: Record<PaymentStatus, { label: string; cls: string; icon: string }> = {
-  subscribed: { label: 'Paying', cls: 'bg-emerald-100 text-emerald-900', icon: '💚' },
-  trial:      { label: 'Trial',  cls: 'bg-blue-100 text-blue-900',       icon: '🆓' },
-  lead:       { label: 'Lead',   cls: 'bg-amber-100 text-amber-900',     icon: '🎯' },
-  not_paying: { label: 'Not paying', cls: 'bg-red-100 text-red-900',     icon: '⚠️' },
-  unknown:    { label: '—',      cls: 'bg-zinc-100 text-zinc-500',       icon: '·' },
+// Compact status pills. Icon column dropped — the colour does the work and
+// the emoji felt amateur in a denser table.
+const PAYMENT_STYLE: Record<PaymentStatus, { label: string; cls: string }> = {
+  subscribed: { label: 'Paying',     cls: 'bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200' },
+  trial:      { label: 'Trial',      cls: 'bg-blue-50 text-blue-800 ring-1 ring-inset ring-blue-200' },
+  lead:       { label: 'Lead',       cls: 'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200' },
+  not_paying: { label: 'Not paying', cls: 'bg-red-50 text-red-800 ring-1 ring-inset ring-red-200' },
+  unknown:    { label: '—',          cls: 'bg-zinc-50 text-zinc-500 ring-1 ring-inset ring-zinc-200' },
 }
 
 const SOURCE_LABEL: Record<string, string> = {
-  fb_ad: '📘 Facebook',
-  instagram: '📸 Instagram',
-  google: '🔍 Google',
-  word_of_mouth: '💬 Word of mouth',
-  school: '🏫 School',
-  walkin: '🚪 Walk-in',
-  open_day: '🎪 Open day',
-  email: '✉️ Email',
-  other: '✨ Other',
+  fb_ad:         'Facebook',
+  instagram:     'Instagram',
+  google:        'Google',
+  word_of_mouth: 'Word of mouth',
+  school:        'School',
+  walkin:        'Walk-in',
+  open_day:      'Open day',
+  email:         'Email',
+  other:         'Other',
 }
 
 function relativeTime(iso: string | null): string {
@@ -79,18 +81,18 @@ export function ContactsListView({
   return (
     <div className="space-y-4">
       {/* Filter bar */}
-      <form className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-3 flex items-center gap-2 flex-wrap">
+      <form className="bg-white rounded-xl border border-zinc-200 p-3 flex items-center gap-2 flex-wrap">
         <input
           type="search"
           name="q"
           defaultValue={q}
-          placeholder="Search name / email / phone…"
-          className="flex-1 min-w-[180px] px-4 py-2.5 border-2 border-zinc-200 rounded-xl text-sm focus:border-[#D72027] focus:outline-none"
+          placeholder="Search name, email, or phone…"
+          className="flex-1 min-w-[200px] px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:border-[#D72027] focus:ring-2 focus:ring-[#D72027]/20 focus:outline-none transition-shadow"
         />
         <select
           name="stage"
           defaultValue={stage}
-          className="px-3 py-2.5 border-2 border-zinc-200 rounded-xl text-sm font-bold focus:border-[#D72027] focus:outline-none"
+          className="px-3 py-2 border border-zinc-200 rounded-lg text-sm font-medium focus:border-[#D72027] focus:outline-none bg-white"
         >
           <option value="">All lifecycle</option>
           <option value="active">Active</option>
@@ -103,7 +105,7 @@ export function ContactsListView({
         <select
           name="source"
           defaultValue={source}
-          className="px-3 py-2.5 border-2 border-zinc-200 rounded-xl text-sm font-bold focus:border-[#D72027] focus:outline-none"
+          className="px-3 py-2 border border-zinc-200 rounded-lg text-sm font-medium focus:border-[#D72027] focus:outline-none bg-white"
         >
           <option value="">Any source</option>
           {Object.entries(SOURCE_LABEL).map(([k, label]) => (
@@ -114,7 +116,7 @@ export function ContactsListView({
           <select
             name="tag"
             defaultValue={tag}
-            className="px-3 py-2.5 border-2 border-zinc-200 rounded-xl text-sm focus:border-[#D72027] focus:outline-none"
+            className="px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:border-[#D72027] focus:outline-none bg-white"
           >
             <option value="">Any tag</option>
             {topTags.map((t) => (
@@ -122,11 +124,11 @@ export function ContactsListView({
             ))}
           </select>
         )}
-        <button type="submit" className="bg-zinc-900 text-white font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-zinc-800">
+        <button type="submit" className="bg-zinc-900 text-white font-semibold text-sm px-4 py-2 rounded-lg hover:bg-zinc-800">
           Filter
         </button>
         {(q || stage || tag || source) && (
-          <a href="/contacts" className="text-sm font-bold text-zinc-500 hover:text-zinc-900 px-3 py-2.5">
+          <a href="/contacts" className="text-sm font-medium text-zinc-500 hover:text-zinc-900 px-2">
             Clear
           </a>
         )}
@@ -134,15 +136,18 @@ export function ContactsListView({
 
       {/* List */}
       {rows.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-10 text-center text-zinc-500">
-          <div className="text-4xl mb-2">👤</div>
-          <p className="font-bold text-zinc-700">No contacts match.</p>
+        <div className="bg-white rounded-xl border border-zinc-200 p-12 text-center">
+          <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 mx-auto flex items-center justify-center mb-3">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <p className="font-semibold text-zinc-700">No contacts match.</p>
+          <p className="text-xs text-zinc-500 mt-1">Try clearing a filter or adjusting your search.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 border-b border-zinc-200">
-              <tr className="text-left text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">
+              <tr className="text-left text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                 <th className="px-4 sm:px-5 py-3">Contact</th>
                 <th className="px-4 py-3 hidden md:table-cell">Phone / Email</th>
                 <th className="px-4 py-3 hidden lg:table-cell">Source</th>
@@ -158,11 +163,11 @@ export function ContactsListView({
                   <tr key={f.id} className="hover:bg-zinc-50 transition-colors">
                     <td className="px-4 sm:px-5 py-3">
                       <a href={`/contacts/${f.id}`} className="flex items-center gap-3 group">
-                        <span className="w-9 h-9 rounded-full bg-gradient-to-br from-[#D72027] to-[#FFC107] text-white flex items-center justify-center text-xs font-extrabold shrink-0">
+                        <span className="w-9 h-9 rounded-full bg-zinc-100 text-zinc-600 flex items-center justify-center text-xs font-semibold shrink-0 ring-1 ring-zinc-200 group-hover:ring-zinc-300">
                           {initials(f.primaryParent ?? f.name)}
                         </span>
                         <div className="min-w-0">
-                          <div className="font-extrabold text-zinc-900 group-hover:underline truncate">
+                          <div className="font-semibold text-zinc-900 group-hover:text-[#D72027] truncate transition-colors">
                             {f.primaryParent ?? f.name}
                           </div>
                           {f.primaryParent && (
@@ -172,7 +177,7 @@ export function ContactsListView({
                       </a>
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell text-zinc-600 text-xs">
-                      {f.phone && <div>{f.phone}</div>}
+                      {f.phone && <div className="text-zinc-700">{f.phone}</div>}
                       {f.email && <div className="text-zinc-400 truncate max-w-[220px]">{f.email}</div>}
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell text-zinc-500 text-xs">
@@ -187,27 +192,27 @@ export function ContactsListView({
                             <a
                               key={t}
                               href={`/contacts?tag=${encodeURIComponent(t)}`}
-                              className="text-[10px] bg-zinc-100 text-zinc-700 font-bold px-1.5 py-0.5 rounded hover:bg-zinc-200"
+                              className="text-[10px] bg-zinc-100 text-zinc-700 font-medium px-1.5 py-0.5 rounded hover:bg-zinc-200"
                             >
-                              #{t}
+                              {t}
                             </a>
                           ))}
                           {f.tags.length > 3 && (
-                            <span className="text-[10px] text-zinc-400 font-bold">+{f.tags.length - 3}</span>
+                            <span className="text-[10px] text-zinc-400 font-medium">+{f.tags.length - 3}</span>
                           )}
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-zinc-500 text-xs">
+                    <td className="px-4 py-3 hidden md:table-cell text-zinc-500 text-xs tabular-nums">
                       {relativeTime(f.lastActivity)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className={`inline-block text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded ${payment.cls}`}>
-                        {payment.icon} {payment.label}
+                      <span className={`inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${payment.cls}`}>
+                        {payment.label}
                       </span>
                       {f.lifecycle && (
                         <div className="mt-1">
-                          <span className={`text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded ${LIFECYCLE_CLS[f.lifecycle] ?? 'bg-zinc-100 text-zinc-500'}`}>
+                          <span className={`text-[10px] font-semibold capitalize px-1.5 py-0.5 rounded ${LIFECYCLE_CLS[f.lifecycle] ?? 'bg-zinc-100 text-zinc-500'}`}>
                             {f.lifecycle}
                           </span>
                         </div>

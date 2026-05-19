@@ -59,13 +59,13 @@ export function SmartListTabs({
     <div className="flex items-center gap-1.5 overflow-x-auto pb-2 -mx-1 px-1">
       <a
         href="/contacts"
-        className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap ${
+        className={`shrink-0 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-colors ${
           activeId === null
-            ? 'bg-zinc-900 text-white shadow'
-            : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+            ? 'bg-zinc-900 text-white'
+            : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
         }`}
       >
-        🏷 All
+        All
       </a>
       {lists.map((l) => {
         const active = activeId === l.id
@@ -73,10 +73,10 @@ export function SmartListTabs({
           <div key={l.id} className="relative group shrink-0">
             <a
               href={`/contacts?list=${l.id}`}
-              className={`block px-3 py-1.5 pr-7 rounded-lg text-xs font-extrabold whitespace-nowrap ${
+              className={`block px-3 py-1.5 pr-7 rounded-md text-xs font-semibold whitespace-nowrap transition-colors ${
                 active
-                  ? 'bg-gradient-to-br from-[#FFC107] to-amber-500 text-zinc-900 shadow'
-                  : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                  ? 'bg-[#FFC107] text-zinc-900'
+                  : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
               }`}
             >
               {l.name}
@@ -85,7 +85,7 @@ export function SmartListTabs({
               type="button"
               onClick={() => removeList(l.id, l.name)}
               disabled={pending}
-              className={`absolute top-1/2 -translate-y-1/2 right-1.5 w-4 h-4 rounded-full text-[10px] leading-none flex items-center justify-center ${
+              className={`absolute top-1/2 -translate-y-1/2 right-1.5 w-4 h-4 rounded-full text-[10px] leading-none flex items-center justify-center transition-colors ${
                 active ? 'text-zinc-700 hover:bg-zinc-900 hover:text-white' : 'text-zinc-400 hover:bg-red-500 hover:text-white'
               } opacity-0 group-hover:opacity-100`}
               aria-label={`Delete smart list ${l.name}`}
@@ -100,7 +100,7 @@ export function SmartListTabs({
         type="button"
         onClick={addList}
         disabled={pending}
-        className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-extrabold text-[#D72027] border-2 border-dashed border-[#D72027]/40 hover:border-[#D72027] hover:bg-red-50 whitespace-nowrap disabled:opacity-50"
+        className="shrink-0 px-3 py-1.5 rounded-md text-xs font-semibold text-[#D72027] border border-dashed border-[#D72027]/40 hover:border-[#D72027] hover:bg-red-50 whitespace-nowrap disabled:opacity-50 transition-colors"
       >
         + Add smart list
       </button>

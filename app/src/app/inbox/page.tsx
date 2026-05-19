@@ -77,7 +77,7 @@ export default async function InboxPage({
       user={user}
       currentPath="/inbox"
       pageTitle="Approval queue"
-      pageSubtitle={`Jacky's drafts waiting for your tap. Tap ✅ to send, ✏️ to edit, ✖ to reject.`}
+      pageSubtitle="Drafts queued by Jacky — review, edit, and approve before they send."
     >
       {error && (
         <div className="bg-red-50 border-l-4 border-red-500 text-red-800 rounded-r-xl px-4 py-3 text-sm mb-4">
@@ -100,10 +100,10 @@ export default async function InboxPage({
             <a
               key={s}
               href={`/inbox?filter=${s}`}
-              className={`text-xs font-extrabold uppercase tracking-wider px-3 py-2 rounded-lg ${
+              className={`inline-flex items-center gap-1.5 text-xs font-semibold capitalize px-3 py-1.5 rounded-md transition-colors ${
                 active
                   ? 'bg-zinc-900 text-white'
-                  : 'bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                  : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
               }`}
             >
               {s} <span className={`ml-1 ${active ? 'opacity-80' : 'text-zinc-400'}`}>{count}</span>

@@ -42,7 +42,7 @@ export default async function SitesIndex({
       pageActions={
         <a
           href="/sites/new"
-          className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg"
+          className="inline-flex items-center gap-2 bg-[#D72027] hover:bg-[#A0151B] text-white font-semibold text-sm px-4 py-2 rounded-lg shadow-sm hover:shadow transition-colors"
         >
           + New site
         </a>
@@ -59,8 +59,8 @@ export default async function SitesIndex({
       <div className="flex items-center gap-2 flex-wrap mb-5">
         <a
           href="/sites"
-          className={`text-xs font-extrabold px-3 py-1.5 rounded-lg ${
-            !kind ? 'bg-zinc-900 text-white shadow' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+          className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ${
+            !kind ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
           }`}
         >
           All
@@ -69,11 +69,11 @@ export default async function SitesIndex({
           <a
             key={k}
             href={`/sites?kind=${k}`}
-            className={`text-xs font-extrabold px-3 py-1.5 rounded-lg ${
-              kind === k ? 'bg-zinc-900 text-white shadow' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+            className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-colors capitalize ${
+              kind === k ? 'bg-zinc-900 text-white' : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50'
             }`}
           >
-            {KIND_LABEL[k]}
+            {k}
           </a>
         ))}
         <form action="/sites" method="get" className="ml-auto flex items-center gap-1">
@@ -82,8 +82,8 @@ export default async function SitesIndex({
             type="search"
             name="q"
             defaultValue={q ?? ''}
-            placeholder="🔍 Search sites…"
-            className="text-xs font-bold px-3 py-1.5 border-2 border-zinc-200 rounded-lg focus:border-[#D72027] focus:outline-none w-56"
+            placeholder="Search sites…"
+            className="text-sm px-3 py-1.5 border border-zinc-200 rounded-md focus:border-[#D72027] focus:ring-2 focus:ring-[#D72027]/20 focus:outline-none w-56 transition-shadow"
           />
         </form>
       </div>
@@ -91,47 +91,47 @@ export default async function SitesIndex({
       {sites.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
           <table className="w-full">
             <thead className="bg-zinc-50 border-b border-zinc-200">
-              <tr className="text-left">
-                <th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">Name</th>
-                <th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">Type</th>
-                <th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">Last updated</th>
-                <th className="px-4 py-3 text-[10px] font-extrabold uppercase tracking-wider text-zinc-500">Status</th>
-                <th className="px-4 py-3"></th>
+              <tr className="text-left text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                <th className="px-5 py-3">Name</th>
+                <th className="px-4 py-3 hidden md:table-cell">Type</th>
+                <th className="px-4 py-3 hidden sm:table-cell">Updated</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-zinc-100">
               {sites.map((s) => (
-                <tr key={s.id} className="border-b border-zinc-100 hover:bg-zinc-50">
-                  <td className="px-4 py-3">
-                    <a href={`/sites/${s.id}`} className="font-extrabold text-zinc-900 hover:text-[#D72027]">
+                <tr key={s.id} className="hover:bg-zinc-50 transition-colors">
+                  <td className="px-5 py-3">
+                    <a href={`/sites/${s.id}`} className="font-semibold text-zinc-900 hover:text-[#D72027] transition-colors">
                       {s.name}
                     </a>
                     {s.description && (
-                      <div className="text-xs text-zinc-500 truncate max-w-xs">{s.description}</div>
+                      <div className="text-xs text-zinc-500 truncate max-w-md mt-0.5">{s.description}</div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs font-bold text-zinc-700">
-                    {KIND_LABEL[s.kind]}
+                  <td className="px-4 py-3 text-xs font-medium text-zinc-600 hidden md:table-cell capitalize">
+                    {s.kind}
                   </td>
-                  <td className="px-4 py-3 text-xs text-zinc-500">
+                  <td className="px-4 py-3 text-xs text-zinc-500 hidden sm:table-cell tabular-nums">
                     {new Date(s.updated_at).toLocaleDateString('en-AU', { dateStyle: 'medium' })}
                   </td>
                   <td className="px-4 py-3">
                     {s.is_published ? (
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                        ● Live
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200 px-2 py-0.5 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Live
                       </span>
                     ) : (
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider bg-zinc-50 text-zinc-500 ring-1 ring-inset ring-zinc-200 px-2 py-0.5 rounded-full">
                         Draft
                       </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <a href={`/sites/${s.id}`} className="text-xs font-bold text-[#D72027] hover:underline">
+                    <a href={`/sites/${s.id}`} className="text-xs font-semibold text-[#D72027] hover:underline">
                       Open →
                     </a>
                   </td>
@@ -147,16 +147,18 @@ export default async function SitesIndex({
 
 function EmptyState() {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border-2 border-dashed border-zinc-200 p-12 text-center">
-      <div className="text-5xl mb-3">🪧</div>
-      <h2 className="text-xl font-extrabold text-zinc-900 mb-1">No sites yet</h2>
-      <p className="text-sm text-zinc-600 mb-5 max-w-md mx-auto">
+    <div className="bg-white rounded-xl border-2 border-dashed border-zinc-200 p-12 text-center">
+      <div className="w-12 h-12 mx-auto rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center mb-3">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
+      </div>
+      <h2 className="text-lg font-semibold text-zinc-900 mb-1">No sites yet</h2>
+      <p className="text-sm text-zinc-500 mb-5 max-w-md mx-auto">
         Build a one-pager for a Term offer, a multi-page website for the studio,
-        or a multi-step funnel for trial sign-ups — all from here.
+        or a multi-step funnel for trial sign-ups.
       </p>
       <a
         href="/sites/new"
-        className="inline-block bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-5 py-3 rounded-xl shadow-md hover:shadow-lg"
+        className="inline-flex items-center gap-2 bg-[#D72027] hover:bg-[#A0151B] text-white font-semibold text-sm px-5 py-2.5 rounded-lg shadow-sm hover:shadow transition-colors"
       >
         + Build your first site
       </a>

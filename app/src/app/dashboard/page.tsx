@@ -3,7 +3,12 @@ import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { NextUpBanner } from '@/components/calendar-view'
 import { expandClass, type CalendarItem } from '@/lib/calendar'
-import { Inbox, Users, Baby, Tent, Target } from 'lucide-react'
+import {
+  Inbox, Users, Baby, Tent, Target,
+  Sparkles, Send, ClipboardList, UserPlus, Megaphone,
+  ArrowRight, Activity, Bot,
+  type LucideIcon,
+} from 'lucide-react'
 
 type ClassRow = {
   id: string
@@ -318,58 +323,52 @@ export default async function DashboardPage() {
           </div>
 
           {/* Quick actions + Jacky status */}
-          <aside className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
+          <aside className="space-y-5">
+            <div className="bg-white rounded-xl border border-zinc-200 p-5">
               <SectionHeader title="Quick actions" />
-              <div className="space-y-2">
-                <QuickAction href="/jacky" icon="🎪" label="Ask Jacky" />
-                <QuickAction href="/inbox" icon="✉️" label="Approval queue" />
-                <QuickAction href="/marketing/bulk-send" icon="📨" label="Bulk send (email / SMS)" />
-                <QuickAction href="/roll-call" icon="📋" label="Take attendance" />
-                <QuickAction href="/families" icon="➕" label="Add a new family" />
-                <QuickAction href="/marketing" icon="📣" label="Plan a post" />
+              <div className="space-y-0.5 -mx-2">
+                <QuickAction href="/jacky"               icon={Sparkles}      label="Ask Jacky" />
+                <QuickAction href="/inbox"               icon={Inbox}         label="Approval queue" />
+                <QuickAction href="/marketing/social"    icon={Sparkles}      label="AI social post" />
+                <QuickAction href="/marketing/bulk-send" icon={Send}          label="Bulk send (email or SMS)" />
+                <QuickAction href="/roll-call"           icon={ClipboardList} label="Take attendance" />
+                <QuickAction href="/contacts"            icon={UserPlus}      label="Add a new contact" />
+                <QuickAction href="/marketing"           icon={Megaphone}     label="Plan a post" />
               </div>
             </div>
 
-            {/* Jacky's day card — what the AI did today */}
-            <div data-tour="jacky-today" className="bg-gradient-to-br from-zinc-900 to-zinc-800 text-white rounded-2xl shadow-md p-5">
-              <div className="flex items-start justify-between mb-3">
+            {/* Jacky AI activity card */}
+            <div data-tour="jacky-today" className="bg-zinc-950 text-white rounded-xl border border-zinc-900 p-5">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-extrabold flex items-center gap-2">
-                    🎪 Jacky today
+                  <h2 className="text-sm font-bold tracking-tight flex items-center gap-2">
+                    <Bot size={16} className="text-amber-400" />
+                    Jacky AI activity
                   </h2>
-                  <p className="text-[10px] uppercase tracking-wider opacity-60 font-bold mt-0.5">
-                    Server-Jacky 24/7
+                  <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium mt-0.5">
+                    24/7 background worker
                   </p>
                 </div>
                 <span
-                  className={`text-[10px] font-extrabold px-2 py-1 rounded ${
-                    jackyAlive ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-zinc-900'
+                  className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded ${
+                    jackyAlive ? 'bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30' : 'bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/30'
                   }`}
                 >
-                  {jackyAlive ? '● LIVE' : minutesSinceLastTriage === null ? '— UNKNOWN' : '⚠ STALE'}
+                  <Activity size={11} />
+                  {jackyAlive ? 'Live' : minutesSinceLastTriage === null ? 'Unknown' : 'Stale'}
                 </span>
               </div>
-              <ul className="space-y-2 text-sm">
-                <li className="flex justify-between">
-                  <span className="opacity-70">Emails read</span>
-                  <span className="font-extrabold">{jackyToday.emailsRead}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span className="opacity-70">Drafts queued</span>
-                  <span className="font-extrabold">{jackyToday.draftsCreated}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span className="opacity-70">Triage runs</span>
-                  <span className="font-extrabold">{jackyToday.runs}</span>
-                </li>
-                <li className="flex justify-between border-t border-white/10 pt-2 mt-2">
-                  <span className="opacity-70">AI spend today</span>
-                  <span className="font-extrabold">${jackyToday.costUsd.toFixed(2)}</span>
+              <ul className="space-y-2.5 text-sm">
+                <Stat label="Emails read"     value={jackyToday.emailsRead} />
+                <Stat label="Drafts queued"   value={jackyToday.draftsCreated} />
+                <Stat label="Triage runs"     value={jackyToday.runs} />
+                <li className="flex justify-between border-t border-zinc-900 pt-3 mt-3">
+                  <span className="text-zinc-400 text-xs">AI spend today</span>
+                  <span className="font-semibold tabular-nums">${jackyToday.costUsd.toFixed(2)}</span>
                 </li>
               </ul>
               {minutesSinceLastTriage !== null && (
-                <p className="text-[10px] opacity-50 mt-3">
+                <p className="text-[10px] text-zinc-500 mt-3">
                   Last triage: {minutesSinceLastTriage < 1 ? 'just now' : `${minutesSinceLastTriage} min ago`}
                 </p>
               )}
@@ -508,16 +507,27 @@ function SectionHeader({
   )
 }
 
-function QuickAction({ href, icon, label }: { href: string; icon: string; label: string }) {
+function QuickAction({ href, icon: Icon, label }: { href: string; icon: LucideIcon; label: string }) {
   return (
     <a
       href={href}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-50 text-sm font-bold text-zinc-700 hover:text-zinc-900 transition-colors"
+      className="group flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-zinc-50 text-sm font-medium text-zinc-700 hover:text-zinc-900 transition-colors"
     >
-      <span className="text-lg">{icon}</span>
-      <span>{label}</span>
-      <span className="ml-auto text-zinc-300">→</span>
+      <span className="w-8 h-8 rounded-md bg-zinc-100 text-zinc-600 group-hover:bg-[#D72027] group-hover:text-white flex items-center justify-center transition-colors">
+        <Icon size={15} strokeWidth={2} />
+      </span>
+      <span className="flex-1">{label}</span>
+      <ArrowRight size={14} className="text-zinc-300 group-hover:text-zinc-600 transition-colors" />
     </a>
+  )
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <li className="flex items-baseline justify-between">
+      <span className="text-zinc-400 text-xs">{label}</span>
+      <span className="font-semibold tabular-nums">{value}</span>
+    </li>
   )
 }
 
