@@ -34,6 +34,111 @@ function tableMissing(msg: string | undefined): boolean {
   return msg.includes('does not exist') || msg.includes('relation')
 }
 
+// ────────────────────────────────────────────────────────────────────
+// AI image providers
+// ────────────────────────────────────────────────────────────────────
+
+const UA = 'BSC-CRM/0.1 (+https://bigstarcircus.com.au)'
+
+async function generateWithPollinations(opts: { prompt: string; width: number; height: number }) {
+  // Pollinations occasionally 502s or times out under load. We try the
+  // primary "flux" model with two random seeds, then fall back to the
+  // faster "turbo" model. ~80% of failures recover by the second try.
+  const attempts: Array<{ model: string; seed: number; timeoutMs: number }> = [
+    { model: 'flux',  seed: Math.floor(Math.random() * 1_000_000), timeoutMs: 60_000 },
+    { model: 'flux',  seed: Math.floor(Math.random() * 1_000_000), timeoutMs: 45_000 },
+    { model: 'turbo', seed: Math.floor(Math.random() * 1_000_000), timeoutMs: 30_000 },
+  ]
+  let lastErr = 'AI generation failed'
+  for (const a of attempts) {
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(opts.prompt)}?width=${opts.width}&height=${opts.height}&seed=${a.seed}&model=${a.model}&nologo=true`
+    try {
+      const r = await fetch(url, {
+        signal: AbortSignal.timeout(a.timeoutMs),
+        headers: { 'User-Agent': UA },
+      })
+      if (!r.ok) {
+        lastErr = `Pollinations (${a.model}) returned ${r.status}`
+        continue
+      }
+      const ct = r.headers.get('content-type') ?? 'image/jpeg'
+      const bytes = await r.arrayBuffer()
+      // Pollinations sometimes returns an HTML error page with 200 status —
+      // sanity-check the size.
+      if (bytes.byteLength < 5000) {
+        lastErr = `Pollinations (${a.model}) returned a tiny payload (${bytes.byteLength} bytes)`
+        continue
+      }
+      return { bytes, contentType: ct }
+    } catch (e) {
+      lastErr = e instanceof Error ? e.message : String(e)
+      continue
+    }
+  }
+  throw new Error(`${lastErr}. Try a simpler prompt or switch to OpenAI in a moment.`)
+}
+
+async function generateWithOpenAi(opts: { prompt: string; width: number; height: number }) {
+  const key = process.env.OPENAI_API_KEY
+  if (!key) throw new Error('OPENAI_API_KEY not configured')
+  // DALL-E 3 accepts a fixed set of sizes — map our requested dims to the
+  // closest supported size.
+  const aspect = opts.width / opts.height
+  const size =
+    aspect > 1.3  ? '1792x1024' :
+    aspect < 0.77 ? '1024x1792' :
+                    '1024x1024'
+  const r = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      'User-Agent': UA,
+    },
+    body: JSON.stringify({
+      model: 'dall-e-3',
+      prompt: opts.prompt,
+      n: 1,
+      size,
+      quality: 'standard',
+      response_format: 'b64_json',
+    }),
+    signal: AbortSignal.timeout(90_000),
+  })
+  if (!r.ok) {
+    const text = await r.text().catch(() => '')
+    throw new Error(`OpenAI returned ${r.status}: ${text.slice(0, 200)}`)
+  }
+  const json = await r.json() as { data: Array<{ b64_json?: string; url?: string }> }
+  const first = json.data?.[0]
+  if (!first) throw new Error('OpenAI returned no image')
+  let bytes: ArrayBuffer
+  if (first.b64_json) {
+    const buf = Buffer.from(first.b64_json, 'base64')
+    bytes = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+  } else if (first.url) {
+    const dl = await fetch(first.url, { signal: AbortSignal.timeout(60_000) })
+    if (!dl.ok) throw new Error(`Couldn't fetch OpenAI image: ${dl.status}`)
+    bytes = await dl.arrayBuffer()
+  } else {
+    throw new Error('OpenAI returned no image data')
+  }
+  return { bytes, contentType: 'image/png' }
+}
+
+// ────────────────────────────────────────────────────────────────────
+
+export async function getAiProviders(): Promise<{ providers: Array<{ id: 'pollinations' | 'openai'; label: string; available: boolean; cost: string }> }> {
+  // Exposed as a server action so the picker UI can ask "which providers
+  // are enabled?" without exposing the API key itself.
+  return {
+    providers: [
+      { id: 'pollinations', label: 'Pollinations (free)',  available: true,                            cost: 'Free' },
+      { id: 'openai',       label: 'OpenAI DALL-E 3',      available: !!process.env.OPENAI_API_KEY,    cost: '~4¢ / image' },
+    ],
+  }
+}
+
 function safeFilename(name: string): string {
   return name
     .toLowerCase()
@@ -102,6 +207,7 @@ export async function generateMedia(input: {
   prompt: string
   width?: number
   height?: number
+  provider?: 'pollinations' | 'openai'
 }): Promise<Result<MediaItem>> {
   const user = await verifySession()
   const supabase = await createServerSupabase()
@@ -110,25 +216,27 @@ export async function generateMedia(input: {
   if (prompt.length > 800) return { ok: false, error: 'Prompt too long (max 800 chars)' }
   const width = input.width ?? 1024
   const height = input.height ?? 1024
-  const seed = Math.floor(Math.random() * 1_000_000)
 
-  // Pull the bytes from Pollinations via our own /api/ai-image proxy. We
-  // use Pollinations directly here (server-side) so we don't recurse
-  // through our own URL.
-  const upstream = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${seed}&model=flux&nologo=true`
+  // Provider routing — OpenAI when an API key is present AND the caller
+  // asks for it; otherwise Pollinations (free).
+  const provider = input.provider ?? 'pollinations'
+  const hasOpenAi = !!process.env.OPENAI_API_KEY
+  if (provider === 'openai' && !hasOpenAi) {
+    return { ok: false, error: 'OpenAI API key not configured on the server. Add OPENAI_API_KEY to .env.local and redeploy.' }
+  }
+
   let bytes: ArrayBuffer
   let contentType = 'image/jpeg'
   try {
-    const r = await fetch(upstream, {
-      signal: AbortSignal.timeout(60_000),
-      headers: { 'User-Agent': 'BSC-CRM/0.1 (+https://bigstarcircus.com.au)' },
-    })
-    if (!r.ok) return { ok: false, error: `AI service returned ${r.status}` }
-    contentType = r.headers.get('content-type') ?? 'image/jpeg'
-    bytes = await r.arrayBuffer()
+    if (provider === 'openai') {
+      ;({ bytes, contentType } = await generateWithOpenAi({ prompt, width, height }))
+    } else {
+      ;({ bytes, contentType } = await generateWithPollinations({ prompt, width, height }))
+    }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'AI generation failed' }
   }
+  const seed = Math.floor(Math.random() * 1_000_000)
 
   const ext = contentType.includes('png') ? 'png' : 'jpg'
   const path = pathFor(user.tenantId, `ai-${seed}.${ext}`)

@@ -13,7 +13,7 @@
 // uploading / generating. The picker then closes itself.
 
 import { useEffect, useRef, useState, useTransition } from 'react'
-import { deleteMedia, generateMedia, listMedia, uploadMedia, type MediaItem } from '@/app/media/actions'
+import { deleteMedia, generateMedia, getAiProviders, listMedia, uploadMedia, type MediaItem } from '@/app/media/actions'
 
 type Tab = 'library' | 'upload' | 'ai'
 
@@ -279,13 +279,24 @@ function AiTab({ onDone }: { onDone: (it: MediaItem) => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [ratio, setRatio] = useState<'square' | 'wide' | 'tall'>('square')
+  const [provider, setProvider] = useState<'pollinations' | 'openai'>('pollinations')
+  const [providers, setProviders] = useState<Array<{ id: 'pollinations' | 'openai'; label: string; available: boolean; cost: string }>>([])
+
+  useEffect(() => {
+    void getAiProviders().then((res) => {
+      setProviders(res.providers)
+      // If OpenAI is wired up, default to it (more reliable than free tier).
+      const oa = res.providers.find((p) => p.id === 'openai' && p.available)
+      if (oa) setProvider('openai')
+    })
+  }, [])
 
   async function generate() {
     if (!prompt.trim()) return
     setBusy(true)
     setError(null)
     const dims = ratio === 'wide' ? { width: 1280, height: 720 } : ratio === 'tall' ? { width: 720, height: 1280 } : { width: 1024, height: 1024 }
-    const res = await generateMedia({ prompt: prompt.trim(), ...dims })
+    const res = await generateMedia({ prompt: prompt.trim(), provider, ...dims })
     setBusy(false)
     if (res.ok) onDone(res.data)
     else setError(res.error)
@@ -332,15 +343,53 @@ function AiTab({ onDone }: { onDone: (it: MediaItem) => void }) {
         </div>
       </div>
 
+      <div>
+        <label className="block text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 mb-1.5">AI engine</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {providers.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => p.available && setProvider(p.id)}
+              disabled={!p.available}
+              className={`text-left px-3 py-2 rounded-lg border-2 ${
+                !p.available
+                  ? 'border-zinc-100 text-zinc-300 cursor-not-allowed bg-zinc-50'
+                  : provider === p.id
+                    ? 'border-[#D72027] bg-red-50 text-zinc-900'
+                    : 'border-zinc-200 text-zinc-700 hover:border-zinc-400'
+              }`}
+              title={!p.available ? 'Add OPENAI_API_KEY to your env to enable this' : undefined}
+            >
+              <div className="text-xs font-extrabold">{p.label}</div>
+              <div className="text-[10px] text-zinc-500 mt-0.5">{p.cost}{!p.available ? ' · needs API key' : ''}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <button
         onClick={() => void generate()}
         disabled={busy || !prompt.trim()}
         className="w-full bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-6 py-3 rounded-xl shadow-md hover:shadow-lg disabled:opacity-50"
       >
-        {busy ? '🎨 Generating (up to 30 seconds)…' : '✨ Generate image'}
+        {busy
+          ? (provider === 'openai' ? '🎨 OpenAI generating (10–30s)…' : '🎨 Generating (up to 60s, retrying if needed)…')
+          : '✨ Generate image'}
       </button>
 
-      {error && <div className="bg-red-50 border-l-4 border-red-400 text-red-800 text-sm px-3 py-2 rounded-r-xl">{error}</div>}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-400 text-red-800 text-sm px-3 py-2 rounded-r-xl">
+          <div className="font-bold">Generation failed</div>
+          <div className="text-xs mt-0.5">{error}</div>
+          <button
+            onClick={() => void generate()}
+            disabled={busy}
+            className="mt-2 text-xs font-extrabold bg-white border border-red-300 text-red-700 px-3 py-1 rounded hover:bg-red-100"
+          >
+            🔁 Try again
+          </button>
+        </div>
+      )}
 
       <details>
         <summary className="cursor-pointer text-xs font-bold text-zinc-500 hover:text-zinc-900">▸ Try these examples</summary>
