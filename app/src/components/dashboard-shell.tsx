@@ -29,6 +29,7 @@ const NAV: NavItem[] = [
   { href: '/stars', label: 'Star Ledger', icon: '⭐', badge: 'Soon', section: 'main' },
 
   { href: '/leads', label: 'Leads', icon: '🎯', section: 'growth' },
+  { href: '/sites', label: 'Sites', icon: '🪧', section: 'growth' },
   { href: '/bookings', label: 'Bookings', icon: '🎉', badge: 'Soon', section: 'growth' },
   { href: '/marketing', label: 'Marketing', icon: '📣', badge: 'Soon', section: 'growth' },
   { href: '/payments', label: 'Payments', icon: '💳', badge: 'Soon', section: 'growth' },

@@ -28,3 +28,21 @@ export const createServerSupabase = async () => {
     }
   )
 }
+
+// ────────────────────────────────────────────────────────────────────
+// Service-role client — bypasses RLS. Use ONLY for routes where the
+// caller is provably unauthenticated (e.g. public /s/* pages that only
+// read `is_published = true` rows) or for trusted server-side jobs.
+// Never expose the resulting data without filtering on a published flag.
+// ────────────────────────────────────────────────────────────────────
+export const createServerSupabaseAdmin = async () => {
+  // Lazy import keeps the service-role import path off the client bundle.
+  const { createClient } = await import('@supabase/supabase-js')
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }
+  )
+}
