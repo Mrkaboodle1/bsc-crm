@@ -53,6 +53,7 @@ export default async function EditPage({
     >
       <PageEditor
         pageId={page.id}
+        siteId={site.id}
         siteSlug={site.slug}
         pageSlug={page.slug}
         initialBlocks={blocks}
