@@ -6,9 +6,12 @@ import { DashboardShell } from '@/components/dashboard-shell'
 // Morning + Afternoon row bands, alternating red/yellow class cards. Each
 // card is a button that opens the class roll on iPad.
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const
-// In our schema: 0=Sun, 1=Mon...6=Sat. Reorder to start with Monday.
-const DAY_INDEX_FROM_SCHEMA = [1, 2, 3, 4, 5, 6, 0]
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
+// In our schema: 0=Sun, 1=Mon...6=Sat. Reorder to start with Monday. Sunday
+// is intentionally excluded — BSC doesn't run classes on Sundays, so it just
+// looked like a long row of "empty" cards before. If that changes, add 0
+// back to the list and "Sunday" to DAYS.
+const DAY_INDEX_FROM_SCHEMA = [1, 2, 3, 4, 5, 6]
 
 function todayInBrisbane() {
   const now = new Date()
@@ -105,7 +108,7 @@ export default async function RollCallIndexPage() {
         <BandHeader label="Morning" />
 
         {/* Day columns — morning row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 p-2 sm:p-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 p-2 sm:p-3">
           {DAY_INDEX_FROM_SCHEMA.map((dow, idx) => (
             <DayColumn key={`am-${dow}`} dow={dow} dayName={DAYS[idx]!} isToday={dow === todayDow}>
               {grid[dow]!.morning.length === 0 ? (
@@ -129,7 +132,7 @@ export default async function RollCallIndexPage() {
         <BandHeader label="Afternoon" />
 
         {/* Day columns — afternoon row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 p-2 sm:p-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 p-2 sm:p-3">
           {DAY_INDEX_FROM_SCHEMA.map((dow, idx) => (
             <DayColumn key={`pm-${dow}`} dow={dow} dayName={DAYS[idx]!} isToday={dow === todayDow} hideHeader>
               {grid[dow]!.afternoon.length === 0 ? (
