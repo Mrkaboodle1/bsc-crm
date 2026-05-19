@@ -58,20 +58,14 @@ function buildWordTimings(script: string, durationSeconds: number) {
   return { words: tokens, wtimes, wdurations }
 }
 
-async function loadMp3AsArrayBuffer(url: string): Promise<ArrayBuffer> {
+// Fetch and DECODE the MP3 — speakAudio requires a real AudioBuffer
+// (decoded PCM samples), not the raw compressed ArrayBuffer from fetch.
+async function loadMp3AsAudioBuffer(url: string, audioCtx: AudioContext): Promise<AudioBuffer> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Audio fetch failed: ${res.status}`)
-  return await res.arrayBuffer()
-}
-
-async function probeAudioDuration(url: string): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const a = document.createElement('audio')
-    a.preload = 'metadata'
-    a.src = url
-    a.onloadedmetadata = () => resolve(a.duration)
-    a.onerror = () => reject(new Error('Could not read audio duration'))
-  })
+  const buf = await res.arrayBuffer()
+  // decodeAudioData mutates the ArrayBuffer in older Safari; clone to be safe.
+  return await audioCtx.decodeAudioData(buf.slice(0))
 }
 
 export function JackyLiveAvatar({
@@ -208,19 +202,27 @@ export function JackyLiveAvatar({
       setStatus('speaking')
       onStateChange?.(true)
 
-      const [audioBuf, durSecs] = await Promise.all([
-        loadMp3AsArrayBuffer(audioUrl),
-        probeAudioDuration(audioUrl),
-      ])
+      // The library spins up an AudioContext inside the TalkingHead instance
+      // and exposes it as `head.audioCtx`. We must (a) make sure it's not
+      // suspended (browsers gate AudioContext on the first user gesture)
+      // and (b) decode the MP3 using THAT context so the sample-rate
+      // matches the library's worklet.
+      const audioCtx: AudioContext = h.audioCtx
+      if (audioCtx?.state === 'suspended') {
+        try { await audioCtx.resume() } catch {}
+      }
+
+      const audioBuffer = await loadMp3AsAudioBuffer(audioUrl, audioCtx)
+      const durSecs = audioBuffer.duration
       const { words, wtimes, wdurations } = buildWordTimings(script, durSecs)
 
-      // speakAudio accepts an Audio object: { audio, words, wtimes, wdurations }.
-      // Visemes are derived from words by the bundled en lipsync module.
+      // speakAudio expects a real AudioBuffer — the previous ArrayBuffer
+      // was silently rejected by AudioBufferSourceNode.buffer = ... and
+      // the lips would animate over silence.
       h.speakAudio(
-        { audio: audioBuf, words, wtimes, wdurations },
-        {},
-        // onsubtitles callback — could wire to a transcript panel later
-        null,
+        { audio: audioBuffer, words, wtimes, wdurations },
+        { lipsyncLang: 'en' },
+        null, // subtitles callback — could wire to a transcript panel later
       )
 
       // The library doesn't expose a finished-event, so we poll the audio
