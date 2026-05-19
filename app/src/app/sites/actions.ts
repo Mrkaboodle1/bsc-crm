@@ -31,61 +31,83 @@ function tableMissing(msg: string | undefined): boolean {
 // ────────────────────────────────────────────────────────────────────
 
 export async function createSite(formData: FormData) {
-  const user = await verifySession()
-  const supabase = await createServerSupabase()
-  const name = String(formData.get('name') ?? '').trim()
-  const kind = (String(formData.get('kind') ?? 'website') as SiteKind)
-  const description = String(formData.get('description') ?? '').trim()
-  if (!name) return redirect('/sites/new?err=' + encodeURIComponent('Name is required'))
-  let slug = slugify(name) || 'site'
+  let newId: string | null = null
+  try {
+    const user = await verifySession()
+    const supabase = await createServerSupabase()
+    const name = String(formData.get('name') ?? '').trim()
+    const kind = (String(formData.get('kind') ?? 'website') as SiteKind)
+    const description = String(formData.get('description') ?? '').trim()
+    if (!name) return redirect('/sites/new?err=' + encodeURIComponent('Name is required'))
+    let slug = slugify(name) || 'site'
 
-  // Ensure unique slug within tenant
-  for (let i = 1; i < 25; i++) {
-    const { data: exists } = await supabase
-      .from('sites')
-      .select('id')
-      .eq('tenant_id', user.tenantId)
-      .eq('slug', slug)
-      .maybeSingle()
-    if (!exists) break
-    slug = `${slugify(name) || 'site'}-${i + 1}`
-  }
-
-  const { data, error } = await supabase
-    .from('sites')
-    .insert({
-      tenant_id: user.tenantId,
-      name,
-      slug,
-      kind,
-      description: description || null,
-      created_by_user_id: user.id,
-    })
-    .select('id')
-    .single()
-  if (error) {
-    if (tableMissing(error.message)) {
-      return redirect('/sites/new?err=' + encodeURIComponent('Sites table missing — apply schema/009 in Supabase.'))
+    // Ensure unique slug within tenant
+    for (let i = 1; i < 25; i++) {
+      const { data: exists } = await supabase
+        .from('sites')
+        .select('id')
+        .eq('tenant_id', user.tenantId)
+        .eq('slug', slug)
+        .maybeSingle()
+      if (!exists) break
+      slug = `${slugify(name) || 'site'}-${i + 1}`
     }
-    return redirect('/sites/new?err=' + encodeURIComponent(error.message))
+
+    const { data, error } = await supabase
+      .from('sites')
+      .insert({
+        tenant_id: user.tenantId,
+        name,
+        slug,
+        kind,
+        description: description || null,
+        created_by_user_id: user.id,
+      })
+      .select('id')
+      .single()
+    if (error) {
+      console.error('createSite insert failed', error)
+      if (tableMissing(error.message)) {
+        return redirect('/sites/new?err=' + encodeURIComponent('Sites table missing — apply schema/009 in Supabase.'))
+      }
+      // Show full Postgres error (code + message) so RLS / FK violations are
+      // visible to the user instead of just failing silently.
+      const code = (error as { code?: string }).code
+      const msg = `${error.message}${code ? ` [code ${code}]` : ''}`
+      return redirect('/sites/new?err=' + encodeURIComponent(msg))
+    }
+
+    // Bootstrap with a default home page so the editor opens to something useful.
+    const { error: pageError } = await supabase.from('site_pages').insert({
+      site_id: data!.id,
+      tenant_id: user.tenantId,
+      name: 'Home',
+      slug: '',
+      position: 0,
+      blocks: [
+        makeBlock('hero'),
+        makeBlock('features'),
+        makeBlock('cta'),
+      ] satisfies Block[],
+    })
+    if (pageError) {
+      console.error('createSite bootstrap page insert failed', pageError)
+    }
+
+    revalidatePath('/sites')
+    newId = data!.id
+  } catch (e) {
+    // redirect() throws a NEXT_REDIRECT signal — bubble that up, don't swallow.
+    if (e instanceof Error && e.message === 'NEXT_REDIRECT') throw e
+    if (typeof e === 'object' && e !== null && 'digest' in e &&
+        typeof (e as { digest: unknown }).digest === 'string' &&
+        (e as { digest: string }).digest.startsWith('NEXT_REDIRECT')) throw e
+    console.error('createSite threw', e)
+    const msg = e instanceof Error ? e.message : String(e)
+    return redirect('/sites/new?err=' + encodeURIComponent(msg))
   }
-
-  // Bootstrap with a default home page so the editor opens to something useful.
-  await supabase.from('site_pages').insert({
-    site_id: data!.id,
-    tenant_id: user.tenantId,
-    name: 'Home',
-    slug: '',
-    position: 0,
-    blocks: [
-      makeBlock('hero'),
-      makeBlock('features'),
-      makeBlock('cta'),
-    ] satisfies Block[],
-  })
-
-  revalidatePath('/sites')
-  return redirect(`/sites/${data!.id}`)
+  if (newId) return redirect(`/sites/${newId}`)
+  return redirect('/sites/new?err=' + encodeURIComponent('Unknown error creating site.'))
 }
 
 export async function deleteSite(input: { id: string }): Promise<Result> {
