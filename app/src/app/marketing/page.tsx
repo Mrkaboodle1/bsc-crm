@@ -3,6 +3,8 @@ import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { MarketingOverview } from '@/components/marketing-overview'
 import { mediaStats } from '@/data/media-stats'
+import { LinkButton } from '@/components/ui/button'
+import { Send, Sparkles } from 'lucide-react'
 
 export default async function MarketingPage() {
   const user = await verifySession()
@@ -20,21 +22,15 @@ export default async function MarketingPage() {
       user={user}
       currentPath="/marketing"
       pageTitle="Marketing"
-      pageSubtitle="Media library, AI image generation, post composer."
+      pageSubtitle="Generate posts, design pages, and reach your families."
       pageActions={
         <div className="flex items-center gap-2">
-          <a
-            href="/marketing/bulk-send"
-            className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-50"
-          >
-            📨 Bulk send
-          </a>
-          <a
-            href="/marketing/compose"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-sm px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg"
-          >
-            ✏️ Compose post
-          </a>
+          <LinkButton href="/marketing/bulk-send" variant="outline" size="md" icon={Send}>
+            Bulk send
+          </LinkButton>
+          <LinkButton href="/marketing/social" variant="primary" size="md" icon={Sparkles}>
+            AI social post
+          </LinkButton>
         </div>
       }
     >
