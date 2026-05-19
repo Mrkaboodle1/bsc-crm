@@ -11,11 +11,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-// Default Jacky avatar — Ready Player Me "Brunette" model bundled in the
-// TalkingHead demo. To swap her: replace this URL with one you generated
-// at https://readyplayer.me/avatar (must include the morphTargets query).
-const DEFAULT_AVATAR_URL =
-  'https://models.readyplayer.me/64bfa15f0e72c63d7c3934a6.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png'
+// Default Jacky avatar — the TalkingHead demo's "brunette" model, baked
+// into /public/training/jacky.glb so we don't depend on Ready Player Me's
+// (sometimes flaky) avatar CDN. To swap her: generate a new avatar at
+// https://readyplayer.me/avatar, download the .glb, save it as
+// app/public/training/jacky.glb (must include ARKit + Oculus visemes
+// morph targets in the export). License: CC BY-NC 4.0 (non-commercial),
+// which fits internal staff training fine.
+const DEFAULT_AVATAR_URL = '/training/jacky.glb'
 
 type Mood = 'neutral' | 'happy' | 'angry' | 'sad' | 'fear' | 'disgust' | 'love' | 'sleep'
 
