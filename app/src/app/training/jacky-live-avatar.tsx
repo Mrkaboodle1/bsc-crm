@@ -93,12 +93,22 @@ export function JackyLiveAvatar({
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'speaking' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState<number>(0)
+  const [stage, setStage] = useState<string>('Starting')
 
   // Build the TalkingHead instance once on mount, tear it down on unmount.
   useEffect(() => {
     if (!containerRef.current) return
     let cancelled = false
     setStatus('loading')
+    setStage('Loading library')
+
+    // Hard timeout — if we're still loading after 30 s, surface an error
+    // rather than letting the user stare at a spinner forever.
+    const timeoutId = window.setTimeout(() => {
+      if (cancelled) return
+      setError(`Stuck on "${stage}" for 30 s. Hard-refresh (Ctrl+Shift+R) or check the browser console for errors.`)
+      setStatus('error')
+    }, 30000)
 
     ;(async () => {
       try {
@@ -114,8 +124,18 @@ export function JackyLiveAvatar({
           import('@/lib/talkinghead/lipsync-en.mjs'),
         ])
         if (cancelled) return
+        setStage('Building scene')
         const TalkingHead = (thMod as { TalkingHead: new (el: HTMLElement, opts: Record<string, unknown>) => unknown }).TalkingHead
         const LipsyncEn = (lipsyncMod as { LipsyncEn: new () => unknown }).LipsyncEn
+        // Probe the avatar file BEFORE handing it to TalkingHead — gives a
+        // clear "not found" error early instead of a silent hang inside
+        // GLTFLoader.
+        setStage('Fetching avatar')
+        const probe = await fetch(DEFAULT_AVATAR_URL, { method: 'HEAD' })
+        if (!probe.ok) {
+          throw new Error(`Avatar file unavailable (${probe.status}). Try a hard-refresh.`)
+        }
+        if (cancelled) return
         const head = new TalkingHead(containerRef.current!, {
           ttsEndpoint: '',         // we'll use speakAudio() with pre-rendered MP3 — no Google TTS needed
           lipsyncModules: [],      // suppress runtime dynamic import — we register the en module below
@@ -125,6 +145,7 @@ export function JackyLiveAvatar({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(head as any).lipsync = { en: new LipsyncEn() }
         headRef.current = head
+        setStage('Downloading 3D model')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (head as any).showAvatar(
           {
@@ -138,17 +159,20 @@ export function JackyLiveAvatar({
             avatarSpeakingHeadMove: 0.9,
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (_url: string, ev: { lengthComputable: boolean; loaded: number; total: number }) => {
-            if (ev.lengthComputable && ev.total > 0) {
+          (ev: { lengthComputable: boolean; loaded: number; total: number }) => {
+            if (ev?.lengthComputable && ev.total > 0) {
               setProgress(Math.round((ev.loaded / ev.total) * 100))
             }
           },
         )
         if (cancelled) return
+        window.clearTimeout(timeoutId)
+        setStage('Ready')
         setStatus('ready')
       } catch (e) {
         console.error('TalkingHead init failed', e)
         if (!cancelled) {
+          window.clearTimeout(timeoutId)
           setError((e instanceof Error ? e.message : String(e)))
           setStatus('error')
         }
@@ -157,6 +181,7 @@ export function JackyLiveAvatar({
 
     return () => {
       cancelled = true
+      window.clearTimeout(timeoutId)
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(headRef.current as any)?.stop?.()
@@ -234,12 +259,14 @@ export function JackyLiveAvatar({
         style={{ aspectRatio: '16 / 9', minHeight: 340 }}
       />
 
-      {/* Loading overlay */}
+      {/* Loading overlay — shows current stage so the user can tell where
+          it's stuck if it stalls. */}
       {(status === 'loading' || status === 'idle') && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white">
           <div className="text-4xl mb-3 animate-pulse">🎪</div>
           <div className="text-sm font-extrabold">Loading 3D Jacky…</div>
-          <div className="text-xs text-zinc-400 mt-1">{progress > 0 ? `${progress}%` : 'Connecting'}</div>
+          <div className="text-xs text-amber-300 mt-1 font-bold">{stage}</div>
+          {progress > 0 && <div className="text-[11px] text-zinc-400 mt-0.5">{progress}%</div>}
         </div>
       )}
 
