@@ -9,6 +9,7 @@ import { revalidatePath } from 'next/cache'
 import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { type Block, type SiteKind, makeBlock } from '@/lib/sites/blocks'
+import { getTemplate } from '@/lib/sites/templates'
 
 type Result<T = void> = { ok: true; data?: T } | { ok: false; error: string }
 
@@ -141,12 +142,13 @@ export async function setSitePublished(input: { id: string; published: boolean }
 // Pages
 // ────────────────────────────────────────────────────────────────────
 
-export async function createPage(input: { siteId: string; name: string }) {
+export async function createPage(input: { siteId: string; name?: string; templateId?: string }) {
   const user = await verifySession()
   const supabase = await createServerSupabase()
-  const name = input.name.trim()
-  if (!name) return { ok: false, error: 'Name is required' } as Result
-  let slug = slugify(name) || 'page'
+  const tpl = input.templateId ? getTemplate(input.templateId) : null
+  const built = tpl ? tpl.build() : { name: 'New page', slug: 'new-page', blocks: [makeBlock('heading'), makeBlock('paragraph')] }
+  const name = (input.name?.trim()) || built.name
+  let slug = slugify(name) || built.slug || 'page'
   for (let i = 1; i < 25; i++) {
     const { data: exists } = await supabase
       .from('site_pages')
@@ -157,7 +159,6 @@ export async function createPage(input: { siteId: string; name: string }) {
     if (!exists) break
     slug = `${slugify(name) || 'page'}-${i + 1}`
   }
-  // Find current max position so the new page goes at the end of the nav.
   const { data: posRow } = await supabase
     .from('site_pages')
     .select('position')
@@ -175,13 +176,61 @@ export async function createPage(input: { siteId: string; name: string }) {
       name,
       slug,
       position: nextPos,
-      blocks: [makeBlock('heading'), makeBlock('paragraph')],
+      blocks: built.blocks,
     })
     .select('id')
     .single()
   if (error) return { ok: false, error: error.message } as Result
   revalidatePath(`/sites/${input.siteId}`)
   return { ok: true, data: { id: data!.id } } as Result<{ id: string }>
+}
+
+export async function duplicatePage(input: { pageId: string }): Promise<Result<{ id: string }>> {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+  const { data: src, error: srcErr } = await supabase
+    .from('site_pages')
+    .select('site_id, name, blocks, seo_title, seo_description')
+    .eq('id', input.pageId)
+    .eq('tenant_id', user.tenantId)
+    .maybeSingle()
+  if (srcErr || !src) return { ok: false, error: srcErr?.message ?? 'Source page not found' }
+  const name = `${src.name} (copy)`
+  let slug = slugify(name) || 'page'
+  for (let i = 1; i < 25; i++) {
+    const { data: exists } = await supabase
+      .from('site_pages')
+      .select('id')
+      .eq('site_id', src.site_id)
+      .eq('slug', slug)
+      .maybeSingle()
+    if (!exists) break
+    slug = `${slugify(name) || 'page'}-${i + 1}`
+  }
+  const { data: posRow } = await supabase
+    .from('site_pages')
+    .select('position')
+    .eq('site_id', src.site_id)
+    .order('position', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const { data, error } = await supabase
+    .from('site_pages')
+    .insert({
+      tenant_id: user.tenantId,
+      site_id: src.site_id,
+      name,
+      slug,
+      position: (posRow?.position ?? -1) + 1,
+      blocks: src.blocks,
+      seo_title: src.seo_title,
+      seo_description: src.seo_description,
+    })
+    .select('id')
+    .single()
+  if (error) return { ok: false, error: error.message }
+  revalidatePath(`/sites/${src.site_id}`)
+  return { ok: true, data: { id: data!.id } }
 }
 
 export async function savePageBlocks(input: { pageId: string; blocks: Block[]; name?: string; seo_title?: string; seo_description?: string }): Promise<Result> {
