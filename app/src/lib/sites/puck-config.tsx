@@ -11,6 +11,7 @@
 
 import type { Config } from '@measured/puck'
 import { BlockView } from '@/components/sites/block-view'
+import { makeMediaField } from './media-field'
 import type { Block } from './blocks'
 
 // ─────────────────────────────────────────────────────────────
@@ -93,9 +94,9 @@ export const puckConfig: Config = {
     Image: {
       label: 'Image',
       fields: {
-        url:     { type: 'text',     label: 'Image URL' },
-        alt:     { type: 'text',     label: 'Alt text (for screen readers)' },
-        caption: { type: 'text',     label: 'Caption (optional)' },
+        url:     makeMediaField('Image'),
+        alt:     { type: 'text', label: 'Alt text (for screen readers)' },
+        caption: { type: 'text', label: 'Caption (optional)' },
       },
       defaultProps: { url: '/bigstar-logo.png', alt: 'Big Star Circus', caption: '' },
       render: render('image'),
@@ -175,7 +176,7 @@ export const puckConfig: Config = {
       fields: {
         title:    { type: 'text', label: 'Headline' },
         subtitle: { type: 'text', label: 'Subheadline' },
-        image:    { type: 'text', label: 'Background image URL (optional)' },
+        image:    makeMediaField('Background image (optional)'),
         cta: {
           type: 'object',
           label: 'Call-to-action button',

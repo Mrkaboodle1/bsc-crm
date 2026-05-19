@@ -30,6 +30,7 @@ const NAV: NavItem[] = [
 
   { href: '/leads', label: 'Leads', icon: '🎯', section: 'growth' },
   { href: '/sites', label: 'Sites', icon: '🪧', section: 'growth' },
+  { href: '/media', label: 'Media', icon: '🖼️', section: 'growth' },
   { href: '/bookings', label: 'Bookings', icon: '🎉', badge: 'Soon', section: 'growth' },
   { href: '/marketing', label: 'Marketing', icon: '📣', badge: 'Soon', section: 'growth' },
   { href: '/payments', label: 'Payments', icon: '💳', badge: 'Soon', section: 'growth' },
