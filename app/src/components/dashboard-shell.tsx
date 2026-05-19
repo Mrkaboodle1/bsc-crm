@@ -5,6 +5,7 @@
 import type { ReactNode } from 'react'
 import type { BscUser } from '@/lib/dal'
 import { MusicPlayer } from './music-player'
+import { JackyTourMount } from './jacky-tour-mount'
 
 type NavItem = {
   href: string
@@ -173,6 +174,9 @@ export function DashboardShell({
 
       {/* Floating studio music player — clean, ad-free, always on top */}
       <MusicPlayer />
+
+      {/* Floating "tour mode" widget — mounts only when ?tour=<moduleId> */}
+      <JackyTourMount />
     </div>
   )
 }

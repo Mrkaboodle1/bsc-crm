@@ -14,6 +14,7 @@ import { useMemo, useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import type { TrainingModule } from './modules'
 import { submitSupportTicket } from './actions'
+import { getTour } from './tour-scripts'
 
 // TalkingHead touches `window` at parse time — load the live avatar only
 // in the browser. SSR would crash otherwise.
@@ -339,14 +340,25 @@ function ModuleVideoCard({
           <p className="mt-3 text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">{module.script}</p>
         </details>
 
-        {module.tryItPath && (
-          <div className="mt-5">
-            <a
-              href={module.tryItPath}
-              className="inline-block text-sm font-extrabold px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white shadow-md hover:shadow-lg"
-            >
-              Try it now →
-            </a>
+        {/* Try it / Take the tour buttons */}
+        {(module.tryItPath || getTour(module.id)) && (
+          <div className="mt-5 flex items-center gap-2 flex-wrap">
+            {module.tryItPath && (
+              <a
+                href={module.tryItPath}
+                className="inline-block text-sm font-extrabold px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white shadow-md hover:shadow-lg"
+              >
+                Try it now →
+              </a>
+            )}
+            {getTour(module.id) && (
+              <a
+                href={`${getTour(module.id)!.pageHref}?tour=${module.id}`}
+                className="inline-block text-sm font-extrabold px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#FFC107] to-amber-400 text-zinc-900 shadow-md hover:shadow-lg"
+              >
+                🎪 Take the tour with Jacky →
+              </a>
+            )}
           </div>
         )}
       </div>

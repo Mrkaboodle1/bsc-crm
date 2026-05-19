@@ -210,7 +210,8 @@ export default async function DashboardPage() {
         {nextUp && <NextUpBanner item={nextUp} now={now} />}
 
         {/* KPI tiles */}
-        <section className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+        <section data-tour="kpi-row" className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+          <div data-tour="kpi-pending">
           <KpiTile
             icon="✉️"
             label="Pending approval"
@@ -219,6 +220,7 @@ export default async function DashboardPage() {
             href="/inbox?filter=pending"
             pulse={pendingCount > 0}
           />
+          </div>
           <KpiTile
             icon="👨‍👩‍👧"
             label="Families"
@@ -252,7 +254,7 @@ export default async function DashboardPage() {
         {/* Two-column: today's classes + build progress */}
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Today's classes */}
-          <div className="xl:col-span-2">
+          <div data-tour="todays-classes" className="xl:col-span-2">
             <SectionHeader
               title={`Today's classes`}
               subtitle={`${classes.length} on ${DAY_NAMES[today]}`}
@@ -329,7 +331,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Jacky's day card — what the AI did today */}
-            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 text-white rounded-2xl shadow-md p-5">
+            <div data-tour="jacky-today" className="bg-gradient-to-br from-zinc-900 to-zinc-800 text-white rounded-2xl shadow-md p-5">
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h2 className="text-lg font-extrabold flex items-center gap-2">
