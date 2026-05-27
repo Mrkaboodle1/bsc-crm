@@ -10,7 +10,7 @@ import { DashboardShell } from '@/components/dashboard-shell'
 import {
   ShieldCheck, FileText, AlertTriangle, ExternalLink, Printer,
   Users, ClipboardCheck, ScrollText, Flag, ListChecks, BadgeCheck,
-  Siren, Globe, BookOpen, ClipboardList, Compass, ArrowRight,
+  Siren, Globe, BookOpen, ClipboardList, Compass, FileDown,
 } from 'lucide-react'
 
 type DocInfo = {
@@ -229,28 +229,53 @@ function SectionHeader({ section }: { section: Section }) {
 }
 
 function DocRow({ doc }: { doc: DocInfo }) {
+  const docxFile = doc.file.replace(/\.html$/, '.docx')
   return (
-    <a
-      href={`/compliance/${doc.file}`}
-      target="_blank"
-      rel="noreferrer"
-      className="group flex items-center gap-4 bg-white rounded-lg border border-zinc-200 px-4 py-3.5 hover:border-zinc-300 hover:shadow-sm hover:bg-zinc-50 transition-all"
-    >
-      <span className="w-9 h-9 rounded-md bg-red-50 text-[#D72027] flex items-center justify-center shrink-0 ring-1 ring-inset ring-red-100 group-hover:bg-[#D72027] group-hover:text-white group-hover:ring-[#D72027] transition-colors">
-        <doc.Icon size={16} />
-      </span>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2 mb-0.5">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">BSC-CS-{doc.number}</span>
+    <div className="group bg-white rounded-lg border border-zinc-200 px-4 py-3.5 hover:border-zinc-300 hover:shadow-sm transition-all">
+      <div className="flex items-start gap-4">
+        <span className="w-9 h-9 rounded-md bg-red-50 text-[#D72027] flex items-center justify-center shrink-0 ring-1 ring-inset ring-red-100">
+          <doc.Icon size={16} />
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-0.5">
+            BSC-CS-{doc.number}
+          </div>
+          <div className="text-sm font-semibold text-zinc-900 leading-tight">
+            {doc.title}
+          </div>
+          <p className="text-xs text-zinc-500 mt-1 line-clamp-2 leading-snug">{doc.desc}</p>
+
+          <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+            <a
+              href={`/compliance/${doc.file}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-white px-3 py-1.5 rounded-md transition-colors"
+              title="Open document in a new tab"
+            >
+              <ExternalLink size={12} /> Open
+            </a>
+            <a
+              href={`/compliance/${docxFile}`}
+              download
+              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md transition-colors"
+              title="Download as editable Word document"
+            >
+              <FileDown size={12} /> Word
+            </a>
+            <a
+              href={`/compliance/${doc.file}?print=1`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#D72027] hover:bg-[#A0151B] text-white px-3 py-1.5 rounded-md transition-colors"
+              title="Open and trigger Print to PDF"
+              data-print
+            >
+              <Printer size={12} /> Print
+            </a>
+          </div>
         </div>
-        <div className="text-sm font-semibold text-zinc-900 leading-tight group-hover:text-[#D72027] transition-colors">
-          {doc.title}
-        </div>
-        <p className="text-xs text-zinc-500 mt-1 line-clamp-2 leading-snug">{doc.desc}</p>
       </div>
-      <span className="hidden sm:inline-flex shrink-0 text-xs font-semibold text-zinc-400 group-hover:text-[#D72027] items-center gap-1 transition-colors">
-        Open <ArrowRight size={13} />
-      </span>
-    </a>
+    </div>
   )
 }
