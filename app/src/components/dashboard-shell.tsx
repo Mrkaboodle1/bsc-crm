@@ -33,6 +33,7 @@ import {
   Search,
   PartyPopper,
   ShieldCheck,
+  Trophy,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -55,6 +56,7 @@ const NAV: NavItem[] = [
   { href: '/students',      label: 'Students',       Icon: Baby,            section: 'main' },
   { href: '/classes',       label: 'Classes',        Icon: Tent,            section: 'main' },
   { href: '/stars',         label: 'Star Ledger',    Icon: Star,            badge: 'Soon', section: 'main' },
+  { href: '/star-rewards',  label: 'Star Rewards',   Icon: Trophy,          section: 'main' },
 
   { href: '/leads',         label: 'Leads',          Icon: Target,          section: 'growth' },
   { href: '/sites',         label: 'Sites',          Icon: LayoutPanelTop,  section: 'growth' },
