@@ -32,6 +32,13 @@ export async function sendEmail(input: {
     return { ok: false, error: 'RESEND_API_KEY not set' }
   }
 
+  // Defence in depth: Resend rejects with HTTP 422 "Missing html or text"
+  // when both are empty. Catch this here so the caller gets a clear error
+  // instead of an opaque API failure.
+  if (!input.bodyText?.trim() && !input.bodyHtml?.trim()) {
+    return { ok: false, error: 'Email body is empty — refusing to send a blank message' }
+  }
+
   const fromEmail = process.env.ADMIN_FROM_EMAIL || 'admin@bigstarcircus.com.au'
   const fromName = process.env.ADMIN_FROM_NAME || 'Jacky · Big Star Circus'
   const replyTo = input.replyTo || fromEmail

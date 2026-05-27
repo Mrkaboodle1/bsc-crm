@@ -82,13 +82,29 @@ export async function sendApprovedActions(): Promise<{
         if (!action.draft_recipient) {
           throw new Error('Missing recipient')
         }
+        // Reject empty-body drafts BEFORE calling Resend. The API rejects them
+        // with HTTP 422 "Missing html or text", which used to land in our queue
+        // as a confusing repeated failure. Mark the row rejected with a clear
+        // reason so it stops being retried.
+        if (!action.draft_body?.trim()) {
+          await supabase
+            .from('pending_actions')
+            .update({
+              status: 'rejected',
+              rejected_reason: 'Empty body — refusing to send a blank email',
+              delivery_metadata: { auto_rejected: true, reason: 'empty_body' },
+            })
+            .eq('id', action.id)
+          logger.warn({ id: action.id }, '⏭ Skipped — empty draft body')
+          continue
+        }
         const meta = (action.draft_metadata ?? {}) as Record<string, unknown>
         const inReplyToId = typeof meta.in_reply_to === 'string' ? meta.in_reply_to : undefined
 
         const result = await sendEmail({
           to: action.draft_recipient,
           subject: action.draft_subject ?? '(no subject)',
-          bodyText: action.draft_body ?? '',
+          bodyText: action.draft_body,
           inReplyToId,
         })
 
