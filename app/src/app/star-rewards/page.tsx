@@ -8,7 +8,7 @@ import { verifySession } from '@/lib/dal'
 import { DashboardShell } from '@/components/dashboard-shell'
 import {
   Star, ExternalLink, FileText, Trophy, BookOpen, Sparkles,
-  Dumbbell, type LucideIcon,
+  Dumbbell, Printer, type LucideIcon,
 } from 'lucide-react'
 
 type DesignInfo = {
@@ -16,6 +16,7 @@ type DesignInfo = {
   desc: string
   designId: string
   viewUrl: string
+  pdf: string
   pages: number
   Icon: LucideIcon
 }
@@ -40,6 +41,7 @@ const SECTIONS: Section[] = [
         desc: 'Pre-Conditioning + Levels 1–5 + Performance Troupe finale. 7 pages.',
         designId: 'DAGgsy0NeFo',
         viewUrl: 'https://www.canva.com/d/5a0lWtu4Esa6l8v',
+        pdf: 'gymnastic-skill-card',
         pages: 7,
         Icon: Trophy,
       },
@@ -48,6 +50,7 @@ const SECTIONS: Section[] = [
         desc: 'Silks, lyra, trapeze progression. 7 pages.',
         designId: 'DAGTcJAhKgo',
         viewUrl: 'https://www.canva.com/d/ag_CH0J5qN2wFWn',
+        pdf: 'aerial-skill-card',
         pages: 7,
         Icon: Trophy,
       },
@@ -56,6 +59,7 @@ const SECTIONS: Section[] = [
         desc: 'Toss patterns and progression skills. 6 pages.',
         designId: 'DAGRwgwmWb4',
         viewUrl: 'https://www.canva.com/d/mE_43LIw-IlNTQ3',
+        pdf: 'juggling-skill-card',
         pages: 6,
         Icon: Trophy,
       },
@@ -64,6 +68,7 @@ const SECTIONS: Section[] = [
         desc: 'Aerial hoop / lyra progression. 7 pages.',
         designId: 'DAGQHswEo3E',
         viewUrl: 'https://www.canva.com/d/Vrh4dhmcPIc2Cb0',
+        pdf: 'hoops-skill-cards',
         pages: 7,
         Icon: Trophy,
       },
@@ -72,6 +77,7 @@ const SECTIONS: Section[] = [
         desc: 'Flower / devil stick progression. 6 pages.',
         designId: 'DAGRvDjui1w',
         viewUrl: 'https://www.canva.com/d/cmnb9e-AJT-bUhV',
+        pdf: 'flower-stick-skill-cards',
         pages: 6,
         Icon: Trophy,
       },
@@ -88,6 +94,7 @@ const SECTIONS: Section[] = [
         desc: 'Supplementary aerial progression detail. 6 pages.',
         designId: 'DAFpGoqCDw4',
         viewUrl: 'https://www.canva.com/d/xWVQqAnHYYkIbAN',
+        pdf: 'silk-lyra-progress-cards',
         pages: 6,
         Icon: Sparkles,
       },
@@ -96,6 +103,7 @@ const SECTIONS: Section[] = [
         desc: 'Acro pair and group work progression. 10 pages.',
         designId: 'DAGQH2ipfrw',
         viewUrl: 'https://www.canva.com/d/TuCw5KwnL6-xP_f',
+        pdf: 'acrobatics-progress-cards',
         pages: 10,
         Icon: Sparkles,
       },
@@ -104,6 +112,7 @@ const SECTIONS: Section[] = [
         desc: 'Extended juggling progression — every skill broken down. 13 pages.',
         designId: 'DAGNWx57isQ',
         viewUrl: 'https://www.canva.com/d/jADxsYLlmTgNu7d',
+        pdf: 'juggling-progress-cards',
         pages: 13,
         Icon: Sparkles,
       },
@@ -112,6 +121,7 @@ const SECTIONS: Section[] = [
         desc: 'Conditioning challenges to award stars. 4 pages.',
         designId: 'DAGKAoL6nYI',
         viewUrl: 'https://www.canva.com/d/eCColfReqLUyean',
+        pdf: 'strength-challenge-cards',
         pages: 4,
         Icon: Dumbbell,
       },
@@ -128,6 +138,7 @@ const SECTIONS: Section[] = [
         desc: 'The Stars Challenge booklet that families take home. 8 pages.',
         designId: 'DAGxH451IRs',
         viewUrl: 'https://www.canva.com/d/6dAnS_0YOtxEMvb',
+        pdf: 'stars-challenge-book-1',
         pages: 8,
         Icon: BookOpen,
       },
@@ -136,6 +147,7 @@ const SECTIONS: Section[] = [
         desc: 'Large-format studio wall decor for the Star Rewards system. 5 pages.',
         designId: 'DAGh0woAP_w',
         viewUrl: 'https://www.canva.com/d/wD8p859yl58UKIc',
+        pdf: 'a3-decoration',
         pages: 5,
         Icon: FileText,
       },
@@ -256,6 +268,24 @@ function DesignRow({ design }: { design: DesignInfo }) {
               title="Open the original Canva design in a new tab"
             >
               <ExternalLink size={12} /> Open in Canva
+            </a>
+            <a
+              href={`/star-rewards/print.html?file=${design.pdf}.pdf&title=${encodeURIComponent(design.title)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#D72027] hover:bg-[#A0151B] text-white px-3 py-1.5 rounded-md transition-colors"
+              title="Open the PDF and trigger Print straight away"
+            >
+              <Printer size={12} /> Print
+            </a>
+            <a
+              href={`/star-rewards/${design.pdf}.pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md transition-colors"
+              title="Download the PDF"
+            >
+              <FileText size={12} /> PDF
             </a>
           </div>
         </div>

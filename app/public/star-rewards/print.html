@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BigStar Star Reward — Print</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; font-family: system-ui, -apple-system, sans-serif; background: #1a1a1a; color: #fff; }
+  .bar { position: fixed; top: 0; left: 0; right: 0; height: 48px; background: #18181b; border-bottom: 1px solid #2a2a2a; display: flex; align-items: center; gap: 12px; padding: 0 16px; z-index: 10; }
+  .bar h1 { font-size: 14px; font-weight: 600; margin: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar button { background: #D72027; color: #fff; border: 0; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .bar button:hover { background: #A0151B; }
+  .bar a { color: #a1a1aa; text-decoration: none; font-size: 12px; padding: 6px 10px; border-radius: 6px; }
+  .bar a:hover { color: #fff; background: #27272a; }
+  iframe { position: absolute; top: 48px; left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - 48px); border: 0; background: #fff; }
+  .hint { position: fixed; bottom: 16px; right: 16px; background: #18181b; border: 1px solid #2a2a2a; color: #d4d4d8; font-size: 12px; padding: 10px 14px; border-radius: 8px; z-index: 9; max-width: 320px; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1 id="title">Star Reward</h1>
+  <button onclick="doPrint()">🖨 Print</button>
+  <a href="#" id="download" download>Download PDF</a>
+</div>
+<iframe id="pdf" src="" name="pdf"></iframe>
+<div class="hint">
+  If your browser shows the PDF, press <strong>Ctrl + P</strong> (or click 🖨 Print above) to print.
+</div>
+<script>
+  const params = new URLSearchParams(location.search);
+  const file = params.get('file') || '';
+  const title = params.get('title') || 'Star Reward';
+  if (!/^[a-z0-9\-]+\.pdf$/i.test(file)) {
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;">Invalid file.</div>';
+  } else {
+    document.title = title + ' — Print';
+    document.getElementById('title').textContent = title;
+    document.getElementById('pdf').src = file;
+    document.getElementById('download').href = file;
+  }
+  function doPrint() {
+    try {
+      const fr = document.getElementById('pdf');
+      fr.focus();
+      fr.contentWindow.print();
+    } catch (e) {
+      window.print();
+    }
+  }
+  // Try to auto-trigger print once the PDF iframe finishes loading.
+  document.getElementById('pdf').addEventListener('load', function () {
+    setTimeout(doPrint, 800);
+  });
+</script>
+</body>
+</html>
