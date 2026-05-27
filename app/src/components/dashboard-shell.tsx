@@ -32,6 +32,7 @@ import {
   LogOut,
   Search,
   PartyPopper,
+  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -65,6 +66,7 @@ const NAV: NavItem[] = [
 
   { href: '/coaches',       label: 'Coaches',        Icon: Handshake,       badge: 'Soon', section: 'admin' },
   { href: '/training',      label: 'Training',       Icon: GraduationCap,   section: 'admin' },
+  { href: '/compliance',    label: 'Compliance',     Icon: ShieldCheck,     section: 'admin' },
   { href: '/settings',      label: 'Settings',       Icon: Settings,        badge: 'Soon', section: 'admin' },
 ]
 
