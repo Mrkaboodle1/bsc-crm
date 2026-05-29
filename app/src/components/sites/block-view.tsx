@@ -174,8 +174,8 @@ export function BlockView({ block }: { block: Block }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={block.posterUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
           ) : null}
-          {/* Subtle vignette so the white title stays legible over busy artwork */}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(20,10,30,.15) 0%, rgba(20,10,30,.15) 55%, rgba(20,10,30,.75) 100%)', zIndex: 1 }} />
+          {/* Very light vignette only on the title/CTA strip — keeps the sign image bright above. */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 35%, rgba(20,10,30,.45) 75%, rgba(20,10,30,.55) 100%)', zIndex: 1 }} />
           <div style={{ position: 'relative', zIndex: 2, maxWidth: 820, padding: '80px 22px 110px' }}>
             <h1 style={{ fontFamily: FRED, fontSize: 'clamp(40px,7vw,68px)', lineHeight: 1.05, textShadow: '0 3px 18px rgba(0,0,0,.55)', fontWeight: 700 }}>{block.title}</h1>
             {block.subtitle && <p style={{ margin: '18px auto 26px', fontSize: 17, fontWeight: 300, maxWidth: 640, textShadow: '0 1px 8px rgba(0,0,0,.45)' }}>{block.subtitle}</p>}
