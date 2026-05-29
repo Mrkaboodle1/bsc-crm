@@ -20,6 +20,12 @@ const BLOCK_TO_PUCK: Record<Block['type'], string> = {
   cta:       'CtaSection',
   form:      'Form',
   embed:     'Embed',
+  videohero:    'VideoHero',
+  infocards:    'InfoCards',
+  gallery:      'Gallery',
+  band:         'Band',
+  columns:      'Columns',
+  testimonials: 'Testimonials',
 }
 
 const PUCK_TO_BLOCK: Record<string, Block['type']> = Object.fromEntries(

@@ -18,6 +18,13 @@ export type Block =
   | { type: 'cta';       title: string; body?: string; button: { text: string; href: string } }
   | { type: 'form';      title?: string; submit_label?: string; fields: FormField[] }
   | { type: 'embed';     html: string }       // raw HTML escape hatch — use sparingly
+  // ── Bespoke "pixel-exact" blocks (match the bigstarcircus.com.au design) ──
+  | { type: 'videohero'; title: string; subtitle?: string; note?: string; videoUrl?: string; posterUrl?: string; cta?: { text: string; href: string } }
+  | { type: 'infocards'; items: { color?: 'pink' | 'amber' | 'purple'; title: string; body: string }[] }
+  | { type: 'gallery';   images: { url: string; alt?: string }[] }
+  | { type: 'band';      title: string; body?: string; bgUrl?: string; theme?: 'curtain' | 'stage' | 'light'; cta?: { text: string; href: string } }
+  | { type: 'columns';   title?: string; accent?: boolean; items: { title: string; body: string }[]; cta?: { text: string; href: string } }
+  | { type: 'testimonials'; title?: string; bgUrl?: string; items: { quote: string; name: string }[] }
 
 export type FormField =
   | { type: 'text';     name: string; label: string; placeholder?: string; required?: boolean }
@@ -45,6 +52,12 @@ export const BLOCK_LABEL: Record<Block['type'], { icon: string; label: string; g
   cta:       { icon: '🎯', label: 'CTA section', group: 'cta' },
   form:      { icon: '📝', label: 'Form',        group: 'cta' },
   embed:     { icon: '</>', label: 'HTML embed', group: 'advanced' },
+  videohero:    { icon: '🎬', label: 'Video hero',   group: 'layout' },
+  infocards:    { icon: '🃏', label: 'Info cards (3)', group: 'layout' },
+  gallery:      { icon: '🖼', label: 'Photo gallery', group: 'media' },
+  band:         { icon: '🎭', label: 'Feature band',  group: 'layout' },
+  columns:      { icon: '🪧', label: 'Text columns',  group: 'layout' },
+  testimonials: { icon: '⭐', label: 'Testimonials',  group: 'layout' },
 }
 
 // Convenience factories — the editor uses these when the user clicks
@@ -81,6 +94,60 @@ export function makeBlock(type: Block['type']): Block {
       ],
     }
     case 'embed':     return { type: 'embed', html: '<!-- paste any HTML here -->' }
+    case 'videohero': return {
+      type: 'videohero',
+      title: 'Big Star Circus',
+      subtitle: 'We aim at inspiring our students to dream more, learn more, do more, and become more in their respective journeys of life.',
+      note: '3 free trial classes — up to 3 in one week!',
+      videoUrl: '',
+      posterUrl: '/bigstar-logo.png',
+      cta: { text: 'Select a class to trial today!', href: '/contact' },
+    }
+    case 'infocards': return {
+      type: 'infocards',
+      items: [
+        { color: 'pink',   title: 'Free Trial Class', body: 'Try three free trial classes within the same week — circus, aerial, acrobatics and drama.' },
+        { color: 'amber',  title: 'Timetable',        body: 'Classes run Monday to Saturday, plus unforgettable birthday parties on Sundays!' },
+        { color: 'purple', title: 'Prices',           body: 'Options starting at $27 per class, with discounts for siblings and multiple classes.' },
+      ],
+    }
+    case 'gallery': return {
+      type: 'gallery',
+      images: [
+        { url: '/bigstar-logo.png', alt: 'Circus class' },
+        { url: '/bigstar-logo.png', alt: 'Circus class' },
+        { url: '/bigstar-logo.png', alt: 'Circus class' },
+        { url: '/bigstar-logo.png', alt: 'Circus class' },
+      ],
+    }
+    case 'band': return {
+      type: 'band',
+      title: 'Rhett Morrow — Head Coach',
+      body: 'A professional circus artist with over 15 years of experience, performing in Australia and overseas.',
+      theme: 'curtain',
+      bgUrl: '',
+      cta: { text: 'Learn more about us', href: '/about' },
+    }
+    case 'columns': return {
+      type: 'columns',
+      title: 'Types of Classes',
+      accent: true,
+      items: [
+        { title: 'Circus Fusion Classes', body: 'Combine the best of circus arts and fitness, creating a fun, dynamic experience!' },
+        { title: 'Aerial Classes for Kids & Adults', body: 'A thrilling way to build strength, flexibility, and confidence!' },
+        { title: 'Circus Gymnastics', body: 'Master essential skills such as balance, tumbling, handstands, and cartwheels.' },
+      ],
+      cta: { text: 'More about our classes', href: '/classes' },
+    }
+    case 'testimonials': return {
+      type: 'testimonials',
+      title: 'What our families are saying...',
+      bgUrl: '',
+      items: [
+        { quote: 'We’ve had such a wonderful experience with Big Star Circus! In just a few weeks, she’s come out of her shell and absolutely loves it.', name: '— Stephanie W, May 2025' },
+        { quote: 'Seriously fun, engaging circus skills workshop. Our crew had a brilliant time. We are heading back!!!', name: '— Deb and the crew' },
+      ],
+    }
   }
 }
 

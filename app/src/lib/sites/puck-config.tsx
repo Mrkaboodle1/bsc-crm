@@ -58,6 +58,7 @@ function render<T extends Block['type']>(type: T) {
 export const puckConfig: Config = {
   // Categories control the left-hand palette grouping in Puck's editor.
   categories: {
+    bigstar:  { title: '🎪 BigStar sections', components: ['VideoHero', 'InfoCards', 'Gallery', 'Band', 'Columns', 'Testimonials'] },
     text:     { title: '📝 Text',     components: ['Heading', 'Paragraph'] },
     media:    { title: '🖼 Media',    components: ['Image'] },
     cta:      { title: '🎯 CTA',      components: ['Button', 'CtaSection', 'Form'] },
@@ -243,6 +244,149 @@ export const puckConfig: Config = {
       },
       defaultProps: { html: '<!-- paste any HTML here -->' },
       render: render('embed'),
+    },
+
+    // ── BigStar bespoke pixel-exact sections ────────────────
+    VideoHero: {
+      label: '🎬 Video hero',
+      fields: {
+        title:    { type: 'text', label: 'Big headline' },
+        subtitle: { type: 'textarea', label: 'Sub-text' },
+        cta: { type: 'object', label: 'Button', objectFields: {
+          text: { type: 'text', label: 'Button text' },
+          href: { type: 'text', label: 'Link' },
+        } },
+        note:      { type: 'text', label: 'Small note under the button' },
+        videoUrl:  { type: 'text', label: 'Background video link (.mp4)' },
+        posterUrl: makeMediaField('Fallback image (if no video)'),
+      },
+      defaultProps: {
+        title: 'Big Star Circus',
+        subtitle: 'We aim at inspiring our students to dream more, learn more, do more, and become more in their respective journeys of life.',
+        note: '3 free trial classes — up to 3 in one week!',
+        videoUrl: '', posterUrl: '/bigstar-logo.png',
+        cta: { text: 'Select a class to trial today!', href: '/contact' },
+      },
+      render: render('videohero'),
+    },
+    InfoCards: {
+      label: '🃏 Info cards (3)',
+      fields: {
+        items: {
+          type: 'array', label: 'Cards',
+          arrayFields: {
+            color: { type: 'select', label: 'Icon colour', options: [
+              { label: 'Pink', value: 'pink' }, { label: 'Amber', value: 'amber' }, { label: 'Purple', value: 'purple' },
+            ] },
+            title: { type: 'text', label: 'Title' },
+            body:  { type: 'textarea', label: 'Text' },
+          },
+          getItemSummary: (item: { title?: string }) => item.title ?? 'Card',
+          defaultItemProps: { color: 'pink', title: 'New card', body: 'Describe it.' },
+        },
+      },
+      defaultProps: { items: [
+        { color: 'pink',   title: 'Free Trial Class', body: 'Try three free trial classes within the same week.' },
+        { color: 'amber',  title: 'Timetable',        body: 'Classes run Monday to Saturday, parties on Sundays!' },
+        { color: 'purple', title: 'Prices',           body: 'From $27 per class, with sibling discounts.' },
+      ] },
+      render: render('infocards'),
+    },
+    Gallery: {
+      label: '🖼 Photo gallery',
+      fields: {
+        images: {
+          type: 'array', label: 'Photos',
+          arrayFields: {
+            url: makeMediaField('Photo'),
+            alt: { type: 'text', label: 'Description (for screen readers)' },
+          },
+          getItemSummary: () => 'Photo',
+          defaultItemProps: { url: '/bigstar-logo.png', alt: '' },
+        },
+      },
+      defaultProps: { images: [{ url: '/bigstar-logo.png', alt: '' }] },
+      render: render('gallery'),
+    },
+    Band: {
+      label: '🎭 Feature band',
+      fields: {
+        title: { type: 'text', label: 'Heading' },
+        body:  { type: 'textarea', label: 'Text' },
+        theme: { type: 'select', label: 'Style', options: [
+          { label: 'Dark curtain', value: 'curtain' },
+          { label: 'Dark stage',   value: 'stage' },
+          { label: 'Light',        value: 'light' },
+        ] },
+        bgUrl: makeMediaField('Background image (optional)'),
+        cta: { type: 'object', label: 'Button (optional)', objectFields: {
+          text: { type: 'text', label: 'Button text' },
+          href: { type: 'text', label: 'Link' },
+        } },
+      },
+      defaultProps: {
+        title: 'Rhett Morrow — Head Coach',
+        body: 'A professional circus artist with over 15 years of experience, performing in Australia and overseas.',
+        theme: 'curtain', bgUrl: '',
+        cta: { text: 'Learn more about us', href: '/about' },
+      },
+      render: render('band'),
+    },
+    Columns: {
+      label: '🪧 Text columns',
+      fields: {
+        title:  { type: 'text', label: 'Section title' },
+        accent: { type: 'radio', label: 'Red titles?', options: [
+          { label: 'Yes', value: true }, { label: 'No', value: false },
+        ] },
+        items: {
+          type: 'array', label: 'Columns',
+          arrayFields: {
+            title: { type: 'text', label: 'Title' },
+            body:  { type: 'textarea', label: 'Text' },
+          },
+          getItemSummary: (item: { title?: string }) => item.title ?? 'Column',
+          defaultItemProps: { title: 'New column', body: 'Describe it.' },
+        },
+        cta: { type: 'object', label: 'Button (optional)', objectFields: {
+          text: { type: 'text', label: 'Button text' },
+          href: { type: 'text', label: 'Link' },
+        } },
+      },
+      defaultProps: {
+        title: 'Types of Classes', accent: true,
+        items: [
+          { title: 'Circus Fusion Classes', body: 'Circus arts and fitness combined into a fun, dynamic experience.' },
+          { title: 'Aerial Classes for Kids & Adults', body: 'A thrilling way to build strength, flexibility and confidence.' },
+          { title: 'Circus Gymnastics', body: 'Master balance, tumbling, handstands and cartwheels.' },
+        ],
+        cta: { text: 'More about our classes', href: '/classes' },
+      },
+      render: render('columns'),
+    },
+    Testimonials: {
+      label: '⭐ Testimonials',
+      fields: {
+        title: { type: 'text', label: 'Heading' },
+        bgUrl: makeMediaField('Background image (optional)'),
+        items: {
+          type: 'array', label: 'Quotes',
+          arrayFields: {
+            quote: { type: 'textarea', label: 'Quote' },
+            name:  { type: 'text', label: 'Name' },
+          },
+          getItemSummary: (item: { name?: string }) => item.name ?? 'Quote',
+          defaultItemProps: { quote: 'They loved it!', name: '— A happy parent' },
+        },
+      },
+      defaultProps: {
+        title: 'What our families are saying...', bgUrl: '',
+        items: [
+          { quote: 'We’ve had such a wonderful experience with Big Star Circus! In just a few weeks she’s come out of her shell.', name: '— Stephanie W, May 2025' },
+          { quote: 'Seriously fun, engaging circus skills workshop. We are heading back!!!', name: '— Deb and the crew' },
+        ],
+      },
+      render: render('testimonials'),
     },
   },
 }

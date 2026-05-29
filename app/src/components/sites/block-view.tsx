@@ -5,6 +5,20 @@
 
 import type { Block, FormField } from '@/lib/sites/blocks'
 
+// ── Shared styling for the bespoke "pixel-exact" blocks ──
+const FRED = "'Fredoka', system-ui, sans-serif"
+const RED = '#E5392B'
+const BTN: React.CSSProperties = {
+  display: 'inline-block', background: RED, color: '#fff', fontFamily: FRED, fontWeight: 600,
+  letterSpacing: '0.5px', textTransform: 'uppercase', padding: '14px 30px', borderRadius: 40,
+  fontSize: 15, boxShadow: '0 8px 20px rgba(229,57,43,.35)',
+}
+const CARD_COLORS: Record<'pink' | 'amber' | 'purple', string> = { pink: '#EC4899', amber: '#F7A823', purple: '#8B5CF6' }
+// Loads the Fredoka + Poppins fonts once (duplicate @imports are de-duped by the browser).
+function Fonts() {
+  return <style dangerouslySetInnerHTML={{ __html: "@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@300;400;600;700&display=swap');" }} />
+}
+
 export function BlockView({ block }: { block: Block }) {
   switch (block.type) {
     case 'heading': {
@@ -142,6 +156,114 @@ export function BlockView({ block }: { block: Block }) {
       // Trusted because only tenant admins can edit pages, but we still
       // wrap it so it doesn't break the layout if the HTML is malformed.
       return <div className="my-4" dangerouslySetInnerHTML={{ __html: block.html }} />
+
+    // ── Bespoke pixel-exact blocks ──────────────────────────
+    case 'videohero':
+      return (
+        <section style={{ position: 'relative', minHeight: 560, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#fff', overflow: 'hidden', background: '#1a0f24' }}>
+          <Fonts />
+          {block.videoUrl ? (
+            <video autoPlay loop muted playsInline poster={block.posterUrl || undefined}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }}>
+              <source src={block.videoUrl} type="video/mp4" />
+            </video>
+          ) : block.posterUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={block.posterUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
+          ) : null}
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(20,10,30,.5)', zIndex: 1 }} />
+          <div style={{ position: 'relative', zIndex: 2, maxWidth: 760, padding: '64px 22px' }}>
+            <h1 style={{ fontFamily: FRED, fontSize: 'clamp(40px,7vw,62px)', lineHeight: 1.05, textShadow: '0 3px 18px rgba(0,0,0,.4)', fontWeight: 600 }}>{block.title}</h1>
+            {block.subtitle && <p style={{ margin: '18px auto 26px', fontSize: 18, fontWeight: 300, maxWidth: 640 }}>{block.subtitle}</p>}
+            {block.cta && <a href={block.cta.href} style={BTN}>{block.cta.text}</a>}
+            {block.note && <div style={{ marginTop: 14, fontFamily: FRED, letterSpacing: '1px', fontSize: 13, textTransform: 'uppercase' }}>{block.note}</div>}
+          </div>
+        </section>
+      )
+
+    case 'infocards':
+      return (
+        <section style={{ padding: '0 22px' }}>
+          <Fonts />
+          <div style={{ maxWidth: 1140, margin: '-70px auto 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 26, position: 'relative', zIndex: 5 }}>
+            {block.items.map((it, i) => (
+              <div key={i} style={{ background: '#fff', borderRadius: 20, boxShadow: '0 18px 40px rgba(0,0,0,.10)', padding: '34px 26px', textAlign: 'center' }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 16px', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 26, background: CARD_COLORS[it.color ?? 'pink'] }}>★</div>
+                <h3 style={{ fontFamily: FRED, fontSize: 21, marginBottom: 10, color: '#2b2b2b' }}>{it.title}</h3>
+                <p style={{ fontSize: 15, color: '#6b6b6b', lineHeight: 1.6 }}>{it.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )
+
+    case 'gallery':
+      return (
+        <section style={{ maxWidth: 1140, margin: '0 auto', padding: '10px 22px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14 }}>
+            {block.images.map((im, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} src={im.url} alt={im.alt ?? ''} style={{ height: 210, width: '100%', objectFit: 'cover', borderRadius: 14 }} />
+            ))}
+          </div>
+        </section>
+      )
+
+    case 'band': {
+      const dark = block.theme !== 'light'
+      return (
+        <section style={{
+          position: 'relative', padding: '66px 22px', textAlign: 'center', color: dark ? '#fff' : '#2b2b2b',
+          backgroundColor: dark ? '#1a0f24' : 'transparent',
+          backgroundImage: block.bgUrl ? `linear-gradient(rgba(15,8,20,.62),rgba(15,8,20,.62)),url(${block.bgUrl})` : undefined,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+        }}>
+          <Fonts />
+          <div style={{ maxWidth: 820, margin: '0 auto', position: 'relative', zIndex: 2 }}>
+            <h2 style={{ fontFamily: FRED, fontSize: 'clamp(28px,5vw,40px)', marginBottom: 16, fontWeight: 600 }}>{block.title}</h2>
+            {block.body && <p style={{ fontWeight: 300, maxWidth: 760, margin: '0 auto 14px' }}>{block.body}</p>}
+            {block.cta && <a href={block.cta.href} style={{ ...BTN, marginTop: 22 }}>{block.cta.text}</a>}
+          </div>
+        </section>
+      )
+    }
+
+    case 'columns':
+      return (
+        <section style={{ padding: '56px 22px' }}>
+          <Fonts />
+          {block.title && <h2 style={{ fontFamily: FRED, fontSize: 'clamp(28px,5vw,40px)', textAlign: 'center', marginBottom: 14, color: '#2b2b2b', fontWeight: 600 }}>{block.title}</h2>}
+          <div style={{ maxWidth: 1040, margin: '30px auto 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 34, textAlign: 'center' }}>
+            {block.items.map((it, i) => (
+              <div key={i}>
+                <h3 style={{ fontFamily: FRED, fontSize: 20, marginBottom: 8, color: block.accent ? RED : '#2b2b2b' }}>{it.title}</h3>
+                <p style={{ fontSize: 15, color: '#6b6b6b', lineHeight: 1.6 }}>{it.body}</p>
+              </div>
+            ))}
+          </div>
+          {block.cta && <p style={{ textAlign: 'center', marginTop: 34 }}><a href={block.cta.href} style={BTN}>{block.cta.text}</a></p>}
+        </section>
+      )
+
+    case 'testimonials':
+      return (
+        <section style={{
+          position: 'relative', padding: '70px 22px', textAlign: 'center', color: '#fff', backgroundColor: '#1a0f24',
+          backgroundImage: block.bgUrl ? `linear-gradient(rgba(15,8,20,.66),rgba(15,8,20,.66)),url(${block.bgUrl})` : undefined,
+          backgroundSize: 'cover', backgroundPosition: 'center',
+        }}>
+          <Fonts />
+          <div style={{ maxWidth: 820, margin: '0 auto' }}>
+            {block.title && <h2 style={{ fontFamily: FRED, fontSize: 'clamp(28px,5vw,40px)', marginBottom: 24, fontWeight: 600 }}>{block.title}</h2>}
+            {block.items.map((t, i) => (
+              <div key={i} style={{ marginBottom: 26 }}>
+                <p style={{ fontStyle: 'italic', fontWeight: 300, fontSize: 17, maxWidth: 760, margin: '0 auto 8px' }}>&ldquo;{t.quote}&rdquo;</p>
+                <div style={{ fontFamily: FRED, fontSize: 15 }}>{t.name}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )
 
     default:
       return null

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Big Star Circus Australia | Kids Circus Training &amp; Classes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#E5392B; --red-dark:#c72b1f; --ink:#2b2b2b; --muted:#6b6b6b;
+    --pink:#EC4899; --amber:#F7A823; --purple:#8B5CF6; --grey:#f4f4f6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Poppins',system-ui,sans-serif;color:var(--ink);line-height:1.6;background:#fff}
+  h1,h2,h3,.display{font-family:'Fredoka',sans-serif;font-weight:600;line-height:1.1}
+  img{max-width:100%;display:block}
+  a{text-decoration:none;color:inherit}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 22px}
+  .btn{display:inline-block;background:var(--red);color:#fff;font-family:'Fredoka',sans-serif;font-weight:600;
+    letter-spacing:.5px;text-transform:uppercase;padding:14px 30px;border-radius:40px;font-size:15px;
+    box-shadow:0 8px 20px rgba(229,57,43,.35);transition:.2s}
+  .btn:hover{background:var(--red-dark);transform:translateY(-2px)}
+
+  /* header */
+  header{position:sticky;top:0;z-index:50;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:74px}
+  .nav .logo{display:flex;align-items:center;gap:10px;font-family:'Fredoka';font-weight:700;font-size:20px;color:var(--ink)}
+  .nav .logo img{height:46px;width:auto}
+  .menu{display:flex;align-items:center;gap:26px;font-weight:500;font-size:15px}
+  .menu a:hover{color:var(--red)}
+  .has-sub{position:relative}
+  .has-sub .sub{position:absolute;top:140%;left:50%;transform:translateX(-50%);background:#fff;
+    box-shadow:0 12px 30px rgba(0,0,0,.12);border-radius:12px;padding:10px 0;min-width:230px;display:none}
+  .has-sub:hover .sub{display:block}
+  .sub a{display:block;padding:9px 20px;font-size:14px;white-space:nowrap}
+  .sub a:hover{background:var(--grey);color:var(--red)}
+  .nav .cta{background:var(--red);color:#fff;padding:9px 20px;border-radius:30px;font-family:'Fredoka';text-transform:uppercase;font-size:13px}
+  .burger{display:none}
+
+  /* hero */
+  .hero{position:relative;min-height:560px;display:flex;align-items:center;color:#fff;text-align:center;overflow:hidden;background:#1a0f24}
+  .hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .hero-overlay{position:absolute;inset:0;background:rgba(20,10,30,.5);z-index:1}
+  .hero .wrap{position:relative;z-index:2}
+  .hero h1{font-size:62px;text-shadow:0 3px 18px rgba(0,0,0,.4)}
+  .hero p{max-width:640px;margin:18px auto 26px;font-size:18px;font-weight:300}
+  .hero .note{margin-top:14px;font-family:'Fredoka';letter-spacing:1px;font-size:13px;text-transform:uppercase;opacity:.95}
+  .wave{position:absolute;bottom:-1px;left:0;width:100%;line-height:0}
+  .wave svg{width:100%;height:70px;display:block}
+
+  /* cards */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin:-90px auto 0;position:relative;z-index:5}
+  .card{background:#fff;border-radius:20px;box-shadow:0 18px 40px rgba(0,0,0,.10);padding:34px 26px;text-align:center}
+  .card .ic{width:64px;height:64px;border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;color:#fff;font-size:26px}
+  .card h3{font-size:21px;margin-bottom:10px}
+  .card p{font-size:14.5px;color:var(--muted)}
+
+  section{padding:66px 0}
+  .center{text-align:center}
+  .section-title{font-size:40px;text-align:center;margin-bottom:14px}
+  .lead{max-width:780px;margin:0 auto;text-align:center;color:var(--muted);font-size:16.5px}
+
+  /* gallery */
+  .gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:36px}
+  .gallery img{height:210px;width:100%;object-fit:cover;border-radius:14px}
+
+  /* dark feature (coach / testimonials) */
+  .dark{position:relative;color:#fff;text-align:center;
+    background-position:center;background-size:cover}
+  .dark::before{content:"";position:absolute;inset:0;background:rgba(15,8,20,.62)}
+  .dark .wrap{position:relative;z-index:2}
+  .coach{background-image:url('https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/tcTQ0YAEe18cHYOvkXS8/media/6734447517f51a06729a5d98.jpeg')}
+  .stage{background-image:url('https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/tcTQ0YAEe18cHYOvkXS8/media/67344865e92102861a33e294.jpeg')}
+  .dark h2{font-size:40px;margin-bottom:18px}
+  .dark p{max-width:780px;margin:0 auto 14px;font-weight:300}
+  .dark .btn{margin-top:22px}
+
+  /* classes */
+  .grey{background:var(--grey)}
+  .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:34px;margin-top:40px;text-align:center}
+  .cols3 h3{font-size:20px;margin-bottom:8px;color:var(--red)}
+  .cols3 p{font-size:15px;color:var(--muted)}
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-top:46px}
+  .feature h3{font-size:18px;margin-bottom:8px}
+  .feature p{font-size:14.5px;color:var(--muted)}
+
+  /* testimonials */
+  .quote{font-size:17px;font-style:italic;max-width:760px;margin:0 auto 8px;font-weight:300}
+  .qname{font-family:'Fredoka';margin:6px 0 30px;font-size:15px}
+
+  /* footer */
+  footer{background:#fff;border-top:1px solid #eee;padding:54px 0 30px}
+  .fcols{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:30px}
+  .fcols h4{font-family:'Fredoka';font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:14px}
+  .fcols a,.fcols p{display:block;font-size:14px;color:var(--muted);margin-bottom:8px}
+  .fcols a:hover{color:var(--red)}
+  .social{display:flex;gap:12px}
+  .social img{height:30px;width:30px}
+  .copyright{text-align:center;color:#aaa;font-size:13px;margin-top:34px}
+  .flogo img{height:74px}
+
+  @media(max-width:880px){
+    .menu{display:none}
+    .hero h1{font-size:40px}
+    .cards,.gallery,.cols3,.features,.fcols{grid-template-columns:1fr}
+    .gallery img{height:240px}
+    .section-title,.dark h2{font-size:30px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#"><img src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/tcTQ0YAEe18cHYOvkXS8/media/6644936643640997b6e75841.png" alt="Big Star Circus"> Big Star Circus</a>
+    <nav class="menu">
+      <a href="#">Home</a>
+      <a href="#about">About Us</a>
+      <a href="#trial">Free Trial</a>
+      <span class="has-sub"><a href="#classes">What We Offer ▾</a>
+        <span class="sub">
+          <a href="#">Birthday Party</a>
+          <a href="#">Weekly Classes</a>
+          <a href="#">School Holidays</a>
+          <a href="#">Kids Night Out</a>
+          <a href="#">Talent Show</a>
+          <a href="#">Bubby &amp; Me Toddler Circus</a>
+          <a href="#">Homeschool Classes</a>
+        </span>
+      </span>
+      <a href="#prices">Prices</a>
+      <a href="#contact">Contact Us</a>
+    </nav>
+    <a class="cta" href="#trial">Free Trial</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <video class="hero-bg" autoplay loop muted playsinline
+    poster="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/tcTQ0YAEe18cHYOvkXS8/media/673441806d27471a26e30f68.png">
+    <source src="https://storage.googleapis.com/msgsndr/tcTQ0YAEe18cHYOvkXS8/media/66308026fa4b8a0505bfa6cb.mp4" type="video/mp4">
+  </video>
+  <div class="hero-overlay"></div>
+  <div class="wrap">
+    <h1>Big Star Circus</h1>
+    <p>We aim at inspiring our students to dream more, learn more, do more, and become more in their respective journeys of life.</p>
+    <a class="btn" href="#trial">Select a class to trial today!</a>
+    <div class="note">3 free trial classes — up to 3 in one week!</div>
+  </div>
+  <div class="wave"><svg viewBox="0 0 1440 70" preserveAspectRatio="none"><path fill="#ffffff" d="M0,40 C240,75 480,5 720,30 C960,55 1200,75 1440,35 L1440,70 L0,70 Z"></path></svg></div>
+</div>
+
+<!-- 3 CARDS -->
+<div class="wrap">
+  <div class="cards">
+    <div class="card">
+      <div class="ic" style="background:var(--pink)">✎</div>
+      <h3>Free Trial Class</h3>
+      <p>At BigStar Circus, we offer an exciting range of classes, including circus, aerial, acrobatics, and drama. We want your children to explore their passions and discover what they love. That's why we're inviting them to try three free trial classes within the same week!</p>
+    </div>
+    <div class="card">
+      <div class="ic" style="background:var(--amber)">🗓</div>
+      <h3>Timetable</h3>
+      <p>Our classes run from Monday to Saturday, offering a variety of options in circus, aerial, acrobatics, and drama. Plus, we host unforgettable birthday parties on Sundays!</p>
+    </div>
+    <div class="card">
+      <div class="ic" style="background:var(--purple)">$</div>
+      <h3>Prices</h3>
+      <p>Our classes are affordably priced to fit your needs, with options starting at $27 per class. We also offer discounts for siblings and multiple classes, ensuring your family gets the best value while enjoying the fun from Monday to Saturday.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="wrap">
+    <h2 class="section-title">About Us</h2>
+    <p class="lead">At Bigstar Circus, our vision is to ignite the spark of imagination in every individual, empowering them to dream, believe, and achieve extraordinary feats. Our team of seasoned professionals, deeply rooted in the circus world, are committed to nurturing the skills needed for a stellar journey in the performing arts. Nestled in the lively northern end of the Gold Coast, Bigstar Circus has become the go-to destination for those seeking an innovative and exhilarating circus education.</p>
+    <div class="gallery">
+      <img src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://storage.googleapis.com/msgsndr/tcTQ0YAEe18cHYOvkXS8/media/6758d8fcda8c39cfe73f89c1.jpeg" alt="Circus class">
+      <img src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://storage.googleapis.com/msgsndr/tcTQ0YAEe18cHYOvkXS8/media/6758d8fcb5c094bb795232b8.jpeg" alt="Circus class">
+      <img src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://storage.googleapis.com/msgsndr/tcTQ0YAEe18cHYOvkXS8/media/6758d8fcda8c3925e23f89c0.jpeg" alt="Circus class">
+      <img src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://storage.googleapis.com/msgsndr/tcTQ0YAEe18cHYOvkXS8/media/6758d8fca7758c062937e988.jpeg" alt="Circus class">
+    </div>
+  </div>
+</section>
+
+<!-- COACH -->
+<section class="dark coach">
+  <div class="wrap">
+    <h2>Rhett Morrow — Head Coach</h2>
+    <p>Born into a family that owned a theatre entertainment restaurant, he grew up amidst the glam and glitter of various forms of Performing Arts. However, it was the thrill and excitement of the circus that truly captured his attention. As a professional circus artist with over 15 years of experience, he has performed locally in Australia and overseas, securing victories at the Australian Street Entertainment Championships in 2015 and 2017. Trained at the renowned International Circus School Beijing, he has been part of various productions such as "Aqua Voyage" in Ocean Park Hong Kong and "The Jungle Book" in Singapore and on Carnival Cruise Line and P&amp;O Cruises.</p>
+    <a class="btn" href="#about">Learn more about us</a>
+  </div>
+</section>
+
+<!-- CIRCUS SPACE -->
+<section class="center">
+  <div class="wrap">
+    <h2 class="section-title">The Circus Space</h2>
+    <p class="lead">Welcome to our circus space! Our facility is a vibrant and colorful space that embodies the spirit of the circus. As you enter, you'll immediately notice the bright colors and whimsical decorations that create a fun and exciting atmosphere.</p>
+    <p style="margin-top:26px"><a class="btn" href="#trial">Join today — free trial</a></p>
+  </div>
+</section>
+
+<!-- CLASSES -->
+<section id="classes" class="grey">
+  <div class="wrap">
+    <h2 class="section-title">Types of Classes</h2>
+    <div class="cols3">
+      <div>
+        <h3>Circus Fusion Classes</h3>
+        <p>Our Circus Fusion classes combine the best of circus arts and fitness, creating a fun, dynamic experience!</p>
+      </div>
+      <div>
+        <h3>Aerial Classes for Kids &amp; Adults</h3>
+        <p>Our Aerial classes offer a thrilling way to build strength, flexibility, and confidence!</p>
+      </div>
+      <div>
+        <h3>Circus Gymnastics</h3>
+        <p>Our beginner gymnastics classes are designed to help students master essential skills such as balance, tumbling, handstands, and cartwheels.</p>
+      </div>
+    </div>
+    <p class="center" style="margin-top:34px"><a class="btn" href="#classes">More about our classes</a></p>
+
+    <div class="features">
+      <div class="feature">
+        <h3>Unlock Confidence Through Play</h3>
+        <p>At Big Star Circus, kids learn more than just circus tricks – they build self-confidence! Through fun, interactive exercises like juggling, acrobatics, and aerial silks, children are encouraged to step out of their comfort zones in a supportive environment, discovering the joy of achieving new skills.</p>
+      </div>
+      <div class="feature">
+        <h3>Nurture Creativity and Teamwork</h3>
+        <p>Our classes are designed to spark creativity and foster collaboration. Children work together to perform routines, develop problem-solving skills, and communicate effectively. Big Star Circus teaches kids how to think on their feet and work as a team, essential skills for life beyond the circus ring!</p>
+      </div>
+      <div class="feature">
+        <h3>Strength, Balance &amp; Coordination</h3>
+        <p>Every movement, flip, and swing helps develop strength, balance, and coordination. Our expert instructors guide kids through safe, progressive activities that improve physical fitness and encourage a healthy lifestyle. At Big Star Circus, fitness becomes an exciting adventure!</p>
+      </div>
+    </div>
+    <p class="center" style="margin-top:38px"><a class="btn" href="#trial">Enroll</a></p>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="dark stage">
+  <div class="wrap">
+    <h2>What our families are saying...</h2>
+    <p class="quote">"5 Stars!! We've had such a wonderful experience with Big Star Circus! Rhett, Lauren, and the whole team have been incredibly supportive and welcoming, helping my daughter transition into something completely new. In just a few weeks, we've seen such a positive change — she's come out of her shell and absolutely loves the circus gymnastics and circus fusion classes. Normally she's very shy, but she's really found something here that keeps her engaged and excited. We're so grateful for the care, enthusiasm, and encouragement from the entire Big Star team!"</p>
+    <div class="qname">— Stephanie W, May 2025</div>
+    <p class="quote">"Seriously fun, engaging circus skills workshop. Our crew had a brilliant time and performed skills we didn't know we could do! Great for young adults, youth and kids. Would be a great party venue too. We are heading back!!! Rhett you are a great trainer and seriously nice guy."</p>
+    <div class="qname">— Deb and the crew</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer id="contact">
+  <div class="wrap">
+    <div class="fcols">
+      <div class="flogo">
+        <img src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/tcTQ0YAEe18cHYOvkXS8/media/6644936643640997b6e75841.png" alt="Big Star Circus">
+      </div>
+      <div>
+        <h4>Our Company</h4>
+        <a href="#about">About Us</a>
+        <a href="#classes">Classes</a>
+        <a href="#prices">Prices</a>
+        <a href="#contact">Contact Us</a>
+      </div>
+      <div>
+        <h4>Find Us</h4>
+        <p>Unit 1/14 Harper St,<br>Molendinar QLD 4214</p>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <a href="#">Terms of Use</a>
+        <a href="#">Make Up Class Policy</a>
+        <a href="#">Terms of Service</a>
+        <h4 style="margin-top:18px">Follow Us</h4>
+        <div class="social">
+          <a href="#"><img src="https://stcdn.leadconnectorhq.com/funnel/icons/square/facebook-square.svg" alt="Facebook"></a>
+          <a href="#"><img src="https://stcdn.leadconnectorhq.com/funnel/icons/square/instagram-square.svg" alt="Instagram"></a>
+          <a href="#"><img src="https://stcdn.leadconnectorhq.com/funnel/icons/square/youtube-square.svg" alt="YouTube"></a>
+        </div>
+      </div>
+    </div>
+    <div class="copyright">© Big Star Circus Australia — rebuilt preview by BIGSTAR HQ. Forms will connect to your CRM.</div>
+  </div>
+</footer>
+
+</body>
+</html>
