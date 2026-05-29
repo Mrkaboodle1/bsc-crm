@@ -25,6 +25,9 @@ export type Block =
   | { type: 'band';      title: string; body?: string; bgUrl?: string; theme?: 'curtain' | 'stage' | 'light'; cta?: { text: string; href: string } }
   | { type: 'columns';   title?: string; accent?: boolean; items: { title: string; body: string }[]; cta?: { text: string; href: string } }
   | { type: 'testimonials'; title?: string; bgUrl?: string; items: { quote: string; name: string }[] }
+  | { type: 'navbar';    logo?: string; menu: { label: string; href: string; children?: { label: string; href: string }[] }[]; cta?: { text: string; href: string } }
+  | { type: 'footer';    logo?: string; tagline?: string; columns: { title: string; links: { label: string; href: string }[] }[]; address?: string; phone?: string; socials?: { kind: 'facebook' | 'instagram' | 'youtube' | 'tiktok'; href: string }[]; copyright?: string }
+  | { type: 'pagehero';  title: string; subtitle?: string; bgUrl?: string }
 
 export type FormField =
   | { type: 'text';     name: string; label: string; placeholder?: string; required?: boolean }
@@ -58,6 +61,9 @@ export const BLOCK_LABEL: Record<Block['type'], { icon: string; label: string; g
   band:         { icon: '🎭', label: 'Feature band',  group: 'layout' },
   columns:      { icon: '🪧', label: 'Text columns',  group: 'layout' },
   testimonials: { icon: '⭐', label: 'Testimonials',  group: 'layout' },
+  navbar:       { icon: '🧭', label: 'Top menu bar',  group: 'layout' },
+  footer:       { icon: '🦶', label: 'Footer',        group: 'layout' },
+  pagehero:     { icon: '🏷', label: 'Page banner',   group: 'layout' },
 }
 
 // Convenience factories — the editor uses these when the user clicks
@@ -148,6 +154,51 @@ export function makeBlock(type: Block['type']): Block {
         { quote: 'Seriously fun, engaging circus skills workshop. Our crew had a brilliant time. We are heading back!!!', name: '— Deb and the crew' },
       ],
     }
+    case 'navbar': return {
+      type: 'navbar',
+      logo: '/bigstar-logo.png',
+      menu: [
+        { label: 'Home',         href: '/s/bigstar' },
+        { label: 'About Us',     href: '/s/bigstar/about' },
+        { label: 'Free Trial',   href: '/s/bigstar/free-trial' },
+        { label: 'What We Offer', href: '#', children: [
+          { label: 'Birthday Party',           href: '/s/bigstar/birthday-party' },
+          { label: 'Weekly Classes',           href: '/s/bigstar/weekly-classes' },
+          { label: 'School Holidays',          href: '/s/bigstar/school-holidays' },
+          { label: 'Kids Night Out',           href: '/s/bigstar/kids-night-out' },
+          { label: 'Talent Show',              href: '/s/bigstar/talent-show' },
+          { label: 'Bubby & Me Toddler Circus', href: '/s/bigstar/bubby-me' },
+          { label: 'Homeschool Classes',       href: '/s/bigstar/homeschool' },
+        ] },
+        { label: 'Prices',     href: '/s/bigstar/prices' },
+        { label: 'Contact Us', href: '/s/bigstar/contact' },
+      ],
+    }
+    case 'footer': return {
+      type: 'footer',
+      logo: '/bigstar-logo.png',
+      tagline: 'Inspiring young performers across the Gold Coast.',
+      columns: [
+        { title: 'Explore', links: [
+          { label: 'About Us',    href: '/s/bigstar/about' },
+          { label: 'Prices',      href: '/s/bigstar/prices' },
+          { label: 'Contact Us',  href: '/s/bigstar/contact' },
+        ] },
+        { title: 'Policies', links: [
+          { label: 'Terms of Use',         href: '/s/bigstar/terms-of-use' },
+          { label: 'Make-Up Class Policy', href: '/s/bigstar/makeup-policy' },
+          { label: 'Terms of Service',     href: '/s/bigstar/terms-of-service' },
+        ] },
+      ],
+      address: 'Unit 1/14 Harper St, Molendinar QLD 4214',
+      socials: [
+        { kind: 'facebook',  href: 'https://www.facebook.com/bigstarcircus' },
+        { kind: 'instagram', href: 'https://www.instagram.com/bigstarcircus' },
+        { kind: 'youtube',   href: 'https://www.youtube.com/@bigstarcircus' },
+      ],
+      copyright: '© Big Star Circus. All rights reserved.',
+    }
+    case 'pagehero': return { type: 'pagehero', title: 'About Us', subtitle: 'Learn more about who we are.', bgUrl: '' }
   }
 }
 

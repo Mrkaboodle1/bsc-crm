@@ -270,6 +270,102 @@ export function BlockView({ block }: { block: Block }) {
         </section>
       )
 
+    case 'navbar':
+      return (
+        <nav style={{
+          ...FULLBLEED,
+          position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(6px)',
+          borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '12px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+        }}>
+          <Fonts />
+          <a href={block.menu[0]?.href || '/'} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            {block.logo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={block.logo} alt="Big Star Circus" style={{ height: 44, width: 'auto' }} />
+            )}
+          </a>
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap', fontFamily: FRED, fontSize: 14, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+            {block.menu.map((m, i) => (
+              <li key={i} style={{ position: 'relative' }} className="bsc-nav-item">
+                <a href={m.href} style={{ color: '#2b2b2b', textDecoration: 'none', padding: '8px 4px' }}>{m.label}{m.children && ' ▾'}</a>
+                {m.children && m.children.length > 0 && (
+                  <ul className="bsc-nav-sub" style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.10)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 8, padding: '8px 0', margin: 0, listStyle: 'none', minWidth: 240, display: 'none' }}>
+                    {m.children.map((c, j) => (
+                      <li key={j}><a href={c.href} style={{ display: 'block', padding: '8px 16px', color: '#2b2b2b', textDecoration: 'none', fontSize: 13, textTransform: 'none', fontWeight: 500 }}>{c.label}</a></li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+          {block.cta && (
+            <a href={block.cta.href} style={{ background: '#FF5A1F', color: '#fff', padding: '10px 18px', borderRadius: 999, fontFamily: FRED, fontWeight: 700, textDecoration: 'none', fontSize: 14 }}>{block.cta.text}</a>
+          )}
+          <style dangerouslySetInnerHTML={{ __html: '.bsc-nav-item:hover .bsc-nav-sub{display:block!important}' }} />
+        </nav>
+      )
+
+    case 'pagehero':
+      return (
+        <section style={{
+          ...FULLBLEED, position: 'relative', minHeight: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#fff',
+          background: '#1a0f24',
+          backgroundImage: block.bgUrl ? `linear-gradient(rgba(15,8,20,.55),rgba(15,8,20,.55)),url(${block.bgUrl})` : undefined,
+          backgroundSize: 'cover', backgroundPosition: 'center', padding: '72px 22px',
+        }}>
+          <Fonts />
+          <div style={{ maxWidth: 900 }}>
+            <h1 style={{ fontFamily: FRED, fontSize: 'clamp(34px,6vw,56px)', fontWeight: 700, lineHeight: 1.1, margin: 0 }}>{block.title}</h1>
+            {block.subtitle && <p style={{ marginTop: 14, fontSize: 'clamp(15px,1.6vw,18px)', maxWidth: 720, marginLeft: 'auto', marginRight: 'auto', fontWeight: 300 }}>{block.subtitle}</p>}
+          </div>
+        </section>
+      )
+
+    case 'footer': {
+      const socialIcon = (kind: string) => kind === 'facebook' ? 'f' : kind === 'instagram' ? 'IG' : kind === 'youtube' ? 'YT' : kind === 'tiktok' ? 'TT' : '?'
+      return (
+        <footer style={{
+          ...FULLBLEED, background: '#1a0f24', color: '#e8dff0', padding: '56px 22px 32px',
+        }}>
+          <Fonts />
+          <div style={{ maxWidth: 1140, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 40 }}>
+            <div>
+              {block.logo && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={block.logo} alt="Big Star Circus" style={{ height: 56, width: 'auto', marginBottom: 14, filter: 'brightness(0) invert(1)' }} />
+              )}
+              {block.tagline && <p style={{ fontSize: 14, opacity: 0.85, marginBottom: 12 }}>{block.tagline}</p>}
+              {block.address && <p style={{ fontSize: 13, opacity: 0.75, margin: '6px 0' }}>{block.address}</p>}
+              {block.phone && <p style={{ fontSize: 13, opacity: 0.75, margin: '6px 0' }}>{block.phone}</p>}
+            </div>
+            {block.columns.map((col, i) => (
+              <div key={i}>
+                <h4 style={{ fontFamily: FRED, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14, color: '#fff' }}>{col.title}</h4>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {col.links.map((l, j) => (
+                    <li key={j} style={{ margin: '6px 0' }}><a href={l.href} style={{ color: '#e8dff0', textDecoration: 'none', fontSize: 14 }}>{l.label}</a></li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            {block.socials && block.socials.length > 0 && (
+              <div>
+                <h4 style={{ fontFamily: FRED, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14, color: '#fff' }}>Follow</h4>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {block.socials.map((s, i) => (
+                    <a key={i} href={s.href} target="_blank" rel="noopener noreferrer" style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', color: '#1a0f24', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', fontWeight: 700, fontSize: 12 }}>{socialIcon(s.kind)}</a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          {block.copyright && (
+            <div style={{ maxWidth: 1140, margin: '40px auto 0', borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 20, fontSize: 12, opacity: 0.65, textAlign: 'center' }}>{block.copyright}</div>
+          )}
+        </footer>
+      )
+    }
+
     default:
       return null
   }

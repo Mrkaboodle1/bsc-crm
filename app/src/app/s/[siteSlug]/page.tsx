@@ -49,12 +49,9 @@ export async function PublicRenderer({ siteSlug, pageSlug }: { siteSlug: string;
 
   return (
     <div className="min-h-screen bg-white">
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6">
         <PageBody blocks={blocks} />
       </main>
-      <footer className="border-t border-zinc-100 py-6 mt-10 text-center text-xs text-zinc-400">
-        Built with Big Star CRM
-      </footer>
     </div>
   )
 }
