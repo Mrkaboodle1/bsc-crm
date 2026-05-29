@@ -14,6 +14,9 @@ const BTN: React.CSSProperties = {
   fontSize: 15, boxShadow: '0 8px 20px rgba(229,57,43,.35)',
 }
 const CARD_COLORS: Record<'pink' | 'amber' | 'purple', string> = { pink: '#EC4899', amber: '#F7A823', purple: '#8B5CF6' }
+// Break each section out of the page's centred max-width column so it spans
+// the full browser width (matches the original full-bleed website layout).
+const FULLBLEED: React.CSSProperties = { width: '100vw', maxWidth: '100vw', marginLeft: 'calc(50% - 50vw)', marginRight: 'calc(50% - 50vw)' }
 // Loads the Fredoka + Poppins fonts once (duplicate @imports are de-duped by the browser).
 function Fonts() {
   return <style dangerouslySetInnerHTML={{ __html: "@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@300;400;600;700&display=swap');" }} />
@@ -160,7 +163,7 @@ export function BlockView({ block }: { block: Block }) {
     // ── Bespoke pixel-exact blocks ──────────────────────────
     case 'videohero':
       return (
-        <section style={{ position: 'relative', minHeight: 560, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#fff', overflow: 'hidden', background: '#1a0f24' }}>
+        <section style={{ ...FULLBLEED, position: 'relative', minHeight: 560, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#fff', overflow: 'hidden', background: '#1a0f24' }}>
           <Fonts />
           {block.videoUrl ? (
             <video autoPlay loop muted playsInline poster={block.posterUrl || undefined}
@@ -183,7 +186,7 @@ export function BlockView({ block }: { block: Block }) {
 
     case 'infocards':
       return (
-        <section style={{ padding: '0 22px' }}>
+        <section style={{ ...FULLBLEED, padding: '0 22px' }}>
           <Fonts />
           <div style={{ maxWidth: 1140, margin: '-70px auto 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 26, position: 'relative', zIndex: 5 }}>
             {block.items.map((it, i) => (
@@ -199,8 +202,8 @@ export function BlockView({ block }: { block: Block }) {
 
     case 'gallery':
       return (
-        <section style={{ maxWidth: 1140, margin: '0 auto', padding: '10px 22px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14 }}>
+        <section style={{ ...FULLBLEED, padding: '10px 22px' }}>
+          <div style={{ maxWidth: 1140, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14 }}>
             {block.images.map((im, i) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img key={i} src={im.url} alt={im.alt ?? ''} style={{ height: 210, width: '100%', objectFit: 'cover', borderRadius: 14 }} />
@@ -213,6 +216,7 @@ export function BlockView({ block }: { block: Block }) {
       const dark = block.theme !== 'light'
       return (
         <section style={{
+          ...FULLBLEED,
           position: 'relative', padding: '66px 22px', textAlign: 'center', color: dark ? '#fff' : '#2b2b2b',
           backgroundColor: dark ? '#1a0f24' : 'transparent',
           backgroundImage: block.bgUrl ? `linear-gradient(rgba(15,8,20,.62),rgba(15,8,20,.62)),url(${block.bgUrl})` : undefined,
@@ -230,7 +234,7 @@ export function BlockView({ block }: { block: Block }) {
 
     case 'columns':
       return (
-        <section style={{ padding: '56px 22px' }}>
+        <section style={{ ...FULLBLEED, padding: '56px 22px' }}>
           <Fonts />
           {block.title && <h2 style={{ fontFamily: FRED, fontSize: 'clamp(28px,5vw,40px)', textAlign: 'center', marginBottom: 14, color: '#2b2b2b', fontWeight: 600 }}>{block.title}</h2>}
           <div style={{ maxWidth: 1040, margin: '30px auto 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 34, textAlign: 'center' }}>
@@ -248,6 +252,7 @@ export function BlockView({ block }: { block: Block }) {
     case 'testimonials':
       return (
         <section style={{
+          ...FULLBLEED,
           position: 'relative', padding: '70px 22px', textAlign: 'center', color: '#fff', backgroundColor: '#1a0f24',
           backgroundImage: block.bgUrl ? `linear-gradient(rgba(15,8,20,.66),rgba(15,8,20,.66)),url(${block.bgUrl})` : undefined,
           backgroundSize: 'cover', backgroundPosition: 'center',
