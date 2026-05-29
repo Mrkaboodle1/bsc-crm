@@ -26,6 +26,9 @@ const BLOCK_TO_PUCK: Record<Block['type'], string> = {
   band:         'Band',
   columns:      'Columns',
   testimonials: 'Testimonials',
+  navbar:       'NavBar',
+  footer:       'PageFooter',
+  pagehero:     'PageHero',
 }
 
 const PUCK_TO_BLOCK: Record<string, Block['type']> = Object.fromEntries(
