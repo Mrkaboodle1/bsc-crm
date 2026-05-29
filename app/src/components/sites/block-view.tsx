@@ -163,7 +163,7 @@ export function BlockView({ block }: { block: Block }) {
     // ── Bespoke pixel-exact blocks ──────────────────────────
     case 'videohero':
       return (
-        <section style={{ ...FULLBLEED, position: 'relative', minHeight: 560, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#fff', overflow: 'hidden', background: '#1a0f24' }}>
+        <section style={{ ...FULLBLEED, position: 'relative', minHeight: 620, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: '#fff', overflow: 'hidden', background: '#1a0f24' }}>
           <Fonts />
           {block.videoUrl ? (
             <video autoPlay loop muted playsInline poster={block.posterUrl || undefined}
@@ -174,21 +174,50 @@ export function BlockView({ block }: { block: Block }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={block.posterUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 0 }} />
           ) : null}
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(20,10,30,.5)', zIndex: 1 }} />
-          <div style={{ position: 'relative', zIndex: 2, maxWidth: 760, padding: '64px 22px' }}>
-            <h1 style={{ fontFamily: FRED, fontSize: 'clamp(40px,7vw,62px)', lineHeight: 1.05, textShadow: '0 3px 18px rgba(0,0,0,.4)', fontWeight: 600 }}>{block.title}</h1>
-            {block.subtitle && <p style={{ margin: '18px auto 26px', fontSize: 18, fontWeight: 300, maxWidth: 640 }}>{block.subtitle}</p>}
-            {block.cta && <a href={block.cta.href} style={BTN}>{block.cta.text}</a>}
-            {block.note && <div style={{ marginTop: 14, fontFamily: FRED, letterSpacing: '1px', fontSize: 13, textTransform: 'uppercase' }}>{block.note}</div>}
+          {/* Subtle vignette so the white title stays legible over busy artwork */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(20,10,30,.15) 0%, rgba(20,10,30,.15) 55%, rgba(20,10,30,.75) 100%)', zIndex: 1 }} />
+          <div style={{ position: 'relative', zIndex: 2, maxWidth: 820, padding: '80px 22px 110px' }}>
+            <h1 style={{ fontFamily: FRED, fontSize: 'clamp(40px,7vw,68px)', lineHeight: 1.05, textShadow: '0 3px 18px rgba(0,0,0,.55)', fontWeight: 700 }}>{block.title}</h1>
+            {block.subtitle && <p style={{ margin: '18px auto 26px', fontSize: 17, fontWeight: 300, maxWidth: 640, textShadow: '0 1px 8px rgba(0,0,0,.45)' }}>{block.subtitle}</p>}
+            {block.cta && (
+              <a href={block.cta.href} style={{
+                display: 'inline-block', background: 'linear-gradient(180deg,#FF3D2E 0%,#D72027 100%)', color: '#fff',
+                padding: '14px 38px', borderRadius: 999, fontFamily: FRED, fontWeight: 700, textDecoration: 'none',
+                fontSize: 17, textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: '0 8px 24px rgba(215,32,39,0.45)',
+                border: '2px solid rgba(255,255,255,0.15)',
+              }}>
+                <div>{block.cta.text}</div>
+                {block.note && <div style={{ marginTop: 4, fontSize: 11, fontWeight: 500, opacity: 0.95, letterSpacing: '0.7px' }}>{block.note}</div>}
+              </a>
+            )}
           </div>
+          {/* Wavy bottom cutout — matches the bigstarcircus.com.au transition. */}
+          <svg viewBox="0 0 1440 80" preserveAspectRatio="none" style={{ position: 'absolute', bottom: -1, left: 0, width: '100%', height: 80, zIndex: 3, display: 'block' }}>
+            <path fill="#ffffff" d="M0,32 C240,80 480,0 720,32 C960,64 1200,8 1440,40 L1440,80 L0,80 Z" />
+          </svg>
         </section>
       )
 
     case 'infocards':
       return (
-        <section style={{ ...FULLBLEED, padding: '0 22px' }}>
+        <section style={{ ...FULLBLEED, padding: '40px 22px 60px', position: 'relative', overflow: 'hidden', background: '#fff' }}>
           <Fonts />
-          <div style={{ maxWidth: 1140, margin: '-70px auto 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 26, position: 'relative', zIndex: 5 }}>
+          {/* Soft circus-tent decorations either side, like the GHL original. */}
+          <svg viewBox="0 0 200 240" style={{ position: 'absolute', left: -30, bottom: 0, width: 220, height: 260, opacity: 0.18, zIndex: 0 }}>
+            <defs><linearGradient id="bsc-tent-l" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#FF5A8A"/><stop offset="1" stopColor="#F7A823"/></linearGradient></defs>
+            <path d="M100 20 L20 200 L180 200 Z" fill="url(#bsc-tent-l)"/>
+            <path d="M100 20 L60 200 L100 200 Z" fill="#fff" fillOpacity=".22"/>
+            <path d="M100 20 L140 200 L100 200 Z" fill="#fff" fillOpacity=".12"/>
+            <circle cx="100" cy="18" r="6" fill="#F7A823"/>
+          </svg>
+          <svg viewBox="0 0 200 240" style={{ position: 'absolute', right: -30, bottom: 0, width: 220, height: 260, opacity: 0.18, zIndex: 0, transform: 'scaleX(-1)' }}>
+            <defs><linearGradient id="bsc-tent-r" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#8B5CF6"/><stop offset="1" stopColor="#FF5A8A"/></linearGradient></defs>
+            <path d="M100 20 L20 200 L180 200 Z" fill="url(#bsc-tent-r)"/>
+            <path d="M100 20 L60 200 L100 200 Z" fill="#fff" fillOpacity=".22"/>
+            <path d="M100 20 L140 200 L100 200 Z" fill="#fff" fillOpacity=".12"/>
+            <circle cx="100" cy="18" r="6" fill="#8B5CF6"/>
+          </svg>
+          <div style={{ maxWidth: 1140, margin: '-90px auto 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 26, position: 'relative', zIndex: 5 }}>
             {block.items.map((it, i) => (
               <div key={i} style={{ background: '#fff', borderRadius: 20, boxShadow: '0 18px 40px rgba(0,0,0,.10)', padding: '34px 26px', textAlign: 'center' }}>
                 <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 16px', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 26, background: CARD_COLORS[it.color ?? 'pink'] }}>★</div>
