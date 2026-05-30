@@ -15,8 +15,8 @@ export default async function TrainingPage() {
     <DashboardShell
       user={user}
       currentPath="/training"
-      pageTitle="Training & Support"
-      pageSubtitle="Everything a new BSC team member needs to learn the CRM. Watch, read, listen, and try."
+      pageTitle="BIGSTAR HQ Learning Centre"
+      pageSubtitle="Jacky guides you through it. CRM walkthroughs, parent support, staff onboarding and franchise training — all in one place."
     >
       <TrainingPortal modules={TRAINING_MODULES} userName={user.fullName?.split(' ')[0] ?? null} />
     </DashboardShell>
