@@ -216,10 +216,10 @@ export function BlockView({ block }: { block: Block }) {
             <path d="M100 20 L140 200 L100 200 Z" fill="#fff" fillOpacity=".12"/>
             <circle cx="100" cy="18" r="6" fill="#8B5CF6"/>
           </svg>
-          <div style={{ maxWidth: 1140, margin: '-90px auto 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 26, position: 'relative', zIndex: 5 }}>
+          <div style={{ maxWidth: 1140, margin: '40px auto 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 26, position: 'relative', zIndex: 5 }}>
             {block.items.map((it, i) => (
               <div key={i} style={{ background: '#fff', borderRadius: 20, boxShadow: '0 18px 40px rgba(0,0,0,.10)', padding: '34px 26px', textAlign: 'center' }}>
-                <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 16px', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 26, background: CARD_COLORS[it.color ?? 'pink'] }}>★</div>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', margin: '0 auto 18px', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 28, background: CARD_COLORS[it.color ?? 'pink'], boxShadow: '0 6px 14px rgba(0,0,0,.10)' }}>★</div>
                 <h3 style={{ fontFamily: FRED, fontSize: 21, marginBottom: 10, color: '#2b2b2b' }}>{it.title}</h3>
                 <p style={{ fontSize: 15, color: '#6b6b6b', lineHeight: 1.6 }}>{it.body}</p>
               </div>
