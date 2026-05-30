@@ -4,6 +4,7 @@
 import { notFound } from 'next/navigation'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { PageBody } from '@/components/sites/block-view'
+import { ChatWidget } from '@/components/sites/chat-widget'
 import { type Block } from '@/lib/sites/blocks'
 
 export const dynamic = 'force-dynamic'
@@ -52,6 +53,7 @@ export async function PublicRenderer({ siteSlug, pageSlug }: { siteSlug: string;
       <main className="max-w-4xl mx-auto px-4 sm:px-6">
         <PageBody blocks={blocks} />
       </main>
+      <ChatWidget />
     </div>
   )
 }

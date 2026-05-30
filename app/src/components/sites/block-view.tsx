@@ -181,13 +181,12 @@ export function BlockView({ block }: { block: Block }) {
             {block.subtitle && <p style={{ margin: '18px auto 26px', fontSize: 17, fontWeight: 300, maxWidth: 640, textShadow: '0 1px 8px rgba(0,0,0,.45)' }}>{block.subtitle}</p>}
             {block.cta && (
               <a href={block.cta.href} style={{
-                display: 'inline-block', background: 'linear-gradient(180deg,#FF3D2E 0%,#D72027 100%)', color: '#fff',
-                padding: '14px 38px', borderRadius: 999, fontFamily: FRED, fontWeight: 700, textDecoration: 'none',
-                fontSize: 17, textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: '0 8px 24px rgba(215,32,39,0.45)',
-                border: '2px solid rgba(255,255,255,0.15)',
+                display: 'inline-block', background: '#ffffff', color: '#D72027',
+                padding: '16px 46px', borderRadius: 999, fontFamily: FRED, fontWeight: 800, textDecoration: 'none',
+                fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.6px', boxShadow: '0 12px 30px rgba(0,0,0,0.30)',
               }}>
-                <div>{block.cta.text}</div>
-                {block.note && <div style={{ marginTop: 4, fontSize: 11, fontWeight: 500, opacity: 0.95, letterSpacing: '0.7px' }}>{block.note}</div>}
+                <div style={{ color: '#D72027' }}>{block.cta.text}</div>
+                {block.note && <div style={{ marginTop: 4, fontSize: 12, fontWeight: 700, color: '#F75BA8', letterSpacing: '0.8px' }}>{block.note}</div>}
               </a>
             )}
           </div>
