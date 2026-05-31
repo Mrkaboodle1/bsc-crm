@@ -57,15 +57,28 @@ CREATE POLICY starband_sessions_tenant_read ON starband_sessions
   USING (tenant_id IN (SELECT tenant_id FROM users WHERE id = auth.uid()));
 
 -- ----------------------------------------------------------------------------
--- §3 — Seed: 10 demo students with mock NFC UIDs for tomorrow's test
+-- §3 — Seed: a "StarBand Demo" family + 10 demo students with mock NFC UIDs
+--       (students.family_id is NOT NULL — we provision the family first.)
 -- ----------------------------------------------------------------------------
 DO $$
 DECLARE
   t_id UUID;
+  f_id UUID;
   demo_data RECORD;
 BEGIN
   SELECT id INTO t_id FROM tenants LIMIT 1;
   IF t_id IS NULL THEN RETURN; END IF;
+
+  SELECT id INTO f_id FROM families
+   WHERE tenant_id = t_id AND family_name = 'StarBand Demo Families'
+   LIMIT 1;
+  IF f_id IS NULL THEN
+    INSERT INTO families (tenant_id, family_name, primary_parent, lifecycle_stage, notes)
+    VALUES (t_id, 'StarBand Demo Families', 'Demo Parent', 'trial',
+            'Auto-created for StarBand NFC kiosk testing.')
+    RETURNING id INTO f_id;
+  END IF;
+
   FOR demo_data IN
     SELECT * FROM (VALUES
       ('Oliver',  'Demo', 'DEMO-NFC-01'),
@@ -80,8 +93,10 @@ BEGIN
       ('Finn',    'Demo', 'DEMO-NFC-10')
     ) AS x(first_name, last_name, nfc_uid)
   LOOP
-    INSERT INTO students (tenant_id, first_name, last_name, nfc_uid, stars_total, xp_total, attendance_streak)
-    SELECT t_id, demo_data.first_name, demo_data.last_name, demo_data.nfc_uid, 0, 0, 0
+    INSERT INTO students (tenant_id, family_id, first_name, last_name, nfc_uid,
+                          stars_total, xp_total, attendance_streak)
+    SELECT t_id, f_id, demo_data.first_name, demo_data.last_name, demo_data.nfc_uid,
+           0, 0, 0
     WHERE NOT EXISTS (SELECT 1 FROM students WHERE nfc_uid = demo_data.nfc_uid);
   END LOOP;
 END $$;
