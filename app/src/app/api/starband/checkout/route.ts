@@ -15,7 +15,7 @@ const XP_PER_CHECKOUT = 10
 export async function POST(req: Request) {
   let body: { nfc_uid?: string; collected_by?: string } = {}
   try { body = await req.json() } catch { /* ignore */ }
-  const nfc_uid = (body.nfc_uid ?? '').toString().trim()
+  const nfc_uid = (body.nfc_uid ?? '').toString().trim().toUpperCase()
   const collected_by = (body.collected_by ?? '').toString().trim() || null
   if (!nfc_uid) return NextResponse.json({ ok: false, error: 'missing nfc_uid' }, { status: 400 })
 

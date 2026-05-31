@@ -4,8 +4,19 @@
 // (Android Chrome only), falls back to a manual demo picker on iPad / laptop.
 // Each tap toggles: not-in → checked-in (+5 stars); checked-in → checked-out
 // (+5 stars +10 XP). No login — designed to live on a reception tablet.
+//
+// MIFARE Classic fallback: NFC TagInfo (by NXP) on Android shows the card's
+// UID. Tap "Share UID → Copy". Paste into the input below, or use the
+// share-as-URL trick:  https://<kiosk>/starband?uid=04:8A:9B:C2:11
+// The kiosk auto-fires the tap when ?uid= is present.
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+
+// Normalise any UID so "04:8a:9b" and "04-8A-9B" and " 048A9B " all match.
+// Trim → uppercase. Demo UIDs like DEMO-NFC-01 stay intact (no chars stripped).
+function normaliseUid(raw: string): string {
+  return (raw || '').trim().toUpperCase()
+}
 
 type Student = { id: string; first_name: string; last_name: string; nfc_uid: string | null; stars_total: number; xp_total: number; attendance_streak: number; checked_in: boolean }
 type TapResult = {
@@ -27,13 +38,14 @@ export default function StarBandKiosk() {
   const [showPicker, setShowPicker] = useState(false)
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const tap = useCallback(async (nfc_uid: string) => {
+  const tap = useCallback(async (raw_uid: string) => {
+    const nfc_uid = normaliseUid(raw_uid)
     if (busy || !nfc_uid) return
     setBusy(true)
     if (dismissTimer.current) clearTimeout(dismissTimer.current)
     try {
       // Decide check-in or check-out by what we already know about the student.
-      const local = students.find((s) => s.nfc_uid === nfc_uid)
+      const local = students.find((s) => normaliseUid(s.nfc_uid ?? '') === nfc_uid)
       const endpoint = local?.checked_in ? '/api/starband/checkout' : '/api/starband/checkin'
       const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nfc_uid }) })
       const data: TapResult = await r.json()
@@ -78,6 +90,19 @@ export default function StarBandKiosk() {
   }, [])
   useEffect(() => { void loadStudents() }, [loadStudents])
 
+  // Auto-fire if ?uid= is on the URL (NFC TagInfo Share → URL fallback).
+  // Reads window.location.search to avoid the useSearchParams() Suspense rule.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const uid = params.get('uid') || params.get('UID')
+    if (uid) {
+      // Strip from address bar so a refresh doesn't re-fire.
+      window.history.replaceState({}, '', window.location.pathname)
+      void tap(uid)
+    }
+  }, [tap])
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center text-white" style={{ background: 'linear-gradient(135deg,#1a0f24 0%,#3a0f24 60%,#A0151B 100%)' }}>
       {/* Watermark */}
@@ -89,7 +114,7 @@ export default function StarBandKiosk() {
         <a href="/starband/register" className="bg-amber-400 text-zinc-900 font-bold px-3 py-1.5 rounded-full hover:bg-amber-300">Register band</a>
       </div>
 
-      {result ? <TapResultView r={result} onDismiss={() => setResult(null)} /> : <KioskIdle status={nfcStatus} onManual={() => setShowPicker(true)} />}
+      {result ? <TapResultView r={result} onDismiss={() => setResult(null)} /> : <KioskIdle status={nfcStatus} onManual={() => setShowPicker(true)} onUidEntered={tap} />}
 
       {/* Manual picker (fallback / demo mode) */}
       {showPicker && (
@@ -125,21 +150,56 @@ export default function StarBandKiosk() {
   )
 }
 
-function KioskIdle({ status, onManual }: { status: 'unsupported' | 'idle' | 'scanning' | 'error'; onManual: () => void }) {
+function KioskIdle({ status, onManual, onUidEntered }: { status: 'unsupported' | 'idle' | 'scanning' | 'error'; onManual: () => void; onUidEntered: (uid: string) => void }) {
+  const [manualUid, setManualUid] = useState('')
+  const [showHelp, setShowHelp] = useState(false)
   return (
-    <div className="text-center px-6">
+    <div className="text-center px-6 w-full max-w-md">
       <div className="text-6xl sm:text-8xl mb-2">⭐</div>
       <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight mb-3">BIGSTAR CIRCUS</h1>
-      <h2 className="text-2xl sm:text-3xl font-bold mb-10 opacity-90">Tap your StarBand</h2>
-      <div className="text-sm opacity-70 mb-8">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-8 opacity-90">Tap your StarBand</h2>
+      <div className="text-sm opacity-70 mb-6">
         {status === 'scanning' && <span className="inline-flex items-center gap-2"><span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" /> NFC reader active — bring band close</span>}
-        {status === 'unsupported' && 'NFC not available on this device — use the demo picker below.'}
-        {status === 'error' && 'NFC error — tap Demo mode to test.'}
+        {status === 'unsupported' && 'NFC auto-scan not available on this device.'}
+        {status === 'error' && 'NFC error — use the input below to enter a UID manually.'}
         {status === 'idle' && 'Starting NFC reader…'}
       </div>
-      <button onClick={onManual} className="bg-white/15 hover:bg-white/25 px-6 py-3 rounded-full font-bold border border-white/30">
-        Demo / Manual tap →
-      </button>
+
+      {/* Manual / TagInfo paste field — works with any 13.56 MHz card (incl. MIFARE Classic) */}
+      <form
+        onSubmit={(e) => { e.preventDefault(); if (manualUid.trim()) { onUidEntered(manualUid); setManualUid('') } }}
+        className="flex gap-2 mb-3"
+      >
+        <input
+          type="text" inputMode="text" autoComplete="off" spellCheck={false}
+          value={manualUid} onChange={(e) => setManualUid(e.target.value)}
+          placeholder="Paste or type UID…"
+          className="flex-1 bg-white/10 border border-white/30 rounded-full px-4 py-3 text-white placeholder-white/50 font-mono text-sm focus:outline-none focus:bg-white/20"
+        />
+        <button type="submit" className="bg-amber-400 text-zinc-900 font-extrabold px-5 py-3 rounded-full hover:bg-amber-300">Tap →</button>
+      </form>
+
+      <div className="flex gap-2 justify-center flex-wrap">
+        <button onClick={onManual} className="text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/30">
+          Demo students →
+        </button>
+        <button onClick={() => setShowHelp((s) => !s)} className="text-xs bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full border border-white/30">
+          {showHelp ? 'Hide help' : 'MIFARE / Jaycar card?'}
+        </button>
+      </div>
+
+      {showHelp && (
+        <div className="mt-5 text-left bg-white/10 border border-white/20 rounded-2xl p-4 text-xs leading-relaxed">
+          <div className="font-extrabold text-amber-300 mb-2">Reading a MIFARE / Jaycar 13.56 MHz card:</div>
+          <ol className="list-decimal pl-5 space-y-1 opacity-90">
+            <li>Install <a href="https://play.google.com/store/apps/details?id=com.nxp.taginfolite" target="_blank" rel="noreferrer" className="underline font-bold">NFC TagInfo</a> on Android.</li>
+            <li>Open it, tap your card. It shows a <span className="font-mono">UID</span>.</li>
+            <li>Long-press the UID → <b>Copy</b>.</li>
+            <li>Paste it into the field above → <b>Tap →</b>.</li>
+          </ol>
+          <div className="mt-2 opacity-70">Or share <span className="font-mono">…/starband?uid=YOUR-UID</span> from the app for one-tap.</div>
+        </div>
+      )}
     </div>
   )
 }
