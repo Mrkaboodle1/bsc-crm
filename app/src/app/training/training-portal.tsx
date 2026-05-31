@@ -14,7 +14,7 @@ import { useMemo, useState, useEffect, useRef, type RefObject } from 'react'
 import type { TrainingModule } from './modules'
 import { submitSupportTicket } from './actions'
 import { getTour } from './tour-scripts'
-import { FakeCursor } from './fake-cursor'
+import { FakeCursor, type Spot } from './fake-cursor'
 import { pathFor } from './cursor-paths'
 
 // JackyPlayer — when the module has a HeyGen video, play that (Jacky moving
@@ -279,6 +279,8 @@ function ModuleVideoCard({
   // Eleven simultaneous avatars on mount would be brutal on first paint.
   const [active, setActive] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const [zoomSpot, setZoomSpot] = useState<Spot | null>(null)
+  const path = useMemo(() => pathFor(module) ?? module.demoActions, [module])
 
   return (
     <section
@@ -299,24 +301,32 @@ function ModuleVideoCard({
                 /demo/* routes so no auth is needed and the iframe loads
                 immediately. pointer-events disabled because clicks should
                 interact with the avatar, not the demo. */}
-            {module.previewPath ? (
-              <iframe
-                src={module.previewPath}
-                title={`${module.title} preview`}
-                className="absolute inset-0 w-full h-full border-0"
-                style={{ pointerEvents: 'none', filter: 'brightness(0.78) contrast(1.05)' }}
-                loading="lazy"
-              />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B]" />
-            )}
-            {/* Fake cursor — moves over the demo iframe in time with Jacky's
-                video so it visibly shows what she's pointing at. Per-module
-                paths from cursor-paths.ts; falls back to inline demoActions
-                or the generic default in FakeCursor. */}
-            {module.videoUrl && (
-              <FakeCursor videoRef={videoRef} path={pathFor(module) ?? module.demoActions} />
-            )}
+            {/* Demo stage — iframe + cursor share one wrapper that zooms
+                toward the cursor's current spot (Loom-style focus zoom). */}
+            <div
+              className="absolute inset-0"
+              style={{
+                transform: zoomSpot ? 'scale(1.4)' : 'scale(1)',
+                transformOrigin: zoomSpot ? `${zoomSpot.x}% ${zoomSpot.y}%` : '50% 50%',
+                transition: 'transform 850ms cubic-bezier(.4,.0,.2,1), transform-origin 850ms cubic-bezier(.4,.0,.2,1)',
+                willChange: 'transform',
+              }}
+            >
+              {module.previewPath ? (
+                <iframe
+                  src={module.previewPath}
+                  title={`${module.title} preview`}
+                  className="absolute inset-0 w-full h-full border-0"
+                  style={{ pointerEvents: 'none', filter: 'brightness(0.88) contrast(1.05)' }}
+                  loading="lazy"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B]" />
+              )}
+              {module.videoUrl && (
+                <FakeCursor videoRef={videoRef} path={path} onSpot={setZoomSpot} />
+              )}
+            </div>
             {/* Soft red+gold vignette to focus the eye on Jacky */}
             <div
               className="absolute inset-0 pointer-events-none"

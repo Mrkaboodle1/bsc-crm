@@ -10,7 +10,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 
-type Spot = { atSec: number; x: number; y: number; click?: boolean; label?: string }
+export type Spot = { atSec: number; x: number; y: number; click?: boolean; label?: string }
 
 // Generic believable trail: 9 stops across ~30s, hitting common CRM zones.
 const DEFAULT_PATH: Spot[] = [
@@ -25,7 +25,7 @@ const DEFAULT_PATH: Spot[] = [
   { atSec: 27.5, x: 50, y: 40, click: true, label: 'confirm' },
 ]
 
-export function FakeCursor({ videoRef, path = DEFAULT_PATH }: { videoRef: React.RefObject<HTMLVideoElement | null>; path?: Spot[] }) {
+export function FakeCursor({ videoRef, path = DEFAULT_PATH, onSpot }: { videoRef: React.RefObject<HTMLVideoElement | null>; path?: Spot[]; onSpot?: (s: Spot) => void }) {
   const [pos, setPos] = useState({ x: path[0]?.x ?? 50, y: path[0]?.y ?? 50 })
   const [ripple, setRipple] = useState<{ x: number; y: number; key: number } | null>(null)
   const rippleKey = useRef(0)
@@ -47,12 +47,13 @@ export function FakeCursor({ videoRef, path = DEFAULT_PATH }: { videoRef: React.
           rippleKey.current++
           setRipple({ x: s.x, y: s.y, key: rippleKey.current })
         }
+        if (onSpot) onSpot(s)
         lastIdx.current = idx
       }
     }
     v.addEventListener('timeupdate', onTick)
     return () => v.removeEventListener('timeupdate', onTick)
-  }, [videoRef, path])
+  }, [videoRef, path, onSpot])
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[5]">
