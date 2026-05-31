@@ -15,6 +15,7 @@ import type { TrainingModule } from './modules'
 import { submitSupportTicket } from './actions'
 import { getTour } from './tour-scripts'
 import { FakeCursor } from './fake-cursor'
+import { pathFor } from './cursor-paths'
 
 // JackyPlayer — when the module has a HeyGen video, play that (Jacky moving
 // + talking). Otherwise fall back to a static portrait + narration audio.
@@ -310,9 +311,11 @@ function ModuleVideoCard({
               <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B]" />
             )}
             {/* Fake cursor — moves over the demo iframe in time with Jacky's
-                video so it visibly shows what she's pointing at. */}
+                video so it visibly shows what she's pointing at. Per-module
+                paths from cursor-paths.ts; falls back to inline demoActions
+                or the generic default in FakeCursor. */}
             {module.videoUrl && (
-              <FakeCursor videoRef={videoRef} path={module.demoActions} />
+              <FakeCursor videoRef={videoRef} path={pathFor(module) ?? module.demoActions} />
             )}
             {/* Soft red+gold vignette to focus the eye on Jacky */}
             <div
