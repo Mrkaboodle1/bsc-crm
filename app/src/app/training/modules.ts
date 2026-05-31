@@ -23,6 +23,9 @@ export type TrainingModule = {
    *  MP4 (Jacky moving + talking). When unset, falls back to the portrait
    *  + narration audio. */
   videoUrl?: string
+  /** Optional per-module fake-cursor path. Each spot is fired when the
+   *  video's currentTime passes atSec. x and y are % of the demo iframe. */
+  demoActions?: { atSec: number; x: number; y: number; click?: boolean; label?: string }[]
 }
 
 export const TRAINING_MODULES: TrainingModule[] = [

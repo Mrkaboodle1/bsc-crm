@@ -10,18 +10,20 @@
 //
 // The whole portal is now really just a video gallery + checklist.
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef, type RefObject } from 'react'
 import type { TrainingModule } from './modules'
 import { submitSupportTicket } from './actions'
 import { getTour } from './tour-scripts'
+import { FakeCursor } from './fake-cursor'
 
 // JackyPlayer — when the module has a HeyGen video, play that (Jacky moving
 // + talking). Otherwise fall back to a static portrait + narration audio.
-function JackyPlayer({ audioUrl, videoUrl }: { audioUrl: string; videoUrl?: string; script?: string; mood?: string; transparent?: boolean }) {
+function JackyPlayer({ audioUrl, videoUrl, videoRef }: { audioUrl: string; videoUrl?: string; videoRef?: RefObject<HTMLVideoElement | null>; script?: string; mood?: string; transparent?: boolean }) {
   if (videoUrl) {
     return (
       <div className="relative w-full h-full flex items-end justify-start pl-3 pb-3">
         <video
+          ref={videoRef}
           src={videoUrl}
           controls
           autoPlay
@@ -275,6 +277,7 @@ function ModuleVideoCard({
   // because each instance loads a 3D model + audio buffer (~5–10 MB).
   // Eleven simultaneous avatars on mount would be brutal on first paint.
   const [active, setActive] = useState(false)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
 
   return (
     <section
@@ -300,11 +303,16 @@ function ModuleVideoCard({
                 src={module.previewPath}
                 title={`${module.title} preview`}
                 className="absolute inset-0 w-full h-full border-0"
-                style={{ pointerEvents: 'none', filter: 'brightness(0.55) contrast(1.05)' }}
+                style={{ pointerEvents: 'none', filter: 'brightness(0.78) contrast(1.05)' }}
                 loading="lazy"
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B]" />
+            )}
+            {/* Fake cursor — moves over the demo iframe in time with Jacky's
+                video so it visibly shows what she's pointing at. */}
+            {module.videoUrl && (
+              <FakeCursor videoRef={videoRef} path={module.demoActions} />
             )}
             {/* Soft red+gold vignette to focus the eye on Jacky */}
             <div
@@ -322,6 +330,7 @@ function ModuleVideoCard({
               <JackyPlayer
                 audioUrl={`/training/audio/${module.id}.mp3`}
                 videoUrl={module.videoUrl}
+                videoRef={videoRef}
                 script={module.script}
                 mood="happy"
                 transparent
