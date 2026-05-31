@@ -11,24 +11,27 @@
 // The whole portal is now really just a video gallery + checklist.
 
 import { useMemo, useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
 import type { TrainingModule } from './modules'
 import { submitSupportTicket } from './actions'
 import { getTour } from './tour-scripts'
 
-// TalkingHead touches `window` at parse time — load the live avatar only
-// in the browser. SSR would crash otherwise.
-const JackyLiveAvatar = dynamic(
-  () => import('./jacky-live-avatar').then((m) => m.JackyLiveAvatar),
-  { ssr: false, loading: () => (
-    <div className="w-full aspect-video min-h-[340px] bg-gradient-to-br from-zinc-900 via-zinc-800 to-[#A0151B] rounded-xl flex items-center justify-center text-white">
-      <div className="text-center">
-        <div className="text-4xl mb-2 animate-pulse">🎪</div>
-        <div className="text-sm font-extrabold">Loading 3D Jacky…</div>
-      </div>
+// JackyPortrait — replaces the old 3D talking head with a still photo of
+// the real Jacky avatar plus the module's narration audio. Cleaner, faster,
+// no janky 3D rig. We'll swap this for HeyGen-rendered MP4s next.
+function JackyPortrait({ audioUrl }: { audioUrl: string; script?: string; mood?: string; transparent?: boolean }) {
+  return (
+    <div className="relative w-full h-full flex items-end justify-start pl-3 pb-3">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/jacky-avatar.png"
+        alt="Jacky"
+        className="rounded-full border-4 border-amber-300 shadow-2xl"
+        style={{ width: 'min(80%, 320px)', aspectRatio: '1/1', objectFit: 'cover' }}
+      />
+      <audio src={audioUrl} controls autoPlay className="absolute bottom-2 right-3 max-w-[55%]" style={{ filter: 'invert(0.92)' }} />
     </div>
-  )},
-)
+  )
+}
 
 const PROGRESS_KEY = 'bsc-training-progress-v1'
 
@@ -303,7 +306,7 @@ function ModuleVideoCard({
               className="absolute top-0 bottom-0 left-0 z-10 pointer-events-auto"
               style={{ width: 'min(46%, 480px)' }}
             >
-              <JackyLiveAvatar
+              <JackyPortrait
                 audioUrl={`/training/audio/${module.id}.mp3`}
                 script={module.script}
                 mood="happy"
