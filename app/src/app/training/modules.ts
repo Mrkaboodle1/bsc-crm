@@ -19,6 +19,10 @@ export type TrainingModule = {
   /** demo page to show in the background of the module card while Jacky
    *  presents — must be a static / no-auth route (everything under /demo/* is). */
   previewPath?: string
+  /** HeyGen-rendered presenter video URL. When set, the module plays this
+   *  MP4 (Jacky moving + talking). When unset, falls back to the portrait
+   *  + narration audio. */
+  videoUrl?: string
 }
 
 export const TRAINING_MODULES: TrainingModule[] = [
@@ -30,6 +34,7 @@ export const TRAINING_MODULES: TrainingModule[] = [
     subtitle: 'Meet Jacky — your AI admin partner.',
     tryItPath: '/dashboard',
     previewPath: '/demo/dashboard',
+    videoUrl: '/training/videos/welcome.mp4',
     imagePrompt: 'a friendly circus mascot character wearing a red top hat with a yellow star on it, smiling, cartoon illustration, bright warm colours, family friendly, against a soft cream background',
     script: `Welcome to the Big Star Circus CRM. I'm Jacky, your AI admin partner. I work twenty-four hours a day on the server, reading your admin email, drafting replies, and pushing them to an approval queue. You're always in charge. Nothing goes out without your tap. This training takes about fifteen minutes. By the end, you'll know how to use every part of the system. Take your time. There's no rush.`,
     bullets: [

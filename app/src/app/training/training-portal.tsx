@@ -15,10 +15,23 @@ import type { TrainingModule } from './modules'
 import { submitSupportTicket } from './actions'
 import { getTour } from './tour-scripts'
 
-// JackyPortrait — replaces the old 3D talking head with a still photo of
-// the real Jacky avatar plus the module's narration audio. Cleaner, faster,
-// no janky 3D rig. We'll swap this for HeyGen-rendered MP4s next.
-function JackyPortrait({ audioUrl }: { audioUrl: string; script?: string; mood?: string; transparent?: boolean }) {
+// JackyPlayer — when the module has a HeyGen video, play that (Jacky moving
+// + talking). Otherwise fall back to a static portrait + narration audio.
+function JackyPlayer({ audioUrl, videoUrl }: { audioUrl: string; videoUrl?: string; script?: string; mood?: string; transparent?: boolean }) {
+  if (videoUrl) {
+    return (
+      <div className="relative w-full h-full flex items-end justify-start pl-3 pb-3">
+        <video
+          src={videoUrl}
+          controls
+          autoPlay
+          playsInline
+          className="rounded-2xl border-4 border-amber-300 shadow-2xl bg-black"
+          style={{ width: 'min(90%, 480px)', aspectRatio: '16/9', objectFit: 'cover' }}
+        />
+      </div>
+    )
+  }
   return (
     <div className="relative w-full h-full flex items-end justify-start pl-3 pb-3">
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -306,8 +319,9 @@ function ModuleVideoCard({
               className="absolute top-0 bottom-0 left-0 z-10 pointer-events-auto"
               style={{ width: 'min(46%, 480px)' }}
             >
-              <JackyPortrait
+              <JackyPlayer
                 audioUrl={`/training/audio/${module.id}.mp3`}
+                videoUrl={module.videoUrl}
                 script={module.script}
                 mood="happy"
                 transparent
