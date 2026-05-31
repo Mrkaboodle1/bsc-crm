@@ -36,7 +36,7 @@ function JackyPlayer({ audioUrl, videoUrl }: { audioUrl: string; videoUrl?: stri
     <div className="relative w-full h-full flex items-end justify-start pl-3 pb-3">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/jacky-avatar.png"
+        src="/jacky-avatar.webp"
         alt="Jacky"
         className="rounded-full border-4 border-amber-300 shadow-2xl"
         style={{ width: 'min(80%, 320px)', aspectRatio: '1/1', objectFit: 'cover' }}
@@ -194,7 +194,7 @@ function JackyHeroAvatar({ size = 180 }: { size?: number }) {
       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#D72027] to-amber-500 blur-2xl opacity-50" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/jacky-avatar.png"
+        src="/jacky-avatar.webp"
         alt="Jacky — your BSC AI admin"
         width={size}
         height={size}

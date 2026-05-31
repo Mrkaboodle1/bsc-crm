@@ -169,7 +169,7 @@ function JackyPortrait({ speaking }: { speaking: boolean }) {
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/jacky-avatar.png"
+        src="/jacky-avatar.webp"
         alt="Jacky"
         className="relative w-16 h-16 rounded-full object-cover border-2 border-white shadow-lg"
       />
