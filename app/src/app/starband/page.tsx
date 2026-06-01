@@ -18,7 +18,8 @@ function normaliseUid(raw: string): string {
   return (raw || '').trim().toUpperCase()
 }
 
-type Student = { id: string; first_name: string; last_name: string; nfc_uid: string | null; stars_total: number; xp_total: number; attendance_streak: number; checked_in: boolean }
+type Student = { id: string; first_name: string; last_name: string; nfc_uid: string | null; photo_url?: string | null; pin_code?: string | null; stars_total: number; xp_total: number; attendance_streak: number; checked_in: boolean; tag_count?: number }
+type KioskMode = 'tap' | 'faces' | 'pin'
 type TapResult = {
   ok: boolean; action?: string; message?: string; error?: string
   student?: { name: string; stars: number; xp: number; streak: number }
@@ -36,7 +37,44 @@ export default function StarBandKiosk() {
   const [nfcStatus, setNfcStatus] = useState<'unsupported' | 'idle' | 'scanning' | 'error'>('idle')
   const [students, setStudents] = useState<Student[]>([])
   const [showPicker, setShowPicker] = useState(false)
+  const [mode, setMode] = useState<KioskMode>('tap')
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Layer 3 — face-tap: posts the student id directly.
+  const tapStudent = useCallback(async (id: string) => {
+    if (busy || !id) return
+    setBusy(true)
+    if (dismissTimer.current) clearTimeout(dismissTimer.current)
+    try {
+      const r = await fetch('/api/starband/by-student', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ student_id: id }) })
+      const data: TapResult = await r.json()
+      setResult(data)
+      void loadStudents()
+    } catch (e) {
+      setResult({ ok: false, error: (e as Error).message, message: 'Connection problem — try again.' })
+    } finally {
+      setBusy(false)
+      dismissTimer.current = setTimeout(() => setResult(null), 6000)
+    }
+  }, [busy])
+
+  // Layer 4 — PIN entry.
+  const tapPin = useCallback(async (pin: string) => {
+    if (busy || !pin) return
+    setBusy(true)
+    if (dismissTimer.current) clearTimeout(dismissTimer.current)
+    try {
+      const r = await fetch('/api/starband/by-pin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) })
+      const data: TapResult = await r.json()
+      setResult(data)
+      void loadStudents()
+    } catch (e) {
+      setResult({ ok: false, error: (e as Error).message, message: 'Connection problem — try again.' })
+    } finally {
+      setBusy(false)
+      dismissTimer.current = setTimeout(() => setResult(null), 6000)
+    }
+  }, [busy])
 
   const tap = useCallback(async (raw_uid: string) => {
     const nfc_uid = normaliseUid(raw_uid)
@@ -114,7 +152,30 @@ export default function StarBandKiosk() {
         <a href="/starband/register" className="bg-amber-400 text-zinc-900 font-bold px-3 py-1.5 rounded-full hover:bg-amber-300">Register band</a>
       </div>
 
-      {result ? <TapResultView r={result} onDismiss={() => setResult(null)} /> : <KioskIdle status={nfcStatus} onManual={() => setShowPicker(true)} onUidEntered={tap} />}
+      {/* Mode tabs (hidden when showing a tap result) */}
+      {!result && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-1 bg-white/10 backdrop-blur p-1 rounded-full border border-white/20">
+          {(['tap', 'faces', 'pin'] as KioskMode[]).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className={`px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-full transition ${mode === m ? 'bg-amber-400 text-zinc-900' : 'text-white/80 hover:text-white'}`}
+            >
+              {m === 'tap' ? '⭐ Tap' : m === 'faces' ? '👦 Faces' : '🔢 PIN'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {result ? (
+        <TapResultView r={result} onDismiss={() => setResult(null)} />
+      ) : mode === 'tap' ? (
+        <KioskIdle status={nfcStatus} onManual={() => setShowPicker(true)} onUidEntered={tap} />
+      ) : mode === 'faces' ? (
+        <KioskFaces students={students} onPick={tapStudent} busy={busy} />
+      ) : (
+        <KioskPin onSubmit={tapPin} busy={busy} />
+      )}
 
       {/* Manual picker (fallback / demo mode) */}
       {showPicker && (
@@ -229,6 +290,84 @@ function TapResultView({ r, onDismiss }: { r: TapResult; onDismiss: () => void }
         </>
       )}
     </button>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Layer 3 — face-tap photo grid (works without any card)
+// ─────────────────────────────────────────────────────────────────────────
+function KioskFaces({ students, onPick, busy }: { students: Student[]; onPick: (id: string) => void; busy: boolean }) {
+  const [q, setQ] = useState('')
+  const filtered = students.filter((s) =>
+    !q.trim() || (`${s.first_name} ${s.last_name}`.toLowerCase().includes(q.trim().toLowerCase())),
+  )
+  return (
+    <div className="px-4 pt-32 pb-10 max-w-5xl mx-auto w-full">
+      <div className="text-center mb-4">
+        <h1 className="text-2xl sm:text-3xl font-extrabold mb-1">No band today? Tap your face. 👋</h1>
+        <p className="text-sm opacity-75">No watch, no problem — find yourself below.</p>
+      </div>
+      <input
+        type="text" value={q} onChange={(e) => setQ(e.target.value)}
+        placeholder="Search a name…"
+        className="w-full bg-white/10 border border-white/30 rounded-full px-4 py-2.5 text-white placeholder-white/50 text-sm mb-4 focus:outline-none focus:bg-white/20"
+      />
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+        {filtered.map((s) => (
+          <button
+            key={s.id} disabled={busy}
+            onClick={() => onPick(s.id)}
+            className={`rounded-2xl p-2 border-2 transition ${s.checked_in ? 'border-emerald-400 bg-emerald-400/20' : 'border-white/20 bg-white/5 hover:bg-white/10'}`}
+          >
+            <div className="aspect-square rounded-xl overflow-hidden bg-zinc-700 mb-1.5 relative">
+              {s.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={s.photo_url} alt={s.first_name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-3xl font-extrabold opacity-60">
+                  {(s.first_name?.[0] ?? '?') + (s.last_name?.[0] ?? '')}
+                </div>
+              )}
+              {s.checked_in && <span className="absolute top-1 right-1 bg-emerald-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full">IN</span>}
+            </div>
+            <div className="text-xs font-bold leading-tight truncate">{s.first_name}</div>
+            <div className="text-[10px] opacity-60 leading-tight truncate">{s.last_name}</div>
+          </button>
+        ))}
+        {filtered.length === 0 && <div className="col-span-full text-center opacity-60 py-8 text-sm">No matches.</div>}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Layer 4 — PIN keypad (kid remembers a 4-digit code)
+// ─────────────────────────────────────────────────────────────────────────
+function KioskPin({ onSubmit, busy }: { onSubmit: (pin: string) => void; busy: boolean }) {
+  const [pin, setPin] = useState('')
+  const push = (d: string) => setPin((p) => (p.length < 6 ? p + d : p))
+  const back = () => setPin((p) => p.slice(0, -1))
+  const submit = () => { if (pin.length >= 3) { onSubmit(pin); setPin('') } }
+  return (
+    <div className="text-center px-6 w-full max-w-xs pt-32">
+      <h1 className="text-2xl sm:text-3xl font-extrabold mb-2">Enter your code</h1>
+      <p className="text-sm opacity-70 mb-6">4 digits → tap ✓</p>
+      <div className="flex gap-2 justify-center mb-6">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={`w-12 h-14 rounded-xl border-2 flex items-center justify-center text-2xl font-extrabold ${pin[i] ? 'border-amber-400 bg-white/10' : 'border-white/30'}`}>
+            {pin[i] ? '●' : ''}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        {['1','2','3','4','5','6','7','8','9'].map((d) => (
+          <button key={d} onClick={() => push(d)} className="bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-2xl py-5 text-2xl font-extrabold">{d}</button>
+        ))}
+        <button onClick={back} className="bg-white/10 hover:bg-white/20 rounded-2xl py-5 text-xl">⌫</button>
+        <button onClick={() => push('0')} className="bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-2xl py-5 text-2xl font-extrabold">0</button>
+        <button onClick={submit} disabled={busy || pin.length < 3} className="bg-amber-400 text-zinc-900 hover:bg-amber-300 active:bg-amber-500 rounded-2xl py-5 text-xl font-extrabold disabled:opacity-40">✓</button>
+      </div>
+    </div>
   )
 }
 

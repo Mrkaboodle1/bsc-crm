@@ -21,11 +21,13 @@ export async function POST(req: Request) {
 
   try {
     const sb = await createServerSupabaseAdmin()
-    const { data: student } = await sb
-      .from('students')
-      .select('id, tenant_id, first_name, last_name, stars_total, xp_total, attendance_streak')
-      .eq('nfc_uid', nfc_uid)
-      .maybeSingle()
+
+    // Multi-tag lookup (wristband / sticker / card all resolve to same student).
+    const { data: tag } = await sb.from('nfc_tags').select('student_id').eq('nfc_uid', nfc_uid).eq('is_active', true).maybeSingle()
+    const studentFilter = tag
+      ? sb.from('students').select('id, tenant_id, first_name, last_name, stars_total, xp_total, attendance_streak').eq('id', tag.student_id)
+      : sb.from('students').select('id, tenant_id, first_name, last_name, stars_total, xp_total, attendance_streak').eq('nfc_uid', nfc_uid)
+    const { data: student } = await studentFilter.maybeSingle()
     if (!student) return NextResponse.json({ ok: false, error: 'no_student', message: 'StarBand not registered yet.' }, { status: 404 })
 
     const { data: open } = await sb

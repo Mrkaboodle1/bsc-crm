@@ -10,7 +10,8 @@ declare global {
   interface Window { NDEFReader?: new () => { scan: () => Promise<void>; addEventListener: (ev: string, fn: (e: { serialNumber?: string }) => void) => void } }
 }
 
-type Student = { id: string; first_name: string; last_name: string; nfc_uid: string | null }
+type Student = { id: string; first_name: string; last_name: string; nfc_uid: string | null; photo_url?: string | null; pin_code?: string | null; tag_count?: number }
+type Kind = 'wristband' | 'sticker' | 'card' | 'parent_card' | 'other'
 
 export default function StarBandRegister() {
   const [nfc_uid, setNfcUid] = useState('')
@@ -25,6 +26,11 @@ export default function StarBandRegister() {
   const [students, setStudents] = useState<Student[]>([])
   const [msg, setMsg] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [kind, setKind] = useState<Kind>('wristband')
+  const [label, setLabel] = useState('')
+  const [replace, setReplace] = useState(false)
+  const [photoUrl, setPhotoUrl] = useState('')
+  const [pinCode, setPinCode] = useState('')
 
   useEffect(() => {
     fetch('/api/starband/students').then((r) => r.json()).then((d) => { if (d.ok) setStudents(d.students) })
@@ -54,14 +60,16 @@ export default function StarBandRegister() {
     if (!nfc_uid) { setMsg('Tap the band first (or paste a test UID).'); return }
     setBusy(true)
     try {
+      const common = { kind, label: label || null, replace }
       const body = mode === 'existing'
-        ? { nfc_uid, student_id: studentId }
-        : { nfc_uid, first_name: first, last_name: last, parent_name: parentName, parent_email: parentEmail, parent_phone: parentPhone }
+        ? { nfc_uid, student_id: studentId, ...common }
+        : { nfc_uid, first_name: first, last_name: last, parent_name: parentName, parent_email: parentEmail, parent_phone: parentPhone,
+            photo_url: photoUrl || null, pin_code: pinCode || null, ...common }
       const r = await fetch('/api/starband/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await r.json()
       if (data.ok) {
         setMsg('✓ Band registered. Ready for the kiosk.')
-        setNfcUid(''); setFirst(''); setLast(''); setParentName(''); setParentEmail(''); setParentPhone(''); setStudentId('')
+        setNfcUid(''); setFirst(''); setLast(''); setParentName(''); setParentEmail(''); setParentPhone(''); setStudentId(''); setLabel(''); setReplace(false); setPhotoUrl(''); setPinCode('')
         // reload list
         fetch('/api/starband/students').then((r) => r.json()).then((d) => { if (d.ok) setStudents(d.students) })
       } else {
@@ -118,15 +126,41 @@ export default function StarBandRegister() {
                   <input type="email" value={parentEmail} onChange={(e) => setParentEmail(e.target.value)} placeholder="Parent email" className="px-4 py-3 rounded-xl border-2 border-zinc-200" />
                   <input type="tel" value={parentPhone} onChange={(e) => setParentPhone(e.target.value)} placeholder="Parent phone" className="px-4 py-3 rounded-xl border-2 border-zinc-200" />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <input value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} placeholder="Photo URL (face-tap fallback)" className="px-4 py-3 rounded-xl border-2 border-zinc-200 text-sm" />
+                  <input value={pinCode} onChange={(e) => setPinCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" placeholder="4-digit PIN" className="px-4 py-3 rounded-xl border-2 border-zinc-200 font-mono" />
+                </div>
               </>
             ) : (
               <select required value={studentId} onChange={(e) => setStudentId(e.target.value)} className="w-full px-4 py-3 rounded-xl border-2 border-zinc-200 bg-white">
                 <option value="">Select a student…</option>
-                {students.filter((s) => !s.nfc_uid).map((s) => (
-                  <option key={s.id} value={s.id}>{s.first_name} {s.last_name}</option>
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.first_name} {s.last_name}{s.tag_count ? ` · ${s.tag_count} band${s.tag_count === 1 ? '' : 's'}` : ''}
+                  </option>
                 ))}
               </select>
             )}
+
+            {/* Tag kind + label — what is this tag? */}
+            <div className="bg-zinc-50 rounded-xl p-3 border border-zinc-200">
+              <label className="block text-[10px] font-extrabold tracking-widest text-zinc-500 mb-2">TAG TYPE</label>
+              <div className="flex gap-1 flex-wrap mb-3">
+                {(['wristband', 'sticker', 'card', 'parent_card'] as Kind[]).map((k) => (
+                  <button type="button" key={k} onClick={() => setKind(k)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-extrabold ${kind === k ? 'bg-red-600 text-white' : 'bg-white border border-zinc-200 text-zinc-700'}`}>
+                    {k === 'wristband' ? '⌚ Wristband' : k === 'sticker' ? '🏷 Sticker' : k === 'card' ? '💳 Card' : '👨‍👩 Parent card'}
+                  </button>
+                ))}
+              </div>
+              <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Optional label e.g. Drink bottle, School bag" className="w-full px-4 py-2 rounded-xl border border-zinc-200 text-sm" />
+              {mode === 'existing' && kind === 'wristband' && (
+                <label className="flex items-center gap-2 mt-3 text-sm text-zinc-700 cursor-pointer">
+                  <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} className="w-4 h-4" />
+                  <span>🆘 <b>Lost-band replace</b> — deactivate this kid's other wristbands</span>
+                </label>
+              )}
+            </div>
 
             <button
               type="submit"
