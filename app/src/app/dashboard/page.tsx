@@ -2,6 +2,8 @@ import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { NextUpBanner } from '@/components/calendar-view'
+import { JackyChat } from '../jacky/jacky-chat'
+import { HomeClock } from '@/components/home-clock'
 import { expandClass, type CalendarItem } from '@/lib/calendar'
 import {
   Inbox, Users, Baby, Tent, Target,
@@ -212,6 +214,8 @@ export default async function DashboardPage() {
       }
     >
       <div className="space-y-8">
+        <HomeClock />
+
         {/* Next up banner (only when something is upcoming in the next 6h) */}
         {nextUp && <NextUpBanner item={nextUp} now={now} />}
 
@@ -255,6 +259,12 @@ export default async function DashboardPage() {
             accent="from-emerald-500 to-emerald-700"
             href="/leads"
           />
+        </section>
+
+        {/* Ask Jacky — right here on Home */}
+        <section data-tour="ask-jacky">
+          <SectionHeader title="Ask Jacky" subtitle="Your AI assistant — ask anything about your business" />
+          <JackyChat userName={firstName(user.fullName, user.email)} compact />
         </section>
 
         {/* Two-column: today's classes + build progress */}

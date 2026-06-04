@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation'
 import type { BscUser } from '@/lib/dal'
 import { MusicPlayer } from './music-player'
 import { JackyTourMount } from './jacky-tour-mount'
+import { GlobalSearch } from './global-search'
 import {
   LayoutDashboard, Users, GraduationCap, Trophy, TrendingUp, CreditCard,
   Handshake, Inbox, Settings, LogOut, Search, ClipboardList, ShieldCheck,
@@ -38,7 +39,7 @@ const DEPARTMENTS: Department[] = [
     { label: 'Staff', href: '/coaches' }, { label: 'Credentials', href: '/credentials' }, { label: 'Training', href: '/training' },
   ] },
   { key: 'inbox', label: 'Inbox', Icon: Inbox, items: [
-    { label: 'Inbox', href: '/inbox' }, { label: 'Conversations', href: '/conversations' }, { label: 'Ask Jacky', href: '/jacky' },
+    { label: 'Inbox', href: '/inbox' }, { label: 'Conversations', href: '/conversations' },
   ] },
   { key: 'admin', label: 'Admin', Icon: Settings, admin: true, items: [
     { label: 'Settings', href: '/settings' }, { label: 'Compliance', href: '/compliance' }, { label: 'Reporting', href: '/reporting' },
@@ -87,12 +88,7 @@ export function DashboardShell({ user, currentPath, pageTitle, pageSubtitle, pag
           </a>
         </div>
 
-        <div className="px-3 pt-3">
-          <div className="flex items-center gap-2 bg-zinc-900 ring-1 ring-zinc-800 rounded-lg px-2.5 py-2 text-xs text-zinc-500">
-            <Search size={14} /><span className="flex-1">Search</span>
-            <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded font-mono text-zinc-400">⌘K</span>
-          </div>
-        </div>
+        <div className="px-3 pt-3"><GlobalSearch /></div>
 
         <nav className="flex-1 overflow-y-auto px-2.5 py-3 space-y-0.5">
           {isCoach ? (

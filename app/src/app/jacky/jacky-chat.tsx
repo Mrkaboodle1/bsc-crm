@@ -58,11 +58,11 @@ const STARTER_PROMPTS = [
   'Move Alannah Bodman to trial stage',
 ] as const
 
-export function JackyChat({ userName, initialPrompt }: { userName: string | null; initialPrompt?: string | null }) {
+export function JackyChat({ userName, initialPrompt, compact }: { userName: string | null; initialPrompt?: string | null; compact?: boolean }) {
   const [messages, setMessages] = useState<UiMessage[]>([
     {
       role: 'assistant',
-      content: `Hey ${userName ?? 'Rhett'}! 🎪 I'm here. I can read your families, check the approval queue, look at recent leads, and queue email/SMS drafts for you to approve. What do you want to do?`,
+      content: `Hi ${userName ?? 'Rhett'} — I'm here. I can read your families, check the approval queue, look at recent leads, and queue email or SMS drafts for you to approve. What would you like to do?`,
     },
   ])
   const [input, setInput] = useState(initialPrompt ?? '')
@@ -232,7 +232,7 @@ export function JackyChat({ userName, initialPrompt }: { userName: string | null
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-180px)] max-h-[800px] bg-white rounded-2xl shadow-sm border-2 border-zinc-200 overflow-hidden">
+    <div className={`flex flex-col ${compact ? 'h-[440px]' : 'h-[calc(100vh-180px)] max-h-[800px]'} bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden`}>
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto p-5 space-y-4 bg-gradient-to-b from-zinc-50 to-white"
