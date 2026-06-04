@@ -9,7 +9,11 @@ const PROTOCOLS: { title: string; icon: string; points: string[] }[] = [
     title: 'Before class',
     icon: '⏰',
     points: [
-      'Arrive 10 minutes early and check the equipment is safe.',
+      'Arrive 20–30 minutes early — and check all the equipment is safe.',
+      'Vacuum and tidy the space so it’s clean and ready.',
+      'Check the toilets are clean and stocked with toilet paper.',
+      'Turn the speaker on.',
+      'Put your uniform on and your name badge.',
       'Open Roll Call on the tablet for your class.',
       'Greet every child by name as they arrive.',
     ],
@@ -19,6 +23,7 @@ const PROTOCOLS: { title: string; icon: string; points: string[] }[] = [
     icon: '📋',
     points: [
       'Mark every child present / absent as they arrive.',
+      'Take out the Star Reward cards and hand them out to the students.',
       'Award stars for effort, kindness and trying something new — not just skill.',
       'Note anything a parent should hear about (a great moment or a concern).',
     ],
