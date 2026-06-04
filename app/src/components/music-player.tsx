@@ -170,7 +170,7 @@ export function MusicPlayer() {
     if (bg) bg.volume = DUCK_VOLUME
     try {
       let spot = spotRef.current
-      if (!spot) { spot = new Audio('/bsc-spot.mp3'); spotRef.current = spot }
+      if (!spot) { spot = new Audio('/bsc-spot.mp3?v=2'); spotRef.current = spot }
       spot.currentTime = 0
       spot.volume = 1
       spot.onended = restoreVol
