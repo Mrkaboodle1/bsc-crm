@@ -1,0 +1,1462 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-06-04",
+  "games": [
+    {
+      "id": "toilet-tiggy",
+      "name": "Toilet Tiggy (Stuck in the Mud)",
+      "summary": "A fast tag game where frozen players are freed when a teammate crawls through their legs.",
+      "categories": [
+        "Warm Up",
+        "Fitness",
+        "Team Building"
+      ],
+      "ageGroups": [
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 6,
+        "max": 30
+      },
+      "equipment": [
+        "Open space"
+      ],
+      "setup": "Mark a clear area. Pick 1–2 taggers (more for bigger groups).",
+      "howToPlay": "Taggers chase everyone. A tagged player freezes standing with legs apart. To free them, another player crawls through their legs (and mimes a 'flush').",
+      "rules": [
+        "Freeze instantly when tagged.",
+        "You can't be tagged while crawling to free someone.",
+        "Swap taggers every 1–2 minutes."
+      ],
+      "variations": [
+        "High-five to unfreeze (for little ones).",
+        "Add more taggers to raise the challenge."
+      ],
+      "skills": [
+        "Agility",
+        "Teamwork",
+        "Running",
+        "Spatial awareness"
+      ],
+      "safety": [
+        "Clear obstacles from the space.",
+        "Heads up while crawling.",
+        "Tag gently, two-finger touch."
+      ],
+      "difficulty": 1,
+      "energy": 5,
+      "tags": [
+        "tag",
+        "chasing",
+        "freeze",
+        "cardio",
+        "warm-up"
+      ],
+      "programAdaptations": {
+        "disability": "Walking-only taggers, bigger personal space, high-five unfreeze.",
+        "homeschool": "Great in a backyard/park with 1 tagger.",
+        "oshc": "Big-group energy burner — set clear boundaries."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "grandmas-footsteps",
+      "name": "Grandma's Footsteps",
+      "summary": "Players sneak up on Grandma and freeze whenever she turns around.",
+      "categories": [
+        "Warm Up",
+        "Drama"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8"
+      ],
+      "groupSize": {
+        "min": 4,
+        "max": 25
+      },
+      "equipment": [
+        "Open space"
+      ],
+      "setup": "One player ('Grandma') stands at one end facing the wall. Everyone else lines up at the far end.",
+      "howToPlay": "Players creep forward while Grandma's back is turned. When Grandma spins around, everyone must freeze. Anyone caught moving goes back to the start. First to tag Grandma wins and becomes the new Grandma.",
+      "rules": [
+        "Move only when Grandma is looking away.",
+        "Total freeze when she turns.",
+        "Caught moving = back to the start line."
+      ],
+      "variations": [
+        "Freeze in a circus shape each time.",
+        "Tip-toe only / animal-walk only."
+      ],
+      "skills": [
+        "Balance",
+        "Body control",
+        "Self-regulation",
+        "Patience"
+      ],
+      "safety": [
+        "Spread players out to avoid bumping.",
+        "No running — sneaking only."
+      ],
+      "difficulty": 1,
+      "energy": 2,
+      "tags": [
+        "freeze",
+        "stealth",
+        "self-control",
+        "calm"
+      ],
+      "programAdaptations": {
+        "disability": "Shorten the distance; allow a support partner.",
+        "homeschool": "Perfect for small groups or siblings.",
+        "oshc": "Good settle-down game after high energy."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "whats-the-time-mr-wolf",
+      "name": "What's the Time Mr Wolf",
+      "summary": "Players take steps toward the Wolf until he calls 'Dinner time!' and chases them home.",
+      "categories": [
+        "Warm Up",
+        "Fitness"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8"
+      ],
+      "groupSize": {
+        "min": 4,
+        "max": 25
+      },
+      "equipment": [
+        "Open space"
+      ],
+      "setup": "Wolf stands at one end facing away. Players line up at the other end.",
+      "howToPlay": "Players chant 'What's the time, Mr Wolf?'. The Wolf calls a number ('3 o'clock') and players take that many steps forward. When the Wolf calls 'Dinner time!' he turns and chases everyone back to the start line. Anyone tagged becomes the next Wolf.",
+      "rules": [
+        "Take exactly the number of steps called.",
+        "Run home only on 'Dinner time!'.",
+        "Tagged players become (or help) the Wolf."
+      ],
+      "variations": [
+        "Circus steps: cartwheel-steps, bunny-hops, giant leaps.",
+        "Two Wolves for big groups."
+      ],
+      "skills": [
+        "Counting",
+        "Listening",
+        "Running",
+        "Reaction"
+      ],
+      "safety": [
+        "Define a clear safe line.",
+        "Watch for collisions on the run home."
+      ],
+      "difficulty": 1,
+      "energy": 4,
+      "tags": [
+        "chasing",
+        "counting",
+        "reaction",
+        "warm-up"
+      ],
+      "programAdaptations": {
+        "disability": "Wolf walks; allow wheels/walkers; shorter run.",
+        "homeschool": "Ideal for early-years at home.",
+        "oshc": "Crowd-pleaser for mixed ages."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "circus-relay-race",
+      "name": "Circus Relay Race",
+      "summary": "Teams race through circus skill stations in a relay.",
+      "categories": [
+        "Fitness",
+        "Circus Skills",
+        "Team Building"
+      ],
+      "ageGroups": [
+        "5–8",
+        "8–12",
+        "Teens"
+      ],
+      "groupSize": {
+        "min": 6,
+        "max": 30
+      },
+      "equipment": [
+        "Cones",
+        "Hula hoops",
+        "Beanbags",
+        "Juggling balls",
+        "Mats"
+      ],
+      "setup": "Set up stations along a course at 5m / 10m / 15m distances. Split into even teams.",
+      "howToPlay": "Each player runs the course completing a skill at each station, then tags the next teammate. Possible stations: star jumps, forward rolls, hula hoop spins, beanbag balance, juggling challenge, shuttle runs.",
+      "rules": [
+        "Complete each station before moving on.",
+        "Tag the next runner to start them.",
+        "First team finished wins."
+      ],
+      "variations": [
+        "Change stations weekly.",
+        "Pairs run together for younger kids."
+      ],
+      "skills": [
+        "Coordination",
+        "Speed",
+        "Circus skills",
+        "Teamwork"
+      ],
+      "safety": [
+        "Mats under any rolls.",
+        "Space lanes so teams don't collide.",
+        "Check equipment is stable."
+      ],
+      "difficulty": 2,
+      "energy": 5,
+      "tags": [
+        "relay",
+        "stations",
+        "circus",
+        "teams",
+        "cardio"
+      ],
+      "programAdaptations": {
+        "disability": "Choose-your-station relay; seated skill options.",
+        "homeschool": "Scale to 2 players, time-trial style.",
+        "oshc": "Excellent large-group format."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "musical-hula-hoops",
+      "name": "Musical Hula Hoops",
+      "summary": "Musical-chairs with hoops — jump into a hoop when the music stops.",
+      "categories": [
+        "Warm Up",
+        "Fitness"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8"
+      ],
+      "groupSize": {
+        "min": 4,
+        "max": 20
+      },
+      "equipment": [
+        "Hula hoops",
+        "Music"
+      ],
+      "setup": "Scatter hoops around the space (one per player to start). Have music ready.",
+      "howToPlay": "Players move around the hoops while music plays. When it stops, everyone jumps into a hoop. Remove a hoop each round. If two players land in the same hoop, they play Rock Paper Scissors — winner stays, loser does 10 star jumps and rejoins.",
+      "rules": [
+        "Move while music plays.",
+        "One player per hoop after each round.",
+        "Settle ties with Rock Paper Scissors."
+      ],
+      "variations": [
+        "Move like circus animals between rounds.",
+        "Team hoops — fit the whole team in shrinking hoops."
+      ],
+      "skills": [
+        "Listening",
+        "Agility",
+        "Fair play",
+        "Jumping"
+      ],
+      "safety": [
+        "Spread hoops out.",
+        "No diving for hoops — feet first."
+      ],
+      "difficulty": 1,
+      "energy": 4,
+      "tags": [
+        "music",
+        "hoops",
+        "reaction",
+        "elimination-free"
+      ],
+      "programAdaptations": {
+        "disability": "No elimination; everyone always has a hoop.",
+        "homeschool": "Works with 3–4 players.",
+        "oshc": "Reliable rainy-day favourite."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "animal-races",
+      "name": "Animal Races",
+      "summary": "Race across the floor using different animal movements.",
+      "categories": [
+        "Warm Up",
+        "Fitness",
+        "Gymnastics"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 30
+      },
+      "equipment": [
+        "Open space",
+        "Mats (optional)"
+      ],
+      "setup": "Mark a start and finish line.",
+      "howToPlay": "Coach calls an animal movement and players race across: frog jumps, crab walk, bear crawl, bunny hops, kangaroo jumps, seal slides.",
+      "rules": [
+        "Use the called movement only.",
+        "Race to the line and back."
+      ],
+      "variations": [
+        "Relay version in teams.",
+        "Mix two animals in one length."
+      ],
+      "skills": [
+        "Strength",
+        "Coordination",
+        "Gross motor",
+        "Body awareness"
+      ],
+      "safety": [
+        "Soft surface for crawls and slides.",
+        "Space lanes apart."
+      ],
+      "difficulty": 1,
+      "energy": 4,
+      "tags": [
+        "animals",
+        "locomotion",
+        "strength",
+        "warm-up",
+        "gymnastics"
+      ],
+      "programAdaptations": {
+        "disability": "Pick movements that suit each child; no racing pressure.",
+        "homeschool": "Brilliant early-years movement break.",
+        "oshc": "Quick and equipment-free."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "circus-obstacle-course",
+      "name": "Circus Obstacle Course",
+      "summary": "A multi-skill course combining circus and gym stations.",
+      "categories": [
+        "Circus Skills",
+        "Gymnastics",
+        "Fitness"
+      ],
+      "ageGroups": [
+        "5–8",
+        "8–12",
+        "Teens"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 24
+      },
+      "equipment": [
+        "Mats",
+        "Beam",
+        "Hula hoops",
+        "Tunnel",
+        "Juggling balls",
+        "Cones"
+      ],
+      "setup": "Build a flowing course: forward roll → beam walk → hula hoop jumps → tunnel crawl → juggling station.",
+      "howToPlay": "Players move through the course in order, completing each obstacle before the next.",
+      "rules": [
+        "Complete obstacles in order.",
+        "One person per obstacle for safety.",
+        "Spotter at any height element."
+      ],
+      "variations": [
+        "Change layout weekly.",
+        "Add a memory element — repeat the sequence."
+      ],
+      "skills": [
+        "Balance",
+        "Coordination",
+        "Sequencing",
+        "Circus skills"
+      ],
+      "safety": [
+        "Mats under all balance/roll elements.",
+        "Coach spots the beam.",
+        "One at a time."
+      ],
+      "difficulty": 2,
+      "energy": 4,
+      "tags": [
+        "obstacle",
+        "stations",
+        "circus",
+        "gymnastics",
+        "skill"
+      ],
+      "programAdaptations": {
+        "disability": "Optional/seated stations; lower the beam to the floor.",
+        "homeschool": "Use household items (cushions, tape lines).",
+        "oshc": "Great rotation activity."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "ninja-warrior-challenge",
+      "name": "Ninja Warrior Challenge",
+      "summary": "A timed obstacle course — fastest clean run wins.",
+      "categories": [
+        "Fitness",
+        "Circus Skills",
+        "Gymnastics"
+      ],
+      "ageGroups": [
+        "8–12",
+        "Teens"
+      ],
+      "groupSize": {
+        "min": 1,
+        "max": 20
+      },
+      "equipment": [
+        "Mats",
+        "Beam",
+        "Hula hoops",
+        "Cones",
+        "Stopwatch"
+      ],
+      "setup": "Build a challenging obstacle course and set a clear start/finish.",
+      "howToPlay": "Players run the course one at a time and are timed. Fastest clean completion wins. Penalties for skipped obstacles.",
+      "rules": [
+        "Complete every obstacle.",
+        "Time penalty for misses.",
+        "One runner on the course at a time."
+      ],
+      "variations": [
+        "Head-to-head split lanes.",
+        "Beat-your-own-time leaderboard."
+      ],
+      "skills": [
+        "Power",
+        "Agility",
+        "Resilience",
+        "Goal setting"
+      ],
+      "safety": [
+        "Crash mats at landings.",
+        "Coach supervises each height element.",
+        "Rest between runs."
+      ],
+      "difficulty": 3,
+      "energy": 5,
+      "tags": [
+        "timed",
+        "obstacle",
+        "challenge",
+        "leaderboard"
+      ],
+      "programAdaptations": {
+        "disability": "Personal-best focus, adapted obstacles, no clock pressure.",
+        "homeschool": "Backyard ninja course.",
+        "oshc": "Older-kids highlight."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "shape-freeze",
+      "name": "Shape Freeze",
+      "summary": "Move to music, then freeze in a called gymnastics shape.",
+      "categories": [
+        "Gymnastics",
+        "Warm Up"
+      ],
+      "ageGroups": [
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 30
+      },
+      "equipment": [
+        "Music (optional)",
+        "Mats"
+      ],
+      "setup": "Spread players out with personal space.",
+      "howToPlay": "Players move around. The coach calls a shape and everyone freezes in it: star, tuck, straddle, pike, arabesque, handstand.",
+      "rules": [
+        "Hold the shape still for 3 seconds.",
+        "Correct shape required to stay in.",
+        "Coach checks technique."
+      ],
+      "variations": [
+        "Partner shapes.",
+        "Hold for longer to build strength."
+      ],
+      "skills": [
+        "Body shapes",
+        "Balance",
+        "Core strength",
+        "Listening"
+      ],
+      "safety": [
+        "Mats for handstands/balances.",
+        "Coach spots inversions."
+      ],
+      "difficulty": 2,
+      "energy": 3,
+      "tags": [
+        "gymnastics",
+        "shapes",
+        "freeze",
+        "technique"
+      ],
+      "programAdaptations": {
+        "disability": "Seated/supported shapes; pick achievable shapes.",
+        "homeschool": "Reinforces gym basics at home.",
+        "oshc": "Calm, focused activity."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "circus-simon-says",
+      "name": "Circus Simon Says",
+      "summary": "Simon Says using circus and gymnastics movements.",
+      "categories": [
+        "Warm Up",
+        "Circus Skills",
+        "Drama"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 30
+      },
+      "equipment": [
+        "Open space"
+      ],
+      "setup": "Players spread out facing the coach.",
+      "howToPlay": "Players only perform a movement when the coach says 'Simon says…'. Use circus/gym moves: 'Simon says do a star jump / juggle / balance on one leg / strike a clown pose'.",
+      "rules": [
+        "Only move on 'Simon says'.",
+        "Move without it = sit out one round (or do a fun forfeit).",
+        "Last player in wins."
+      ],
+      "variations": [
+        "Players take turns being Simon.",
+        "No-elimination: forfeit a silly pose instead."
+      ],
+      "skills": [
+        "Listening",
+        "Body control",
+        "Circus vocabulary",
+        "Focus"
+      ],
+      "safety": [
+        "Keep moves to skill level.",
+        "Spread out."
+      ],
+      "difficulty": 1,
+      "energy": 3,
+      "tags": [
+        "simon-says",
+        "listening",
+        "circus",
+        "focus"
+      ],
+      "programAdaptations": {
+        "disability": "Slow pace; visual cues; no elimination.",
+        "homeschool": "Easy any-group-size game.",
+        "oshc": "Reliable filler that calms or lifts energy."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "pirate-treasure-hunt",
+      "name": "Pirate Treasure Hunt",
+      "summary": "Collect 'treasure' from around the room using a chosen movement.",
+      "categories": [
+        "Fitness",
+        "Team Building"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 24
+      },
+      "equipment": [
+        "Beanbags / soft objects",
+        "Hoops (nests)"
+      ],
+      "setup": "Scatter 'treasure' across the room. Give each player or team a hoop nest.",
+      "howToPlay": "Players collect treasure back to their nest one piece at a time, moving in the called style (crab walk, bear crawl, hopping).",
+      "rules": [
+        "One piece of treasure per trip.",
+        "Use the called movement only.",
+        "No guarding others' nests."
+      ],
+      "variations": [
+        "Teams vs the clock.",
+        "Steal-a-treasure round (see Steal the Egg)."
+      ],
+      "skills": [
+        "Locomotion",
+        "Counting",
+        "Strength",
+        "Strategy"
+      ],
+      "safety": [
+        "Clear floor of trip hazards.",
+        "Soft objects only."
+      ],
+      "difficulty": 1,
+      "energy": 4,
+      "tags": [
+        "collecting",
+        "pirates",
+        "locomotion",
+        "theme"
+      ],
+      "programAdaptations": {
+        "disability": "Closer treasure; any movement allowed.",
+        "homeschool": "Indoor energy burner.",
+        "oshc": "Themeable for any week."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "human-hungry-hippos",
+      "name": "Human Hungry Hippos",
+      "summary": "Lie on a scooter board while a partner launches you to grab beanbags.",
+      "categories": [
+        "Fitness",
+        "Team Building"
+      ],
+      "ageGroups": [
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 4,
+        "max": 16
+      },
+      "equipment": [
+        "Scooter boards",
+        "Beanbags / balls",
+        "Centre hoop"
+      ],
+      "setup": "Pile beanbags in a centre hoop. Players lie on scooter boards around the edge; a partner holds their feet.",
+      "howToPlay": "On 'go', the partner pushes the player toward the centre to grab ONE beanbag, then pulls them back. Most beanbags at the end wins.",
+      "rules": [
+        "One beanbag per trip.",
+        "Hold partner's feet — no letting go fast.",
+        "Push, don't fling."
+      ],
+      "variations": [
+        "Swap roles each round.",
+        "Colour-target beanbags worth points."
+      ],
+      "skills": [
+        "Core strength",
+        "Teamwork",
+        "Communication",
+        "Grip"
+      ],
+      "safety": [
+        "Smooth floor, no fingers under boards.",
+        "Controlled pushes only.",
+        "Helmets optional for speed lovers."
+      ],
+      "difficulty": 2,
+      "energy": 5,
+      "tags": [
+        "scooter-board",
+        "partner",
+        "core",
+        "collecting"
+      ],
+      "programAdaptations": {
+        "disability": "Seated reach version; gentle pace.",
+        "homeschool": "Needs scooter boards — gym/OSHC setting.",
+        "oshc": "Huge favourite, supervise speed."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "balloon-keepy-uppy",
+      "name": "Balloon Keepy Uppy",
+      "summary": "Keep a balloon off the floor — solo or as a team.",
+      "categories": [
+        "Warm Up",
+        "Circus Skills"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 1,
+        "max": 30
+      },
+      "equipment": [
+        "Balloons"
+      ],
+      "setup": "One balloon per player or per small team.",
+      "howToPlay": "Players keep the balloon in the air without it touching the floor. Count the streak.",
+      "rules": [
+        "No catching/holding.",
+        "Floor touch = streak resets.",
+        "Stay in your zone (teams)."
+      ],
+      "variations": [
+        "One hand only.",
+        "Heads only.",
+        "Team circle — everyone touches once before a repeat."
+      ],
+      "skills": [
+        "Hand-eye coordination",
+        "Tracking",
+        "Cooperation",
+        "Focus"
+      ],
+      "safety": [
+        "Clear space overhead.",
+        "Balloon-pop care for sensitive kids."
+      ],
+      "difficulty": 1,
+      "energy": 3,
+      "tags": [
+        "balloon",
+        "coordination",
+        "calm",
+        "cooperative"
+      ],
+      "programAdaptations": {
+        "disability": "Slow balloon = accessible for most abilities; seated works.",
+        "homeschool": "Perfect indoor low-space game.",
+        "oshc": "Cheap, easy, popular."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "circus-traffic-lights",
+      "name": "Circus Traffic Lights",
+      "summary": "Colour calls trigger circus movements — listen and react fast.",
+      "categories": [
+        "Warm Up",
+        "Fitness",
+        "Circus Skills"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 30
+      },
+      "equipment": [
+        "Open space"
+      ],
+      "setup": "Teach the colour commands first.",
+      "howToPlay": "Coach calls colours and players respond: Green = run, Yellow = walk, Red = freeze, Purple = spin, Blue = balance, Orange = forward roll.",
+      "rules": [
+        "React to the call immediately.",
+        "Hold freezes still.",
+        "Last to react does a fun forfeit (no elimination)."
+      ],
+      "variations": [
+        "Add new colours/skills.",
+        "Players call the colours."
+      ],
+      "skills": [
+        "Reaction",
+        "Listening",
+        "Body control",
+        "Circus skills"
+      ],
+      "safety": [
+        "Mats for rolls.",
+        "Spread out for spins/balances."
+      ],
+      "difficulty": 1,
+      "energy": 4,
+      "tags": [
+        "reaction",
+        "colours",
+        "listening",
+        "circus",
+        "warm-up"
+      ],
+      "programAdaptations": {
+        "disability": "Fewer commands; visual colour cards.",
+        "homeschool": "Scales to any group.",
+        "oshc": "Energy up or down on demand."
+      },
+      "origin": "BigStar Circus"
+    },
+    {
+      "id": "magic-freeze",
+      "name": "Magic Freeze",
+      "summary": "Dance/move, then freeze as a called circus character.",
+      "categories": [
+        "Drama",
+        "Warm Up"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 30
+      },
+      "equipment": [
+        "Music (optional)"
+      ],
+      "setup": "Spread out with space to pose.",
+      "howToPlay": "Players move freely. On 'freeze!', the coach names a character and everyone strikes that pose: lion, clown, tightrope walker, magician, robot, superhero.",
+      "rules": [
+        "Move until 'freeze'.",
+        "Hold the character pose 3 seconds.",
+        "Be creative — there's no wrong pose."
+      ],
+      "variations": [
+        "Add a sound/action for each character.",
+        "Partner or group statues."
+      ],
+      "skills": [
+        "Imagination",
+        "Expression",
+        "Body control",
+        "Confidence"
+      ],
+      "safety": [
+        "Spread out for big poses."
+      ],
+      "difficulty": 1,
+      "energy": 3,
+      "tags": [
+        "drama",
+        "freeze",
+        "characters",
+        "imagination",
+        "confidence"
+      ],
+      "programAdaptations": {
+        "disability": "Seated character poses welcome.",
+        "homeschool": "Builds confidence at home.",
+        "oshc": "Great imagination builder."
+      },
+      "origin": "BigStar Circus"
+    },
+    {
+      "id": "volcano-tag",
+      "name": "Volcano Tag",
+      "summary": "The floor is lava — tagged players become erupting volcanoes.",
+      "categories": [
+        "Fitness",
+        "Team Building"
+      ],
+      "ageGroups": [
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 6,
+        "max": 30
+      },
+      "equipment": [
+        "Mats / hoops (safe zones)"
+      ],
+      "setup": "Place mats and equipment as safe zones. Choose 1–2 taggers.",
+      "howToPlay": "Players move around avoiding taggers. Stepping on the 'lava' floor or being tagged turns you into a stationary 'volcano' who can tag passers-by. Safe zones (mats/equipment) can't be camped on.",
+      "rules": [
+        "No camping in safe zones (5-second limit).",
+        "Volcanoes stay put but can tag.",
+        "Reset on coach's call."
+      ],
+      "variations": [
+        "More taggers over time.",
+        "Freeze-and-free rescue variant."
+      ],
+      "skills": [
+        "Agility",
+        "Spatial awareness",
+        "Strategy",
+        "Cardio"
+      ],
+      "safety": [
+        "Stable, non-slip safe zones.",
+        "Define lava clearly.",
+        "Two-finger tags."
+      ],
+      "difficulty": 2,
+      "energy": 5,
+      "tags": [
+        "tag",
+        "lava",
+        "safe-zones",
+        "cardio",
+        "theme"
+      ],
+      "programAdaptations": {
+        "disability": "More/closer safe zones; walking taggers.",
+        "homeschool": "Backyard with cushions as islands.",
+        "oshc": "High-energy big-group game."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "star-collector",
+      "name": "Star Collector",
+      "summary": "Earn stars by completing circus and gym challenges.",
+      "categories": [
+        "Circus Skills",
+        "Gymnastics",
+        "Fitness"
+      ],
+      "ageGroups": [
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 24
+      },
+      "equipment": [
+        "Star tokens / cards",
+        "Mats",
+        "Juggling balls",
+        "Hoops"
+      ],
+      "setup": "Set up challenge stations, each worth a star token.",
+      "howToPlay": "Players move between stations completing challenges (forward roll, balance challenge, juggling challenge) and collect a star for each. Ties to BSC's real Star reward system.",
+      "rules": [
+        "Earn a star by completing the challenge well.",
+        "Coach awards the star.",
+        "Encourage personal bests, not ranking."
+      ],
+      "variations": [
+        "Team star totals.",
+        "Bonus 'effort stars' for trying something new."
+      ],
+      "skills": [
+        "Circus skills",
+        "Persistence",
+        "Goal setting",
+        "Confidence"
+      ],
+      "safety": [
+        "Mats under skill stations.",
+        "Coach supervises each challenge."
+      ],
+      "difficulty": 2,
+      "energy": 3,
+      "tags": [
+        "stars",
+        "stations",
+        "reward",
+        "circus",
+        "confidence"
+      ],
+      "programAdaptations": {
+        "disability": "Personalised challenges so everyone earns stars.",
+        "homeschool": "Pairs with a home star chart.",
+        "oshc": "Rotational and rewarding."
+      },
+      "origin": "BigStar Circus"
+    },
+    {
+      "id": "steal-the-egg",
+      "name": "Steal the Egg",
+      "summary": "Collect then steal 'eggs' between nests — most eggs wins.",
+      "categories": [
+        "Fitness",
+        "Team Building"
+      ],
+      "ageGroups": [
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 4,
+        "max": 24
+      },
+      "equipment": [
+        "1 large centre hoop",
+        "20–30 juggling balls (eggs)",
+        "1 hoop nest per player"
+      ],
+      "setup": "Pile all eggs in the centre hoop. Each player has their own hoop nest spread around the room.",
+      "howToPlay": "Round 1: players collect eggs from the centre to their nest, one at a time. Round 2: once the centre is empty, players steal eggs from other nests, one at a time. Player with the most eggs when the coach calls time wins.",
+      "rules": [
+        "Only ONE egg per trip.",
+        "No guarding/blocking your nest.",
+        "No grabbing an egg from someone's hands."
+      ],
+      "variations": [
+        "Pirate Treasure / Dragon Eggs theme.",
+        "Crab-walk-only version.",
+        "Team nests."
+      ],
+      "skills": [
+        "Speed",
+        "Strategy",
+        "Fair play",
+        "Cardio"
+      ],
+      "safety": [
+        "Soft balls only.",
+        "Heads up to avoid collisions.",
+        "No diving."
+      ],
+      "difficulty": 2,
+      "energy": 5,
+      "tags": [
+        "collecting",
+        "stealing",
+        "nests",
+        "cardio",
+        "strategy"
+      ],
+      "programAdaptations": {
+        "disability": "Closer nests; any movement; no-steal collect-only version.",
+        "homeschool": "Works with 4+ players.",
+        "oshc": "Reliable big hit — supervise the chaos."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "floor-is-lava",
+      "name": "Floor Is Lava",
+      "summary": "Cross the room on islands without touching the 'lava' floor.",
+      "categories": [
+        "Fitness",
+        "Team Building",
+        "Circus Skills"
+      ],
+      "ageGroups": [
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 24
+      },
+      "equipment": [
+        "Mats",
+        "Hoops",
+        "Blocks",
+        "Spots"
+      ],
+      "setup": "Lay out mats, hoops and blocks as 'islands' across the floor.",
+      "howToPlay": "Players move island to island without touching the floor. The coach can call events: 'Lava rising', 'Earthquake', 'Volcano eruption', 'Freeze'. Advanced: remove islands as the game goes on.",
+      "rules": [
+        "No touching the floor.",
+        "Respond to event calls.",
+        "Take turns on small islands."
+      ],
+      "variations": [
+        "Team challenge — get everyone across.",
+        "Carry an object without dropping it."
+      ],
+      "skills": [
+        "Balance",
+        "Problem solving",
+        "Teamwork",
+        "Agility"
+      ],
+      "safety": [
+        "Non-slip islands.",
+        "Keep jumps short and safe.",
+        "Spot tricky gaps."
+      ],
+      "difficulty": 2,
+      "energy": 4,
+      "tags": [
+        "lava",
+        "balance",
+        "problem-solving",
+        "islands",
+        "theme"
+      ],
+      "programAdaptations": {
+        "disability": "Wider/closer islands; pathway version.",
+        "homeschool": "Classic cushion game at home.",
+        "oshc": "Endlessly re-playable."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "handstand-heist",
+      "name": "Handstand Heist",
+      "summary": "One partner holds a strength shape while the other ferries props — a BSC original.",
+      "categories": [
+        "Gymnastics",
+        "Circus Skills",
+        "Team Building",
+        "Fitness"
+      ],
+      "ageGroups": [
+        "8–12",
+        "Teens"
+      ],
+      "groupSize": {
+        "min": 4,
+        "max": 24
+      },
+      "equipment": [
+        "Mats",
+        "Juggling balls / scarves",
+        "2 hoops per team",
+        "Wall (optional)"
+      ],
+      "setup": "Two students per team. Set a hoop at each end of each team's lane.",
+      "howToPlay": "One student holds a strength shape (handstand, wall sit, plank, or balance shape). The other transports juggling balls or scarves from one hoop to the other. When the load is moved, partners switch roles. If the held shape drops, the transport partner must freeze until the shape resumes.",
+      "rules": [
+        "Transport stops whenever the shape drops.",
+        "One prop per trip.",
+        "Switch roles after each completed load."
+      ],
+      "variations": [
+        "Choose-your-shape by ability.",
+        "Time challenge vs other teams."
+      ],
+      "skills": [
+        "Handstand strength",
+        "Core strength",
+        "Teamwork",
+        "Communication"
+      ],
+      "safety": [
+        "Mats under all holds.",
+        "Coach spots handstands.",
+        "Stop if form breaks down."
+      ],
+      "difficulty": 4,
+      "energy": 4,
+      "tags": [
+        "handstand",
+        "strength",
+        "partner",
+        "circus",
+        "original"
+      ],
+      "programAdaptations": {
+        "disability": "Use plank/wall-sit/seated holds; flexible roles.",
+        "homeschool": "Needs a partner and mat space.",
+        "oshc": "Better for older, supervised groups."
+      },
+      "origin": "BigStar Circus Original"
+    },
+    {
+      "id": "circus-delivery-race",
+      "name": "Circus Delivery Race",
+      "summary": "Transport circus props to the matching coloured hoops, fast.",
+      "categories": [
+        "Fitness",
+        "Team Building"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 24
+      },
+      "equipment": [
+        "Coloured hoops",
+        "Coloured props / beanbags"
+      ],
+      "setup": "Place coloured hoops around the room. Pile matching coloured props at the start.",
+      "howToPlay": "Players deliver each prop to its correct coloured hoop, one at a time, racing the clock or another team.",
+      "rules": [
+        "Match colour to hoop.",
+        "One prop per trip.",
+        "Fastest correct delivery wins."
+      ],
+      "variations": [
+        "Add movement styles (hop, crab).",
+        "Memory version — colours called, not shown."
+      ],
+      "skills": [
+        "Colour matching",
+        "Speed",
+        "Sorting",
+        "Cardio"
+      ],
+      "safety": [
+        "Clear lanes.",
+        "Soft props only."
+      ],
+      "difficulty": 1,
+      "energy": 4,
+      "tags": [
+        "sorting",
+        "colours",
+        "delivery",
+        "early-years"
+      ],
+      "programAdaptations": {
+        "disability": "Closer hoops; fewer colours.",
+        "homeschool": "Great early-years sorting + movement.",
+        "oshc": "Quick to set up."
+      },
+      "origin": "BigStar Circus"
+    },
+    {
+      "id": "clean-your-room",
+      "name": "Clean Your Room",
+      "summary": "Two teams throw beanbags onto each other's side — cleanest side wins.",
+      "categories": [
+        "Fitness",
+        "Team Building"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8",
+        "8–12"
+      ],
+      "groupSize": {
+        "min": 6,
+        "max": 30
+      },
+      "equipment": [
+        "Beanbags / soft balls",
+        "Centre line"
+      ],
+      "setup": "Split the room in two with a centre line. Scatter beanbags on both sides.",
+      "howToPlay": "On 'go', each team throws beanbags onto the other team's side to keep their own side clean. On 'stop', count beanbags — the side with the fewest wins.",
+      "rules": [
+        "Throw underarm and low.",
+        "No crossing the centre line.",
+        "Stop instantly on the whistle."
+      ],
+      "variations": [
+        "Timed rounds.",
+        "Only certain throws (left hand, backwards)."
+      ],
+      "skills": [
+        "Throwing",
+        "Speed",
+        "Teamwork",
+        "Cardio"
+      ],
+      "safety": [
+        "Soft items only.",
+        "Throw at the floor, not people."
+      ],
+      "difficulty": 1,
+      "energy": 5,
+      "tags": [
+        "throwing",
+        "teams",
+        "tidy",
+        "cardio",
+        "classic"
+      ],
+      "programAdaptations": {
+        "disability": "Closer line; rolling instead of throwing.",
+        "homeschool": "Needs a bigger group.",
+        "oshc": "Guaranteed energy burner."
+      },
+      "origin": "Classic"
+    },
+    {
+      "id": "circus-builders",
+      "name": "Circus Builders",
+      "summary": "Teams build a pyramid, castle or circus tent from equipment.",
+      "categories": [
+        "Team Building",
+        "Circus Skills"
+      ],
+      "ageGroups": [
+        "8–12",
+        "Teens"
+      ],
+      "groupSize": {
+        "min": 4,
+        "max": 24
+      },
+      "equipment": [
+        "Mats",
+        "Blocks",
+        "Soft equipment",
+        "Bodies (low pyramids)"
+      ],
+      "setup": "Give each team a set of equipment and a build challenge.",
+      "howToPlay": "Teams design and build a structure (pyramid, castle or circus tent) using available equipment and safe low acro shapes. Judge on teamwork, creativity and stability.",
+      "rules": [
+        "Safe acro only — coach-approved heights.",
+        "Everyone contributes.",
+        "Build must stand for 10 seconds."
+      ],
+      "variations": [
+        "Themed builds.",
+        "Speed build vs design build."
+      ],
+      "skills": [
+        "Cooperation",
+        "Problem solving",
+        "Acro basics",
+        "Communication"
+      ],
+      "safety": [
+        "No high human pyramids without coaching + mats.",
+        "Spot every shape.",
+        "Stable bases only."
+      ],
+      "difficulty": 3,
+      "energy": 3,
+      "tags": [
+        "building",
+        "teamwork",
+        "acro",
+        "creative"
+      ],
+      "programAdaptations": {
+        "disability": "Equipment-only builds; clear roles.",
+        "homeschool": "Use furniture-free soft items.",
+        "oshc": "Great cooperative challenge."
+      },
+      "origin": "BigStar Circus"
+    },
+    {
+      "id": "superhero-rescue",
+      "name": "Superhero Rescue",
+      "summary": "Complete circus challenges to 'rescue' a trapped superhero.",
+      "categories": [
+        "Circus Skills",
+        "Fitness",
+        "Drama"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 24
+      },
+      "equipment": [
+        "Mats",
+        "Beam",
+        "Hoops",
+        "A 'trapped' toy/mascot"
+      ],
+      "setup": "Place the 'superhero' (mascot/toy) at the end of a challenge path.",
+      "howToPlay": "Players complete circus challenges in sequence — forward roll, balance beam, hula hoop jump, bear crawl — to reach and rescue the superhero.",
+      "rules": [
+        "Complete each challenge to advance.",
+        "Cheer each other on.",
+        "Everyone gets to rescue."
+      ],
+      "variations": [
+        "Story themes each week.",
+        "Team relay rescue."
+      ],
+      "skills": [
+        "Circus skills",
+        "Sequencing",
+        "Imagination",
+        "Persistence"
+      ],
+      "safety": [
+        "Mats under skill elements.",
+        "Spot the beam."
+      ],
+      "difficulty": 2,
+      "energy": 4,
+      "tags": [
+        "story",
+        "superhero",
+        "obstacle",
+        "imagination",
+        "early-years"
+      ],
+      "programAdaptations": {
+        "disability": "Adapt/choose challenges; full support to succeed.",
+        "homeschool": "Lovely imaginative home course.",
+        "oshc": "Theme of the week winner."
+      },
+      "origin": "BigStar Circus"
+    },
+    {
+      "id": "traffic-jam",
+      "name": "Traffic Jam",
+      "summary": "Move through hoop pathways responding to motion commands.",
+      "categories": [
+        "Warm Up",
+        "Drama",
+        "Fitness"
+      ],
+      "ageGroups": [
+        "3–5",
+        "5–8"
+      ],
+      "groupSize": {
+        "min": 2,
+        "max": 24
+      },
+      "equipment": [
+        "Hula hoops (pathway)"
+      ],
+      "setup": "Lay hoops in winding pathways across the floor.",
+      "howToPlay": "Players travel along the hoop pathways. The coach calls a motion style and everyone changes: slow motion, fast forward, reverse, freeze.",
+      "rules": [
+        "Stay on the pathway.",
+        "Change instantly on the call.",
+        "No bumping the car in front."
+      ],
+      "variations": [
+        "Add 'spin' or 'balance' commands.",
+        "Follow-the-leader trains."
+      ],
+      "skills": [
+        "Body control",
+        "Listening",
+        "Spatial awareness",
+        "Imagination"
+      ],
+      "safety": [
+        "Space players along the path.",
+        "Slow near turns."
+      ],
+      "difficulty": 1,
+      "energy": 3,
+      "tags": [
+        "pathways",
+        "reaction",
+        "control",
+        "early-years"
+      ],
+      "programAdaptations": {
+        "disability": "Wider pathways; fewer commands.",
+        "homeschool": "Tape lines work instead of hoops.",
+        "oshc": "Good transition/settle game."
+      },
+      "origin": "BigStar Circus"
+    }
+  ]
+}
