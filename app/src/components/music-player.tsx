@@ -81,6 +81,13 @@ const STATIONS: Station[] = [
 
 const STORAGE_KEY = 'bsc-music-state-v1'
 
+// BigStar shout-out — spoken by the device, ducking the music underneath.
+// Live radio has no song markers, so we play it on a steady cadence (≈ every
+// 3 songs). On a controllable playlist we could make it exactly every 3rd song.
+const BSC_LINE = 'Big Star Circus makes circus stars every day. Stay inspired and creative. Make the impossible possible.'
+const SPOT_EVERY_MS = 9 * 60 * 1000
+const DUCK_VOLUME = 0.18
+
 type StoredState = {
   stationId: string
   volume: number
@@ -113,6 +120,7 @@ export function MusicPlayer() {
   const [volume, setVolume] = useState(0.6)
   const [playing, setPlaying] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [spotOn, setSpotOn] = useState(true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const station = STATIONS.find((s) => s.id === stationId) ?? STATIONS[0]!
@@ -151,6 +159,37 @@ export function MusicPlayer() {
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume
   }, [volume])
+
+  // The BigStar shout-out — duck the music, speak the line, restore volume.
+  function speakSpot() {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
+    const audio = audioRef.current
+    const restore = audio ? audio.volume : volume
+    try {
+      if (audio) audio.volume = DUCK_VOLUME
+      window.speechSynthesis.cancel()
+      const u = new SpeechSynthesisUtterance(BSC_LINE)
+      u.rate = 0.98
+      u.pitch = 1.05
+      const voices = window.speechSynthesis.getVoices()
+      const en = voices.find((v) => /en[-_]AU/i.test(v.lang)) || voices.find((v) => /^en/i.test(v.lang))
+      if (en) u.voice = en
+      const done = () => { if (audio) audio.volume = restore }
+      u.onend = done
+      u.onerror = done
+      window.speechSynthesis.speak(u)
+    } catch {
+      if (audio) audio.volume = restore
+    }
+  }
+
+  // Cadence: while an audio station is playing, drop the shout-out periodically.
+  useEffect(() => {
+    if (!mounted || !spotOn || !playing || station.kind !== 'audio') return
+    const t = setInterval(speakSpot, SPOT_EVERY_MS)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, spotOn, playing, station.kind])
 
   function toggle() {
     setError(null)
@@ -322,6 +361,28 @@ export function MusicPlayer() {
                   {error}
                 </div>
               )}
+
+              {/* BigStar shout-out control */}
+              <div className="border-t border-zinc-100 pt-3 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-xs font-extrabold text-zinc-700">🎪 BigStar shout-out</div>
+                  <div className="text-[10px] text-zinc-400">Spoken every few songs</div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={speakSpot}
+                    className="text-[10px] font-bold px-2 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700"
+                  >
+                    Say it now
+                  </button>
+                  <button
+                    onClick={() => setSpotOn((v) => !v)}
+                    className={`text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg ${spotOn ? 'bg-emerald-600 text-white' : 'bg-zinc-200 text-zinc-600'}`}
+                  >
+                    {spotOn ? 'ON' : 'OFF'}
+                  </button>
+                </div>
+              </div>
 
               <div className="text-[9px] text-zinc-400 text-center pt-1">
                 Free + ad-free via SomaFM · always clean lyrics
