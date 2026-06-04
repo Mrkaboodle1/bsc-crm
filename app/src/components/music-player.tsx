@@ -122,6 +122,7 @@ export function MusicPlayer() {
   const [error, setError] = useState<string | null>(null)
   const [spotOn, setSpotOn] = useState(true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const spotRef = useRef<HTMLAudioElement | null>(null)
 
   const station = STATIONS.find((s) => s.id === stationId) ?? STATIONS[0]!
 
@@ -160,26 +161,40 @@ export function MusicPlayer() {
     if (audioRef.current) audioRef.current.volume = volume
   }, [volume])
 
-  // The BigStar shout-out — duck the music, speak the line, restore volume.
+  // The BigStar shout-out — duck the music, play the smooth AI voice clip,
+  // restore the music. Falls back to the device voice if the clip can't load.
   function speakSpot() {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
-    const audio = audioRef.current
-    const restore = audio ? audio.volume : volume
+    const bg = audioRef.current
+    const restore = bg ? bg.volume : volume
+    const restoreVol = () => { if (bg) bg.volume = restore }
+    if (bg) bg.volume = DUCK_VOLUME
     try {
-      if (audio) audio.volume = DUCK_VOLUME
+      let spot = spotRef.current
+      if (!spot) { spot = new Audio('/bsc-spot.mp3'); spotRef.current = spot }
+      spot.currentTime = 0
+      spot.volume = 1
+      spot.onended = restoreVol
+      spot.onerror = () => deviceVoice(restoreVol)
+      const p = spot.play()
+      if (p && typeof p.catch === 'function') p.catch(() => deviceVoice(restoreVol))
+    } catch {
+      deviceVoice(restoreVol)
+    }
+  }
+
+  // Fallback: the browser's built-in voice (robotic, only used if the clip fails).
+  function deviceVoice(after: () => void) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) { after(); return }
+    try {
       window.speechSynthesis.cancel()
       const u = new SpeechSynthesisUtterance(BSC_LINE)
       u.rate = 0.98
       u.pitch = 1.05
-      const voices = window.speechSynthesis.getVoices()
-      const en = voices.find((v) => /en[-_]AU/i.test(v.lang)) || voices.find((v) => /^en/i.test(v.lang))
-      if (en) u.voice = en
-      const done = () => { if (audio) audio.volume = restore }
-      u.onend = done
-      u.onerror = done
+      u.onend = after
+      u.onerror = after
       window.speechSynthesis.speak(u)
     } catch {
-      if (audio) audio.volume = restore
+      after()
     }
   }
 
