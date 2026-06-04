@@ -62,9 +62,8 @@ const NAV: NavItem[] = [
   { href: '/star-rewards',  label: 'Star Rewards',   Icon: Trophy,          section: 'main' },
 
   { href: '/leads',         label: 'Leads',          Icon: Target,          section: 'growth' },
-  { href: '/sites',         label: 'Sites',          Icon: LayoutPanelTop,  section: 'growth' },
-  { href: '/media',         label: 'Media',          Icon: ImageIcon,       section: 'growth' },
   { href: '/marketing',     label: 'Marketing',      Icon: Megaphone,       section: 'growth' },
+  { href: '/sites',         label: 'Sites',          Icon: LayoutPanelTop,  section: 'growth' },
   { href: '/bookings',      label: 'Bookings',       Icon: PartyPopper,     badge: 'Soon', section: 'growth' },
   { href: '/payments',      label: 'Payments',       Icon: CreditCard,      badge: 'Soon', section: 'growth' },
   { href: '/reporting',     label: 'Reporting',      Icon: TrendingUp,      badge: 'Soon', section: 'growth' },
