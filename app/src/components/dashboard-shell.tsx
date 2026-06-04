@@ -6,6 +6,7 @@
 // that read as amateur in a B2B-resold product.
 
 import type { ReactNode, ComponentType } from 'react'
+import { redirect } from 'next/navigation'
 import type { BscUser } from '@/lib/dal'
 import { MusicPlayer } from './music-player'
 import { JackyTourMount } from './jacky-tour-mount'
@@ -87,9 +88,18 @@ export function DashboardShell({
   pageActions?: ReactNode
   children: ReactNode
 }) {
-  const mainNav   = NAV.filter((n) => n.section === 'main')
-  const growthNav = NAV.filter((n) => n.section === 'growth')
-  const adminNav  = NAV.filter((n) => n.section === 'admin')
+  // Coaches are locked to Roll Call only. Any other route bounces to /roll-call,
+  // and the sidebar shows nothing but Roll Call. (Trainees get no login at all.)
+  const isCoach = user.role === 'coach'
+  const onRollCall = currentPath === '/roll-call' || currentPath.startsWith('/roll-call/')
+  if (isCoach && !onRollCall) {
+    redirect('/roll-call')
+  }
+  const homeHref = isCoach ? '/roll-call' : '/dashboard'
+
+  const mainNav   = NAV.filter((n) => n.section === 'main' && (!isCoach || n.href === '/roll-call'))
+  const growthNav = isCoach ? [] : NAV.filter((n) => n.section === 'growth')
+  const adminNav  = isCoach ? [] : NAV.filter((n) => n.section === 'admin')
 
   return (
     <div className="min-h-screen bg-zinc-50 flex">
@@ -97,7 +107,7 @@ export function DashboardShell({
       <aside className="hidden lg:flex w-60 bg-zinc-950 text-zinc-300 flex-col fixed inset-y-0 left-0 z-30 border-r border-zinc-900">
         {/* Brand */}
         <div className="px-4 py-5 border-b border-zinc-900 flex items-center gap-3">
-          <a href="/dashboard" className="flex items-center gap-3 group">
+          <a href={homeHref} className="flex items-center gap-3 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/bigstar-logo.png"
@@ -136,8 +146,8 @@ export function DashboardShell({
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
           <NavGroup items={mainNav}   currentPath={currentPath} />
-          <NavGroup items={growthNav} currentPath={currentPath} label="Growth" />
-          <NavGroup items={adminNav}  currentPath={currentPath} label="Admin"  />
+          {growthNav.length > 0 && <NavGroup items={growthNav} currentPath={currentPath} label="Growth" />}
+          {adminNav.length > 0 && <NavGroup items={adminNav}  currentPath={currentPath} label="Admin"  />}
         </nav>
 
         {/* User */}
@@ -168,7 +178,7 @@ export function DashboardShell({
       {/* Mobile top bar */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-30 bg-zinc-950 text-white shadow-lg">
         <div className="flex items-center justify-between px-4 py-3">
-          <a href="/dashboard" className="flex items-center gap-2">
+          <a href={homeHref} className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/bigstar-logo.png" alt="Big Star Circus" className="w-7 h-7 object-contain" />
             <span className="font-bold text-sm">Big Star CRM</span>
@@ -182,7 +192,7 @@ export function DashboardShell({
             </button>
           </form>
         </div>
-        <MobileNavBar currentPath={currentPath} />
+        <MobileNavBar currentPath={currentPath} isCoach={isCoach} />
       </header>
 
       {/* Main area */}
@@ -262,8 +272,8 @@ function NavGroup({
   )
 }
 
-function MobileNavBar({ currentPath }: { currentPath: string }) {
-  const mobileItems = NAV.filter((n) => n.section === 'main').slice(0, 6)
+function MobileNavBar({ currentPath, isCoach }: { currentPath: string; isCoach?: boolean }) {
+  const mobileItems = NAV.filter((n) => n.section === 'main' && (!isCoach || n.href === '/roll-call')).slice(0, 6)
   return (
     <nav className="overflow-x-auto border-t border-zinc-900">
       <ul className="flex gap-1 px-3 py-2 min-w-max">

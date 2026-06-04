@@ -3,12 +3,42 @@
 import { useState } from 'react'
 import { createBrowserSupabase } from '@/lib/supabase'
 
+type Mode = 'password' | 'magic'
+
 export default function LoginPage() {
+  const [mode, setMode] = useState<Mode>('password')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Email + password — used by admin (office computer) and coaches (studio tablet).
+  const handlePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setStatus('sending')
+    setErrorMsg('')
+
+    const supabase = createBrowserSupabase()
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+
+    if (error) {
+      setStatus('error')
+      setErrorMsg(error.message === 'Invalid login credentials'
+        ? 'That email or password isn’t right. Try again.'
+        : error.message)
+      return
+    }
+
+    // Full navigation so the server picks up the new session cookie.
+    // Coaches get bounced to /roll-call by the dashboard gate.
+    window.location.assign('/dashboard')
+  }
+
+  // Magic link — passwordless backup.
+  const handleMagic = async (e: React.FormEvent) => {
     e.preventDefault()
     setStatus('sending')
     setErrorMsg('')
@@ -56,15 +86,15 @@ export default function LoginPage() {
               <button
                 onClick={() => {
                   setStatus('idle')
-                  setEmail('')
+                  setMode('password')
                 }}
                 className="text-sm text-[#D72027] hover:underline font-bold"
               >
-                Use a different email
+                Back to sign in
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={mode === 'password' ? handlePassword : handleMagic} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
                   Email address
@@ -83,6 +113,25 @@ export default function LoginPage() {
                 />
               </div>
 
+              {mode === 'password' && (
+                <div>
+                  <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    placeholder="Your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={status === 'sending'}
+                    className="w-full px-4 py-3 border-2 border-zinc-200 rounded-xl text-base focus:border-[#D72027] focus:outline-none disabled:opacity-50"
+                  />
+                </div>
+              )}
+
               {status === 'error' && (
                 <div className="bg-red-50 border border-red-200 text-red-800 text-sm rounded-lg px-4 py-3">
                   {errorMsg || 'Something went wrong. Try again.'}
@@ -91,14 +140,32 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={status === 'sending' || !email}
+                disabled={status === 'sending' || !email || (mode === 'password' && !password)}
                 className="w-full bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {status === 'sending' ? 'Sending link…' : 'Send me a sign-in link'}
+                {status === 'sending'
+                  ? (mode === 'password' ? 'Signing in…' : 'Sending link…')
+                  : (mode === 'password' ? 'Sign in' : 'Send me a sign-in link')}
               </button>
 
               <p className="text-xs text-zinc-500 text-center pt-2">
-                No password needed. We&apos;ll email you a one-tap link.
+                {mode === 'password' ? (
+                  <button
+                    type="button"
+                    onClick={() => { setMode('magic'); setStatus('idle'); setErrorMsg('') }}
+                    className="text-[#D72027] hover:underline font-bold"
+                  >
+                    Email me a sign-in link instead
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => { setMode('password'); setStatus('idle'); setErrorMsg('') }}
+                    className="text-[#D72027] hover:underline font-bold"
+                  >
+                    Use a password instead
+                  </button>
+                )}
               </p>
             </form>
           )}
