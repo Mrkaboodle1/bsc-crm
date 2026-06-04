@@ -63,19 +63,21 @@ export default async function RollCallIndexPage() {
   // Coaches only see the classes they teach. Owners/managers see every class.
   // (Find the coach record linked to this login, then filter classes to it.)
   let coachFilterId: string | null = null
+  let hidePrivate = false
   if (user.role === 'coach') {
     const { data: coachRow } = await supabase
       .from('coaches')
       .select('id, role')
       .eq('user_id', user.id)
       .maybeSingle()
-    // Lead coach (coach role 'head') sees EVERY class, Mon–Sat. Other coaches
-    // see only the classes assigned to them. If somehow unlinked, show nothing
-    // rather than everything.
+    // Lead coach (coach role 'head') sees EVERY class, Mon–Sat, including the
+    // private lessons. Other coaches see only the classes assigned to them, and
+    // NEVER the private lessons. If somehow unlinked, show nothing.
     if (!coachRow) {
       coachFilterId = '00000000-0000-0000-0000-000000000000'
     } else if (coachRow.role !== 'head') {
       coachFilterId = coachRow.id
+      hidePrivate = true
     }
   }
 
@@ -88,6 +90,7 @@ export default async function RollCallIndexPage() {
     `)
     .eq('status', 'active')
   if (coachFilterId) classQuery = classQuery.eq('primary_coach_id', coachFilterId)
+  if (hidePrivate) classQuery = classQuery.neq('discipline', 'private')
   const { data: classes } = await classQuery
     .order('day_of_week', { ascending: true })
     .order('start_time', { ascending: true })
