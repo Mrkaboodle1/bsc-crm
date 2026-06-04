@@ -66,12 +66,17 @@ export default async function RollCallIndexPage() {
   if (user.role === 'coach') {
     const { data: coachRow } = await supabase
       .from('coaches')
-      .select('id')
+      .select('id, role')
       .eq('user_id', user.id)
       .maybeSingle()
-    // If somehow unlinked, fall back to an impossible id so they see nothing
+    // Lead coach (coach role 'head') sees EVERY class, Mon–Sat. Other coaches
+    // see only the classes assigned to them. If somehow unlinked, show nothing
     // rather than everything.
-    coachFilterId = coachRow?.id ?? '00000000-0000-0000-0000-000000000000'
+    if (!coachRow) {
+      coachFilterId = '00000000-0000-0000-0000-000000000000'
+    } else if (coachRow.role !== 'head') {
+      coachFilterId = coachRow.id
+    }
   }
 
   let classQuery = supabase
