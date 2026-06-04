@@ -19,8 +19,11 @@ export default function LoginPage() {
     setErrorMsg('')
 
     const supabase = createBrowserSupabase()
+    // Allow a plain username (e.g. "rodrigo") — map it to the BSC email.
+    const id = email.trim()
+    const loginEmail = id.includes('@') ? id : `${id}@bigstarcircus.com.au`
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: loginEmail,
       password,
     })
 
@@ -45,8 +48,10 @@ export default function LoginPage() {
 
     const supabase = createBrowserSupabase()
     const origin = window.location.origin
+    const id = email.trim()
+    const loginEmail = id.includes('@') ? id : `${id}@bigstarcircus.com.au`
     const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
+      email: loginEmail,
       options: {
         emailRedirectTo: `${origin}/auth/callback`,
         shouldCreateUser: true,
@@ -97,15 +102,15 @@ export default function LoginPage() {
             <form onSubmit={mode === 'password' ? handlePassword : handleMagic} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
-                  Email address
+                  Username
                 </label>
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   required
-                  autoComplete="email"
+                  autoComplete="username"
                   autoFocus
-                  placeholder="you@bigstarcircus.com.au"
+                  placeholder="rodrigo"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={status === 'sending'}

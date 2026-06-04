@@ -60,7 +60,21 @@ export default async function RollCallIndexPage() {
   const supabase = await createServerSupabase()
   const { dow: todayDow, iso } = todayInBrisbane()
 
-  const { data: classes } = await supabase
+  // Coaches only see the classes they teach. Owners/managers see every class.
+  // (Find the coach record linked to this login, then filter classes to it.)
+  let coachFilterId: string | null = null
+  if (user.role === 'coach') {
+    const { data: coachRow } = await supabase
+      .from('coaches')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    // If somehow unlinked, fall back to an impossible id so they see nothing
+    // rather than everything.
+    coachFilterId = coachRow?.id ?? '00000000-0000-0000-0000-000000000000'
+  }
+
+  let classQuery = supabase
     .from('classes')
     .select(`
       id, name, day_of_week, start_time, duration_minutes,
@@ -68,6 +82,8 @@ export default async function RollCallIndexPage() {
       primary_coach:coaches!classes_primary_coach_id_fkey ( full_name )
     `)
     .eq('status', 'active')
+  if (coachFilterId) classQuery = classQuery.eq('primary_coach_id', coachFilterId)
+  const { data: classes } = await classQuery
     .order('day_of_week', { ascending: true })
     .order('start_time', { ascending: true })
     .returns<ClassRow[]>()
