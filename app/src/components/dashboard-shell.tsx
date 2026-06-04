@@ -35,6 +35,8 @@ import {
   PartyPopper,
   ShieldCheck,
   Trophy,
+  Gamepad2,
+  BookOpenCheck,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -73,6 +75,15 @@ const NAV: NavItem[] = [
   { href: '/settings',      label: 'Settings',       Icon: Settings,        badge: 'Soon', section: 'admin' },
 ]
 
+// What a coach sees in the sidebar (and the only routes a coach can reach).
+const COACH_NAV: NavItem[] = [
+  { href: '/roll-call',   label: 'Roll Call',      Icon: ClipboardList, section: 'main' },
+  { href: '/credentials', label: 'My Credentials', Icon: ShieldCheck,   section: 'main' },
+  { href: '/games',       label: 'Games',          Icon: Gamepad2,      section: 'main' },
+  { href: '/protocols',   label: 'Protocols',      Icon: BookOpenCheck, section: 'main' },
+]
+const COACH_PATHS = COACH_NAV.map((n) => n.href)
+
 export function DashboardShell({
   user,
   currentPath,
@@ -91,13 +102,13 @@ export function DashboardShell({
   // Coaches are locked to Roll Call only. Any other route bounces to /roll-call,
   // and the sidebar shows nothing but Roll Call. (Trainees get no login at all.)
   const isCoach = user.role === 'coach'
-  const onRollCall = currentPath === '/roll-call' || currentPath.startsWith('/roll-call/')
-  if (isCoach && !onRollCall) {
+  const coachAllowed = COACH_PATHS.some((p) => currentPath === p || currentPath.startsWith(`${p}/`))
+  if (isCoach && !coachAllowed) {
     redirect('/roll-call')
   }
   const homeHref = isCoach ? '/roll-call' : '/dashboard'
 
-  const mainNav   = NAV.filter((n) => n.section === 'main' && (!isCoach || n.href === '/roll-call'))
+  const mainNav   = isCoach ? COACH_NAV : NAV.filter((n) => n.section === 'main')
   const growthNav = isCoach ? [] : NAV.filter((n) => n.section === 'growth')
   const adminNav  = isCoach ? [] : NAV.filter((n) => n.section === 'admin')
 
@@ -273,7 +284,7 @@ function NavGroup({
 }
 
 function MobileNavBar({ currentPath, isCoach }: { currentPath: string; isCoach?: boolean }) {
-  const mobileItems = NAV.filter((n) => n.section === 'main' && (!isCoach || n.href === '/roll-call')).slice(0, 6)
+  const mobileItems = (isCoach ? COACH_NAV : NAV.filter((n) => n.section === 'main')).slice(0, 6)
   return (
     <nav className="overflow-x-auto border-t border-zinc-900">
       <ul className="flex gap-1 px-3 py-2 min-w-max">
