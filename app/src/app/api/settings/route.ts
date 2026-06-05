@@ -3,7 +3,7 @@ import { createServerSupabase } from '@/lib/supabase-server'
 import { createAdminSupabase } from '@/lib/supabase-admin'
 
 // POST /api/settings — update the business profile (owners only).
-const FIELDS = ['name', 'abn', 'email', 'phone', 'website', 'address', 'founded_year', 'primary_colour', 'accent_colour', 'logo_url'] as const
+const FIELDS = ['name', 'abn', 'email', 'phone', 'website', 'address', 'founded_year', 'primary_colour', 'accent_colour', 'logo_url', 'email_signature'] as const
 
 export async function POST(req: Request) {
   const supabase = await createServerSupabase()

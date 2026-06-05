@@ -8,7 +8,7 @@ export type TenantProfile = {
   name: string | null; abn: string | null; email: string | null; phone: string | null
   website: string | null; address: string | null; founded_year: number | null
   primary_colour: string | null; accent_colour: string | null; logo_url: string | null
-  slug: string | null; plan: string | null
+  slug: string | null; plan: string | null; email_signature: string | null
 }
 
 const CATS = [
@@ -50,12 +50,77 @@ export function SettingsClient({ tenant }: { tenant: TenantProfile }) {
 
       {/* Panel */}
       <div>
-        {cat === 'profile' ? <BusinessProfile tenant={tenant} /> : (
+        {cat === 'profile' ? <BusinessProfile tenant={tenant} />
+          : cat === 'email' ? <EmailSettings tenant={tenant} />
+          : (
           <div className="bg-white rounded-xl border border-zinc-200 p-12 text-center">
             <h3 className="font-semibold text-zinc-800 mb-1">{labelFor}</h3>
             <p className="text-sm text-zinc-500">This settings area is part of the staged rollout and is coming soon.</p>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+function defaultSignature(t: TenantProfile): string {
+  return [
+    'Warm regards,',
+    `The ${t.name || 'Big Star Circus'} Team`,
+    '',
+    `Phone: ${t.phone || '0489 188 179'}`,
+    `Email: ${t.email || 'admin@bigstarcircus.com.au'}`,
+    `Web: ${(t.website || 'bigstarcircus.com.au').replace(/^https?:\/\//, '')}`,
+    t.address || 'Unit 1/14 Harper Street, Molendinar QLD 4214',
+  ].join('\n')
+}
+
+function EmailSettings({ tenant }: { tenant: TenantProfile }) {
+  const router = useRouter()
+  const [sig, setSig] = useState(tenant.email_signature ?? defaultSignature(tenant))
+  const [busy, setBusy] = useState(false)
+  const [done, setDone] = useState(false)
+  const [err, setErr] = useState('')
+
+  async function save() {
+    setBusy(true); setErr(''); setDone(false)
+    try {
+      const r = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email_signature: sig }) })
+      const j = await r.json()
+      if (!r.ok) throw new Error(j.error || 'Could not save')
+      setDone(true); router.refresh(); setTimeout(() => setDone(false), 2500)
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Could not save') } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="space-y-5 max-w-3xl">
+      <div className="bg-white rounded-xl border border-zinc-200 p-6">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-semibold text-zinc-900">Email signature</h3>
+          <button onClick={() => setSig(defaultSignature(tenant))} className="text-xs font-semibold text-zinc-500 hover:text-zinc-800">Reset to template</button>
+        </div>
+        <p className="text-sm text-zinc-500 mb-4">This is added to the bottom of emails the CRM sends — login links, parent messages and bulk emails. Edit it however you like.</p>
+        <Field label="Signature">
+          <textarea className={`${input} font-mono`} rows={8} value={sig} onChange={(e) => setSig(e.target.value)} placeholder="Warm regards,&#10;The Big Star Circus Team" />
+        </Field>
+
+        <div className="mt-5">
+          <div className="text-xs font-semibold text-zinc-600 mb-1.5">Preview</div>
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+            <p className="text-sm text-zinc-500 italic mb-3">…your message will appear here, then:</p>
+            <div className="border-t border-zinc-200 pt-3 text-sm text-zinc-700 whitespace-pre-wrap leading-relaxed">{sig || <span className="text-zinc-400">No signature yet.</span>}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button onClick={save} disabled={busy} className="bg-[#D72027] text-white font-semibold text-sm px-5 py-2.5 rounded-lg disabled:opacity-50">{busy ? 'Saving…' : 'Save signature'}</button>
+        {done && <span className="text-sm text-emerald-600 font-medium">✓ Saved</span>}
+        {err && <span className="text-sm text-red-600">{err}</span>}
+      </div>
+
+      <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
+        <strong>Sending emails:</strong> once Resend is connected, the CRM will send login links and parent emails reliably — each one signed with the signature above.
       </div>
     </div>
   )

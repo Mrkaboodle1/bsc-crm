@@ -8,13 +8,13 @@ export default async function SettingsPage() {
   const supabase = await createServerSupabase()
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('name, abn, email, phone, website, address, founded_year, primary_colour, accent_colour, logo_url, slug, plan')
+    .select('name, abn, email, phone, website, address, founded_year, primary_colour, accent_colour, logo_url, slug, plan, email_signature')
     .eq('id', user.tenantId)
     .maybeSingle<TenantProfile>()
 
   return (
     <DashboardShell user={user} currentPath="/settings" pageTitle="Settings" pageSubtitle="Manage your business profile and platform settings">
-      <SettingsClient tenant={tenant ?? { name: 'Big Star Circus', abn: null, email: null, phone: null, website: null, address: null, founded_year: null, primary_colour: '#D72027', accent_colour: '#FFC107', logo_url: null, slug: 'bigstarcircus', plan: 'founder' }} />
+      <SettingsClient tenant={tenant ?? { name: 'Big Star Circus', abn: null, email: null, phone: null, website: null, address: null, founded_year: null, primary_colour: '#D72027', accent_colour: '#FFC107', logo_url: null, slug: 'bigstarcircus', plan: 'founder', email_signature: null }} />
     </DashboardShell>
   )
 }
