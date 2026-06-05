@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Building2, User, CreditCard, UsersRound, Mail, MessageSquare, CalendarDays, Plug, SlidersHorizontal, Upload, Tag, ScrollText } from 'lucide-react'
+import { Building2, User, CreditCard, UsersRound, Mail, MessageSquare, CalendarDays, Plug, SlidersHorizontal, Upload, Tag, ScrollText, Bold, Italic, ImagePlus, RotateCcw } from 'lucide-react'
 
 export type TenantProfile = {
   name: string | null; abn: string | null; email: string | null; phone: string | null
@@ -77,78 +77,105 @@ function defaultSignature(t: TenantProfile): string {
 
 const BSC_LOGO_URL = 'https://app-chi-silk-29.vercel.app/bigstar-logo.png'
 
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+function defaultSignatureHtml(t: TenantProfile): string {
+  return defaultSignature(t).split('\n').map((line) => `<div>${escapeHtml(line) || '<br>'}</div>`).join('')
+}
+// A stored signature might be old plain text — turn it into HTML so the editor shows it nicely.
+function toHtml(stored: string | null, t: TenantProfile): string {
+  if (!stored || !stored.trim()) return defaultSignatureHtml(t)
+  if (/<\w+[^>]*>/.test(stored)) return stored // already HTML
+  return stored.split('\n').map((line) => `<div>${escapeHtml(line) || '<br>'}</div>`).join('')
+}
+
 function EmailSettings({ tenant }: { tenant: TenantProfile }) {
   const router = useRouter()
-  const [sig, setSig] = useState(tenant.email_signature ?? defaultSignature(tenant))
-  const [logo, setLogo] = useState(tenant.logo_url ?? '')
+  const editorRef = useRef<HTMLDivElement>(null)
+  const initial = toHtml(tenant.email_signature, tenant)
+  const [html, setHtml] = useState(initial)
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [err, setErr] = useState('')
 
+  // Seed the editable area once (uncontrolled, so the cursor doesn't jump).
+  useEffect(() => { if (editorRef.current) editorRef.current.innerHTML = initial }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const sync = () => { if (editorRef.current) setHtml(editorRef.current.innerHTML) }
+  function exec(cmd: string, value?: string) {
+    editorRef.current?.focus()
+    document.execCommand(cmd, false, value)
+    sync()
+  }
+  function insertImage(url: string) {
+    if (!url) return
+    editorRef.current?.focus()
+    document.execCommand('insertHTML', false, `<img src="${url}" alt="logo" style="max-height:64px;display:block;margin:4px 0;" />`)
+    sync()
+  }
+  function resetTemplate() {
+    const t = defaultSignatureHtml(tenant)
+    if (editorRef.current) editorRef.current.innerHTML = t
+    setHtml(t)
+  }
+
   async function save() {
     setBusy(true); setErr(''); setDone(false)
     try {
-      const r = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email_signature: sig, logo_url: logo }) })
+      const r = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email_signature: editorRef.current?.innerHTML ?? html }) })
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || 'Could not save')
       setDone(true); router.refresh(); setTimeout(() => setDone(false), 2500)
     } catch (e) { setErr(e instanceof Error ? e.message : 'Could not save') } finally { setBusy(false) }
   }
 
+  const Tool = ({ onClick, title, children }: { onClick: () => void; title: string; children: React.ReactNode }) => (
+    <button type="button" onClick={onClick} title={title} className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-semibold text-zinc-600 hover:bg-zinc-100">{children}</button>
+  )
+
   return (
     <div className="space-y-5 max-w-3xl">
-      {/* Logo */}
-      <div className="bg-white rounded-xl border border-zinc-200 p-6">
-        <h3 className="font-semibold text-zinc-900 mb-1">Logo at the top of emails</h3>
-        <p className="text-sm text-zinc-500 mb-4">Your logo appears as a picture at the top of every email the CRM sends. Leave it blank for no logo.</p>
-        <div className="flex items-start gap-4">
-          <div className="w-20 h-20 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center overflow-hidden shrink-0">
-            {logo ? <img src={logo} alt="Logo" className="max-w-full max-h-full object-contain" /> : <span className="text-[10px] text-zinc-400 text-center px-1">No logo</span>}
-          </div>
-          <div className="flex-1">
-            <Field label="Logo image link">
-              <input className={input} value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="https://…/logo.png" />
-            </Field>
-            <div className="flex items-center gap-3 mt-2">
-              <button onClick={() => setLogo(BSC_LOGO_URL)} className="text-xs font-semibold text-[#D72027] hover:underline">Use my Big Star logo</button>
-              {logo && <button onClick={() => setLogo('')} className="text-xs font-semibold text-zinc-500 hover:text-zinc-800">Remove logo</button>}
-            </div>
-            <p className="text-[11px] text-zinc-400 mt-2">Want a different logo? Paste a web link to the image, or send it to me and I&apos;ll upload it for you.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Signature text */}
       <div className="bg-white rounded-xl border border-zinc-200 p-6">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-semibold text-zinc-900">Email signature</h3>
-          <button onClick={() => setSig(defaultSignature(tenant))} className="text-xs font-semibold text-zinc-500 hover:text-zinc-800">Reset to template</button>
+          <button onClick={resetTemplate} className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 inline-flex items-center gap-1"><RotateCcw size={12} /> Reset to template</button>
         </div>
-        <p className="text-sm text-zinc-500 mb-4">This is added to the bottom of emails the CRM sends — login links, parent messages and bulk emails. Edit it however you like.</p>
-        <Field label="Signature">
-          <textarea className={`${input} font-mono`} rows={8} value={sig} onChange={(e) => setSig(e.target.value)} placeholder="Warm regards,&#10;The Big Star Circus Team" />
-        </Field>
+        <p className="text-sm text-zinc-500 mb-4">Goes at the bottom of every email the CRM sends. Type your text and drop your logo in — exactly how you want it to look.</p>
+
+        {/* Toolbar */}
+        <div className="flex items-center gap-1 border border-zinc-200 rounded-t-lg bg-zinc-50 px-2 py-1.5 flex-wrap">
+          <Tool onClick={() => exec('bold')} title="Bold"><Bold size={14} /></Tool>
+          <Tool onClick={() => exec('italic')} title="Italic"><Italic size={14} /></Tool>
+          <span className="w-px h-5 bg-zinc-200 mx-1" />
+          <Tool onClick={() => insertImage(BSC_LOGO_URL)} title="Insert your Big Star logo"><ImagePlus size={14} /> Insert logo</Tool>
+          <Tool onClick={() => { const u = window.prompt('Paste the web link (URL) of the image to insert:'); if (u) insertImage(u.trim()) }} title="Insert another image"><ImagePlus size={14} /> Insert image…</Tool>
+        </div>
+        {/* Editable area */}
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={sync}
+          className="min-h-[180px] border border-t-0 border-zinc-200 rounded-b-lg px-4 py-3 text-sm text-zinc-800 leading-relaxed focus:outline-none focus:border-zinc-400 [&_img]:inline-block"
+        />
+        <p className="text-[11px] text-zinc-400 mt-2">Tip: click <strong>Insert logo</strong> to drop your Big Star logo in. Want a different image? Use <strong>Insert image…</strong> and paste its web link — or send it to me and I&apos;ll host it for you.</p>
 
         <div className="mt-5">
           <div className="text-xs font-semibold text-zinc-600 mb-1.5">Preview — how the bottom of your emails will look</div>
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
             <p className="text-sm text-zinc-500 italic mb-3">…your message will appear here, then:</p>
-            <div className="border-t border-zinc-200 pt-3">
-              {logo && <img src={logo} alt="Logo" className="h-12 object-contain mb-2" />}
-              <div className="text-sm text-zinc-700 whitespace-pre-wrap leading-relaxed">{sig || <span className="text-zinc-400">No signature yet.</span>}</div>
-            </div>
+            <div className="border-t border-zinc-200 pt-3 text-sm text-zinc-700 leading-relaxed [&_img]:max-h-16" dangerouslySetInnerHTML={{ __html: html || '<span style="color:#a1a1aa">No signature yet.</span>' }} />
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <button onClick={save} disabled={busy} className="bg-[#D72027] text-white font-semibold text-sm px-5 py-2.5 rounded-lg disabled:opacity-50">{busy ? 'Saving…' : 'Save'}</button>
+        <button onClick={save} disabled={busy} className="bg-[#D72027] text-white font-semibold text-sm px-5 py-2.5 rounded-lg disabled:opacity-50">{busy ? 'Saving…' : 'Save signature'}</button>
         {done && <span className="text-sm text-emerald-600 font-medium">✓ Saved</span>}
         {err && <span className="text-sm text-red-600">{err}</span>}
       </div>
 
       <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl px-4 py-3 text-sm">
-        <strong>Resend is connected</strong> — login links already send reliably. The logo &amp; signature above will appear on parent &amp; bulk emails once that feature is switched on.
+        <strong>Resend is connected</strong> — login links already send reliably. This signature (text + logo) will appear on parent &amp; bulk emails once that feature is switched on.
       </div>
     </div>
   )
