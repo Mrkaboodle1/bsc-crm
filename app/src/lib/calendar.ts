@@ -8,6 +8,7 @@ export type CalendarItem = {
   start: Date
   end: Date
   location: string | null
+  description?: string | null
   notes: string | null
   coach: string | null
   family: { id: string; name: string } | null
@@ -18,16 +19,19 @@ export type CalendarItem = {
   href: string | null
 }
 
-export const APPT_TYPE_META: Record<string, { emoji: string; label: string; cls: string }> = {
-  show:              { emoji: '🎪', label: 'Show',              cls: 'bg-[#D72027] text-white' },
-  private_lesson:    { emoji: '⭐', label: 'Private lesson',    cls: 'bg-amber-100 text-amber-800' },
-  workshop:          { emoji: '🧰', label: 'Workshop',          cls: 'bg-purple-100 text-purple-800' },
-  birthday_party:    { emoji: '🎂', label: 'Birthday party',    cls: 'bg-pink-100 text-pink-800' },
-  kno:               { emoji: '🌙', label: 'Kids Night Out',    cls: 'bg-indigo-100 text-indigo-800' },
-  meeting:           { emoji: '👥', label: 'Meeting',           cls: 'bg-zinc-200 text-zinc-800' },
-  personal:          { emoji: '🙂', label: 'Personal',          cls: 'bg-emerald-100 text-emerald-800' },
-  holiday_programme: { emoji: '🏕', label: 'Holiday programme', cls: 'bg-orange-100 text-orange-800' },
-  other:             { emoji: '✨', label: 'Other',             cls: 'bg-zinc-100 text-zinc-700' },
+export const APPT_TYPE_META: Record<string, { emoji: string; label: string; cls: string; dot: string }> = {
+  show:              { emoji: '🎪', label: 'Show',              cls: 'bg-[#D72027] text-white',        dot: 'bg-[#D72027]' },
+  gig:               { emoji: '🎤', label: 'Performing gig',    cls: 'bg-rose-100 text-rose-800',      dot: 'bg-rose-500' },
+  private_lesson:    { emoji: '⭐', label: 'Private lesson',    cls: 'bg-amber-100 text-amber-800',    dot: 'bg-amber-500' },
+  workshop:          { emoji: '🧰', label: 'Workshop',          cls: 'bg-purple-100 text-purple-800',  dot: 'bg-purple-500' },
+  birthday_party:    { emoji: '🎂', label: 'Birthday party',    cls: 'bg-pink-100 text-pink-800',      dot: 'bg-pink-500' },
+  kno:               { emoji: '🌙', label: 'Kids Night Out',    cls: 'bg-indigo-100 text-indigo-800',  dot: 'bg-indigo-500' },
+  meeting:           { emoji: '👥', label: 'Meeting',           cls: 'bg-zinc-200 text-zinc-800',      dot: 'bg-zinc-500' },
+  rehearsal:         { emoji: '🎭', label: 'Rehearsal',         cls: 'bg-teal-100 text-teal-800',      dot: 'bg-teal-500' },
+  personal:          { emoji: '🙂', label: 'Personal',          cls: 'bg-emerald-100 text-emerald-800', dot: 'bg-emerald-500' },
+  holiday_programme: { emoji: '🏕', label: 'Holiday programme', cls: 'bg-orange-100 text-orange-800',  dot: 'bg-orange-500' },
+  event:             { emoji: '📌', label: 'Event',             cls: 'bg-sky-100 text-sky-800',        dot: 'bg-sky-500' },
+  other:             { emoji: '✨', label: 'Other',             cls: 'bg-zinc-100 text-zinc-700',      dot: 'bg-zinc-400' },
 }
 
 export const CLASS_TYPE_META: Record<string, { emoji: string; label: string; cls: string }> = {
@@ -117,6 +121,7 @@ export function expandClass(
     start,
     end,
     location: 'Big Star Studio · Molendinar',
+    description: null,
     notes: null,
     coach: coach ?? null,
     family: null,
