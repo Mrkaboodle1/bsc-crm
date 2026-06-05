@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, X } from 'lucide-react'
 import { APPT_TYPE_META } from '@/lib/calendar'
 import { CLASS_TYPE_META } from '@/lib/calendar'
-import { termFor, termWeek, schoolHolidayFor, publicHolidayFor, significanceFor } from '@/lib/au-calendar'
+import { termFor, termWeek, schoolHolidayFor, publicHolidayFor, significanceFor, isHolidayWorkshopDay } from '@/lib/au-calendar'
 import { AppointmentModal, type ApptCoach, type ApptRecord } from '@/components/appointment-modal'
 
 export type ApptRow = {
@@ -41,6 +41,7 @@ function fmtClassTime(start: string) {
 
 type DayEvent =
   | { kind: 'class'; id: string; title: string; type: string; time: string; sort: number; coach: string | null }
+  | { kind: 'holiday'; id: string; title: string; type: string; time: string; sort: number; coach: string | null }
   | { kind: 'appt'; id: string; title: string; type: string; time: string; sort: number; appt: ApptRow }
 
 export function CalendarMonth({
@@ -76,16 +77,23 @@ export function CalendarMonth({
     return map
   }, [appointments])
 
-  // Events on a given date string (classes by weekday + appointments).
+  // Events on a given date string. During school holidays the weekly classes &
+  // private lessons don't run — instead a 9am–3pm School Holiday Workshop is
+  // shown on the short-break weekdays. Appointments always show.
   function eventsFor(dateStr: string): DayEvent[] {
     const [yy, mm, dd] = dateStr.split('-').map((x) => parseInt(x, 10))
     const dow = new Date(yy, mm - 1, dd).getDay() // 0=Sun..6=Sat (Brisbane local for user)
     const out: DayEvent[] = []
-    for (const c of classes) {
-      if (c.day_of_week === dow) {
-        const [h, m] = c.start_time.split(':').map((x) => parseInt(x, 10))
-        out.push({ kind: 'class', id: c.id, title: c.name, type: c.discipline, time: fmtClassTime(c.start_time), sort: h * 60 + m, coach: c.coach_name })
+    const onHoliday = schoolHolidayFor(dateStr)
+    if (!onHoliday) {
+      for (const c of classes) {
+        if (c.day_of_week === dow) {
+          const [h, m] = c.start_time.split(':').map((x) => parseInt(x, 10))
+          out.push({ kind: 'class', id: c.id, title: c.name, type: c.discipline, time: fmtClassTime(c.start_time), sort: h * 60 + m, coach: c.coach_name })
+        }
       }
+    } else if (isHolidayWorkshopDay(dateStr)) {
+      out.push({ kind: 'holiday', id: `hw-${dateStr}`, title: 'School Holiday Workshop', type: 'holiday_programme', time: '9:00am–3:00pm', sort: 540, coach: null })
     }
     for (const a of apptsByDay[dateStr] ?? []) {
       const p = brisParts(a.start_at)
@@ -191,7 +199,7 @@ export function CalendarMonth({
                 )}
                 <div className="mt-0.5 space-y-0.5">
                   {events.slice(0, 3).map((ev) => {
-                    const dot = ev.kind === 'appt' ? (APPT_TYPE_META[ev.type]?.dot ?? 'bg-zinc-400') : 'bg-blue-400'
+                    const dot = ev.kind === 'appt' ? (APPT_TYPE_META[ev.type]?.dot ?? 'bg-zinc-400') : ev.kind === 'holiday' ? 'bg-orange-500' : 'bg-blue-400'
                     return (
                       <div key={ev.kind + ev.id} className="flex items-center gap-1 text-[10px] text-zinc-700 truncate">
                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
@@ -214,6 +222,7 @@ export function CalendarMonth({
         <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#D72027]" /> Show</span>
         <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500" /> Gig</span>
         <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /> Private lesson</span>
+        <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-orange-500" /> Holiday workshop</span>
         <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-amber-100 border border-amber-200" /> School holidays</span>
         <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> Public holiday</span>
         <span className="text-zinc-400">· faint grey = cultural &amp; religious dates</span>
@@ -276,6 +285,21 @@ function DayPanel({
         <div className="p-5 space-y-2">
           {events.length === 0 && <p className="text-sm text-zinc-400 py-6 text-center">Nothing on this day.</p>}
           {events.map((ev) => {
+            if (ev.kind === 'holiday') {
+              return (
+                <div key={'h' + ev.id} className="flex items-start gap-3 rounded-xl border border-orange-100 bg-orange-50/50 px-3 py-2.5">
+                  <span className="text-xl">🏕</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-zinc-800 truncate">{ev.title}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">Holiday</span>
+                    </div>
+                    <div className="text-xs text-zinc-500 flex items-center gap-1.5 mt-0.5"><Clock size={12} /> {ev.time}</div>
+                    <p className="text-xs text-zinc-400 mt-0.5 italic">Regular classes &amp; private lessons don&apos;t run during the school holidays.</p>
+                  </div>
+                </div>
+              )
+            }
             const meta = ev.kind === 'appt' ? (APPT_TYPE_META[ev.type] ?? APPT_TYPE_META.other) : (CLASS_TYPE_META[ev.type] ?? { emoji: '🎪', label: ev.type, cls: 'bg-blue-100 text-blue-800' })
             if (ev.kind === 'class') {
               return (

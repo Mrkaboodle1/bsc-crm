@@ -166,6 +166,22 @@ export function schoolHolidayFor(date: string): DateRange | null {
   return SCHOOL_HOLIDAYS.find((h) => inRange(date, h.start, h.end)) ?? null
 }
 
+const rangeDays = (h: DateRange) => Math.round((Date.parse(h.end) - Date.parse(h.start)) / 86_400_000) + 1
+
+// A holiday-workshop day = a weekday (Mon–Fri) inside one of the short 2-week
+// breaks (autumn/winter/spring), excluding public holidays. The long summer
+// break (~6 weeks, over Christmas) is intentionally excluded — those days are
+// added manually as needed, not auto-filled.
+export function isHolidayWorkshopDay(date: string): boolean {
+  const h = schoolHolidayFor(date)
+  if (!h) return false
+  if (rangeDays(h) > 28) return false // skip the summer break
+  if (publicHolidayFor(date)) return false
+  const [y, m, d] = date.split('-').map((x) => parseInt(x, 10))
+  const dow = new Date(y, m - 1, d).getDay()
+  return dow >= 1 && dow <= 5
+}
+
 export function publicHolidayFor(date: string): NamedDate | null {
   return PUBLIC_HOLIDAYS.find((h) => h.date === date) ?? null
 }
