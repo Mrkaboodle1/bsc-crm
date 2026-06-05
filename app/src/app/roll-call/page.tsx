@@ -1,6 +1,8 @@
 import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
+import { ClassFormButton, type Coach } from '@/components/class-form'
+import { Printer } from 'lucide-react'
 
 // /roll-call now mirrors the BSC weekly-schedule poster — Mon→Sun columns,
 // Morning + Afternoon row bands, alternating red/yellow class cards. Each
@@ -96,6 +98,14 @@ export default async function RollCallIndexPage() {
     .order('start_time', { ascending: true })
     .returns<ClassRow[]>()
 
+  // Managers can add/edit classes from here; coaches just take the roll.
+  const isManager = user.role === 'owner' || user.role === 'manager'
+  let coachList: Coach[] = []
+  if (isManager) {
+    const { data: cs } = await supabase.from('coaches').select('id, full_name').order('full_name').returns<Coach[]>()
+    coachList = cs ?? []
+  }
+
   // Enrolment counts (so cards can show "5 / 8 here")
   const classIds = (classes ?? []).map((c) => c.id)
   let enrolByClass: Record<string, number> = {}
@@ -125,6 +135,14 @@ export default async function RollCallIndexPage() {
       currentPath="/roll-call"
       pageTitle="Roll Call"
       pageSubtitle="Tap a class to start the roll."
+      pageActions={
+        <>
+          <a href="/roll-call/print" target="_blank" className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-zinc-50">
+            <Printer size={15} /> Print / Download
+          </a>
+          {isManager && <ClassFormButton coaches={coachList} />}
+        </>
+      }
     >
       <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-[#D72027] bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100">
 
