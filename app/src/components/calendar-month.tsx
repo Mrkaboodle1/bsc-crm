@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, X } from 'lucide-react'
 import { APPT_TYPE_META } from '@/lib/calendar'
 import { CLASS_TYPE_META } from '@/lib/calendar'
 import { termFor, termWeek, schoolHolidayFor, publicHolidayFor, significanceFor, isHolidayWorkshopDay } from '@/lib/au-calendar'
+import { recurringEventsFor } from '@/lib/recurring-events'
 import { AppointmentModal, type ApptCoach, type ApptRecord } from '@/components/appointment-modal'
 
 export type ApptRow = {
@@ -42,6 +43,7 @@ function fmtClassTime(start: string) {
 type DayEvent =
   | { kind: 'class'; id: string; title: string; type: string; time: string; sort: number; coach: string | null }
   | { kind: 'holiday'; id: string; title: string; type: string; time: string; sort: number; coach: string | null }
+  | { kind: 'recurring'; id: string; title: string; type: string; time: string; endLabel: string; sort: number; coach: string | null; location: string; note?: string }
   | { kind: 'appt'; id: string; title: string; type: string; time: string; sort: number; appt: ApptRow }
 
 export function CalendarMonth({
@@ -98,6 +100,9 @@ export function CalendarMonth({
     for (const a of apptsByDay[dateStr] ?? []) {
       const p = brisParts(a.start_at)
       out.push({ kind: 'appt', id: a.id, title: a.title, type: a.type, time: a.all_day ? 'All day' : p.time, sort: a.all_day ? -1 : new Date(a.start_at).getTime() % 86_400_000, appt: a })
+    }
+    for (const re of recurringEventsFor(dateStr)) {
+      out.push({ kind: 'recurring', id: `re-${re.title}-${dateStr}`, title: re.title, type: re.type, time: re.startLabel, endLabel: re.endLabel, sort: re.sortMin, coach: re.coach, location: re.location, note: re.note })
     }
     return out.sort((x, y) => x.sort - y.sort)
   }
@@ -199,12 +204,12 @@ export function CalendarMonth({
                 )}
                 <div className="mt-0.5 space-y-0.5">
                   {events.slice(0, 3).map((ev) => {
-                    const dot = ev.kind === 'appt' ? (APPT_TYPE_META[ev.type]?.dot ?? 'bg-zinc-400') : ev.kind === 'holiday' ? 'bg-orange-500' : 'bg-blue-400'
+                    const dot = ev.kind === 'appt' || ev.kind === 'recurring' ? (APPT_TYPE_META[ev.type]?.dot ?? 'bg-zinc-400') : ev.kind === 'holiday' ? 'bg-orange-500' : 'bg-blue-400'
                     return (
                       <div key={ev.kind + ev.id} className="flex items-center gap-1 text-[10px] text-zinc-700 truncate">
                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
                         <span className="text-zinc-400 shrink-0">{ev.time !== 'All day' ? ev.time : ''}</span>
-                        <span className="truncate font-medium">{ev.kind === 'appt' ? ev.title : ev.title.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+[\d:.]+\s*(am|pm)?\s*/i, '')}</span>
+                        <span className="truncate font-medium">{ev.kind === 'class' ? ev.title.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+[\d:.]+\s*(am|pm)?\s*/i, '') : ev.title}</span>
                       </div>
                     )
                   })}
@@ -297,6 +302,24 @@ function DayPanel({
                     <div className="text-xs text-zinc-500 flex items-center gap-1.5 mt-0.5"><Clock size={12} /> {ev.time}</div>
                     <p className="text-xs text-zinc-400 mt-0.5 italic">Regular classes &amp; private lessons don&apos;t run during the school holidays.</p>
                   </div>
+                </div>
+              )
+            }
+            if (ev.kind === 'recurring') {
+              const rm = APPT_TYPE_META[ev.type] ?? APPT_TYPE_META.other
+              return (
+                <div key={'r' + ev.id} className="flex items-start gap-3 rounded-xl border border-zinc-100 px-3 py-2.5">
+                  <span className="text-xl">{rm.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-zinc-800 truncate">{ev.title}</span>
+                      <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${rm.cls}`}>{rm.label}</span>
+                    </div>
+                    <div className="text-xs text-zinc-500 flex items-center gap-1.5 mt-0.5"><Clock size={12} /> {ev.time}–{ev.endLabel}{ev.coach ? ` · ${ev.coach}` : ''}</div>
+                    {ev.location && <div className="text-xs text-zinc-500 flex items-center gap-1.5 mt-0.5"><MapPin size={12} /> {ev.location}</div>}
+                    {ev.note && <p className="text-xs text-zinc-400 mt-0.5 italic">{ev.note}</p>}
+                  </div>
+                  <span className="text-[10px] font-bold text-zinc-300 self-center">Weekly</span>
                 </div>
               )
             }
