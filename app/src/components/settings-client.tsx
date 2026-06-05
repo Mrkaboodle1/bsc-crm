@@ -75,9 +75,12 @@ function defaultSignature(t: TenantProfile): string {
   ].join('\n')
 }
 
+const BSC_LOGO_URL = 'https://app-chi-silk-29.vercel.app/bigstar-logo.png'
+
 function EmailSettings({ tenant }: { tenant: TenantProfile }) {
   const router = useRouter()
   const [sig, setSig] = useState(tenant.email_signature ?? defaultSignature(tenant))
+  const [logo, setLogo] = useState(tenant.logo_url ?? '')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [err, setErr] = useState('')
@@ -85,7 +88,7 @@ function EmailSettings({ tenant }: { tenant: TenantProfile }) {
   async function save() {
     setBusy(true); setErr(''); setDone(false)
     try {
-      const r = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email_signature: sig }) })
+      const r = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email_signature: sig, logo_url: logo }) })
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || 'Could not save')
       setDone(true); router.refresh(); setTimeout(() => setDone(false), 2500)
@@ -94,6 +97,28 @@ function EmailSettings({ tenant }: { tenant: TenantProfile }) {
 
   return (
     <div className="space-y-5 max-w-3xl">
+      {/* Logo */}
+      <div className="bg-white rounded-xl border border-zinc-200 p-6">
+        <h3 className="font-semibold text-zinc-900 mb-1">Logo at the top of emails</h3>
+        <p className="text-sm text-zinc-500 mb-4">Your logo appears as a picture at the top of every email the CRM sends. Leave it blank for no logo.</p>
+        <div className="flex items-start gap-4">
+          <div className="w-20 h-20 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center overflow-hidden shrink-0">
+            {logo ? <img src={logo} alt="Logo" className="max-w-full max-h-full object-contain" /> : <span className="text-[10px] text-zinc-400 text-center px-1">No logo</span>}
+          </div>
+          <div className="flex-1">
+            <Field label="Logo image link">
+              <input className={input} value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="https://…/logo.png" />
+            </Field>
+            <div className="flex items-center gap-3 mt-2">
+              <button onClick={() => setLogo(BSC_LOGO_URL)} className="text-xs font-semibold text-[#D72027] hover:underline">Use my Big Star logo</button>
+              {logo && <button onClick={() => setLogo('')} className="text-xs font-semibold text-zinc-500 hover:text-zinc-800">Remove logo</button>}
+            </div>
+            <p className="text-[11px] text-zinc-400 mt-2">Want a different logo? Paste a web link to the image, or send it to me and I&apos;ll upload it for you.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Signature text */}
       <div className="bg-white rounded-xl border border-zinc-200 p-6">
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-semibold text-zinc-900">Email signature</h3>
@@ -105,22 +130,25 @@ function EmailSettings({ tenant }: { tenant: TenantProfile }) {
         </Field>
 
         <div className="mt-5">
-          <div className="text-xs font-semibold text-zinc-600 mb-1.5">Preview</div>
+          <div className="text-xs font-semibold text-zinc-600 mb-1.5">Preview — how the bottom of your emails will look</div>
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
             <p className="text-sm text-zinc-500 italic mb-3">…your message will appear here, then:</p>
-            <div className="border-t border-zinc-200 pt-3 text-sm text-zinc-700 whitespace-pre-wrap leading-relaxed">{sig || <span className="text-zinc-400">No signature yet.</span>}</div>
+            <div className="border-t border-zinc-200 pt-3">
+              {logo && <img src={logo} alt="Logo" className="h-12 object-contain mb-2" />}
+              <div className="text-sm text-zinc-700 whitespace-pre-wrap leading-relaxed">{sig || <span className="text-zinc-400">No signature yet.</span>}</div>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <button onClick={save} disabled={busy} className="bg-[#D72027] text-white font-semibold text-sm px-5 py-2.5 rounded-lg disabled:opacity-50">{busy ? 'Saving…' : 'Save signature'}</button>
+        <button onClick={save} disabled={busy} className="bg-[#D72027] text-white font-semibold text-sm px-5 py-2.5 rounded-lg disabled:opacity-50">{busy ? 'Saving…' : 'Save'}</button>
         {done && <span className="text-sm text-emerald-600 font-medium">✓ Saved</span>}
         {err && <span className="text-sm text-red-600">{err}</span>}
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
-        <strong>Sending emails:</strong> once Resend is connected, the CRM will send login links and parent emails reliably — each one signed with the signature above.
+      <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl px-4 py-3 text-sm">
+        <strong>Resend is connected</strong> — login links already send reliably. The logo &amp; signature above will appear on parent &amp; bulk emails once that feature is switched on.
       </div>
     </div>
   )
