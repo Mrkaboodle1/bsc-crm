@@ -1,10 +1,13 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Mail, Star, Clock, Inbox as InboxIcon, Send, ExternalLink, Search, MessagesSquare } from 'lucide-react'
+import { Mail, Star, Clock, Inbox as InboxIcon, Send, ExternalLink, Search, MessagesSquare, Globe } from 'lucide-react'
 
+export type Channel = 'email' | 'form' | 'facebook' | 'instagram'
 export type Conversation = {
   id: string
+  emailId: string | null
+  channel: Channel
   fromName: string | null
   fromEmail: string | null
   subject: string | null
@@ -18,6 +21,8 @@ export type Conversation = {
   familyName: string | null
   lifecycle: string | null
   draft: string | null
+  source: string | null
+  createdAt: string | null
 }
 
 type Tab = 'unread' | 'all' | 'recents' | 'starred'
@@ -38,6 +43,12 @@ function rel(iso: string | null) {
 }
 function initials(s: string) { const p = s.trim().split(/\s+/); return ((p[0]?.[0] ?? '') + (p.length > 1 ? p[p.length - 1]![0] : '')).toUpperCase() || '?' }
 function displayName(c: Conversation) { return c.fromName || c.familyName || c.fromEmail || 'Unknown' }
+const CHANNEL: Record<Channel, { label: string; Icon: typeof Mail }> = {
+  email: { label: 'Email', Icon: Mail },
+  form: { label: 'Website form', Icon: Globe },
+  facebook: { label: 'Facebook', Icon: MessagesSquare },
+  instagram: { label: 'Instagram', Icon: MessagesSquare },
+}
 
 export function ConversationsInbox({ conversations }: { conversations: Conversation[] }) {
   const [tab, setTab] = useState<Tab>('all')
@@ -95,6 +106,7 @@ export function ConversationsInbox({ conversations }: { conversations: Conversat
             </div>
           ) : filtered.map((c) => {
             const on = c.id === selId
+            const Ch = CHANNEL[c.channel].Icon
             return (
               <button key={c.id} onClick={() => setSelId(c.id)} className={`w-full text-left px-3 py-3 border-b border-zinc-50 flex gap-3 transition-colors ${on ? 'bg-red-50/60' : 'hover:bg-zinc-50'}`}>
                 <span className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${c.read ? 'bg-zinc-100 text-zinc-500' : 'bg-[#D72027] text-white'}`}>{initials(displayName(c))}</span>
@@ -104,7 +116,7 @@ export function ConversationsInbox({ conversations }: { conversations: Conversat
                     <span className="text-[10px] text-zinc-400 shrink-0">{rel(c.receivedAt)}</span>
                   </div>
                   <div className="text-xs text-zinc-600 truncate">{c.subject || '(no subject)'}</div>
-                  <div className="text-[11px] text-zinc-400 truncate flex items-center gap-1"><Mail size={10} /> {c.preview || '—'}</div>
+                  <div className="text-[11px] text-zinc-400 truncate flex items-center gap-1"><Ch size={10} /> {c.preview || '—'}</div>
                 </div>
                 {!c.read && <span className="w-2 h-2 rounded-full bg-[#D72027] self-center shrink-0" />}
               </button>
@@ -151,7 +163,7 @@ function Thread({ conv }: { conv: Conversation }) {
     try {
       const r = await fetch('/api/conversations/reply', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: conv.fromEmail, subject: conv.subject, body: reply, emailId: conv.id, messageId: conv.messageId }),
+        body: JSON.stringify({ to: conv.fromEmail, subject: conv.subject, body: reply, emailId: conv.emailId, messageId: conv.messageId }),
       })
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || 'Could not send')
@@ -207,28 +219,67 @@ function Thread({ conv }: { conv: Conversation }) {
   )
 }
 
+const SOURCE_LABEL: Record<string, string> = {
+  website_form: 'Website form', fb_ad: 'Facebook', instagram: 'Instagram', google: 'Google search',
+  word_of_mouth: 'Word of mouth', school: 'School', walkin: 'Walk-in', open_day: 'Open day', email: 'Email', other: 'Other',
+}
+function fmtWhen(iso: string | null) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
 function ContactPanel({ conv }: { conv: Conversation }) {
+  const sourceLabel = conv.source ? (SOURCE_LABEL[conv.source] ?? conv.source) : (conv.channel === 'form' ? 'Website form' : null)
+  const channelLabel = CHANNEL[conv.channel].label
   return (
-    <div className="p-5">
-      <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3">Contact details</div>
+    <div className="p-5 overflow-y-auto">
+      <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-3">Activity</div>
       <div className="flex flex-col items-center text-center pb-4 border-b border-zinc-100">
         <span className="w-14 h-14 rounded-full bg-zinc-100 text-zinc-600 flex items-center justify-center text-lg font-bold mb-2">{initials(displayName(conv))}</span>
         <div className="font-bold text-zinc-900">{displayName(conv)}</div>
         {conv.fromEmail && <div className="text-xs text-zinc-500 break-all">{conv.fromEmail}</div>}
       </div>
-      <div className="py-4 space-y-3 text-sm">
-        {conv.classification && (
-          <div><div className="text-[10px] uppercase tracking-wide text-zinc-400 font-bold mb-1">Type</div><span className="text-xs font-semibold bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded">{CLASS_LABEL[conv.classification] ?? conv.classification}</span></div>
+
+      {/* Where the lead came from */}
+      <div className="py-4 border-b border-zinc-100">
+        <div className="text-[10px] uppercase tracking-wide text-zinc-400 font-bold mb-1.5">Lead source</div>
+        {sourceLabel ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#D72027]/10 text-[#D72027] px-2.5 py-1 rounded-full">📍 {sourceLabel}</span>
+        ) : (
+          <span className="text-xs text-zinc-400">Unknown — add a source on the contact.</span>
         )}
-        {conv.lifecycle && (
-          <div><div className="text-[10px] uppercase tracking-wide text-zinc-400 font-bold mb-1">Stage</div><span className="text-xs font-semibold capitalize bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">{conv.lifecycle}</span></div>
-        )}
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {conv.classification && <span className="text-[10px] font-semibold bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded">{CLASS_LABEL[conv.classification] ?? conv.classification}</span>}
+          {conv.lifecycle && <span className="text-[10px] font-semibold capitalize bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">{conv.lifecycle}</span>}
+        </div>
       </div>
+
+      {/* Activity timeline */}
+      <div className="py-4">
+        <div className="text-[10px] uppercase tracking-wide text-zinc-400 font-bold mb-3">Timeline</div>
+        <ol className="relative border-l border-zinc-200 ml-1 space-y-4">
+          <TimelineItem title={conv.channel === 'form' ? 'Form submitted' : `${channelLabel} received`} sub={sourceLabel ? `Source: ${sourceLabel}` : channelLabel} when={fmtWhen(conv.receivedAt)} />
+          {conv.draft && <TimelineItem title="Jacky drafted a reply" sub="AI suggested response ready" when="" accent />}
+          {conv.createdAt && <TimelineItem title="First seen" sub="Added to your CRM" when={fmtWhen(conv.createdAt)} />}
+        </ol>
+      </div>
+
       {conv.familyId ? (
         <a href={`/contacts/${conv.familyId}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#D72027] hover:underline"><ExternalLink size={14} /> Open contact</a>
       ) : (
         <p className="text-xs text-zinc-400">Not yet linked to a contact.</p>
       )}
     </div>
+  )
+}
+
+function TimelineItem({ title, sub, when, accent }: { title: string; sub: string; when: string; accent?: boolean }) {
+  return (
+    <li className="ml-4">
+      <span className={`absolute -left-1.5 w-3 h-3 rounded-full border-2 border-white ${accent ? 'bg-amber-400' : 'bg-[#D72027]'}`} />
+      <div className="text-sm font-semibold text-zinc-800">{title}</div>
+      {sub && <div className="text-xs text-zinc-500">{sub}</div>}
+      {when && <div className="text-[10px] text-zinc-400 mt-0.5">{when}</div>}
+    </li>
   )
 }
