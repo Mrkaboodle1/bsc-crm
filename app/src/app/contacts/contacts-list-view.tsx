@@ -1,5 +1,7 @@
-// Tectonic-style contacts list. Rows: avatar + name + parent · phone+email
-// · source · last activity · payment status pill · tag pills.
+// Tectonic-style contacts list. Rows: avatar + name + parent · phone · email
+// · tags (add/remove inline) · created · last activity · payment status pill.
+
+import { ContactTags } from '@/components/contact-tags'
 
 export type PaymentStatus = 'subscribed' | 'trial' | 'lead' | 'not_paying' | 'unknown'
 
@@ -17,6 +19,7 @@ export type ContactRow = {
   paymentStatus: PaymentStatus
   hasStripe: boolean
   lastActivity: string | null
+  created: string | null
 }
 
 const LIFECYCLE_CLS: Record<string, string> = {
@@ -48,6 +51,11 @@ const SOURCE_LABEL: Record<string, string> = {
   open_day:      'Open day',
   email:         'Email',
   other:         'Other',
+}
+
+function fmtDate(iso: string | null): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function relativeTime(iso: string | null): string {
@@ -149,10 +157,11 @@ export function ContactsListView({
             <thead className="bg-zinc-50 border-b border-zinc-200">
               <tr className="text-left text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                 <th className="px-4 sm:px-5 py-3">Contact</th>
-                <th className="px-4 py-3 hidden md:table-cell">Phone / Email</th>
-                <th className="px-4 py-3 hidden lg:table-cell">Source</th>
-                <th className="px-4 py-3 hidden sm:table-cell">Tags</th>
-                <th className="px-4 py-3 hidden md:table-cell">Last activity</th>
+                <th className="px-4 py-3 hidden md:table-cell">Phone</th>
+                <th className="px-4 py-3 hidden lg:table-cell">Email</th>
+                <th className="px-4 py-3">Tags</th>
+                <th className="px-4 py-3 hidden lg:table-cell">Created</th>
+                <th className="px-4 py-3 hidden xl:table-cell">Last activity</th>
                 <th className="px-4 py-3 text-right">Status</th>
               </tr>
             </thead>
@@ -176,34 +185,19 @@ export function ContactsListView({
                         </div>
                       </a>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-zinc-600 text-xs">
-                      {f.phone && <div className="text-zinc-700">{f.phone}</div>}
-                      {f.email && <div className="text-zinc-400 truncate max-w-[220px]">{f.email}</div>}
+                    <td className="px-4 py-3 hidden md:table-cell text-zinc-700 text-xs whitespace-nowrap">
+                      {f.phone || <span className="text-zinc-300">—</span>}
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell text-zinc-500 text-xs">
-                      {f.source ? (SOURCE_LABEL[f.source] ?? f.source) : '—'}
+                      {f.email ? <span className="truncate inline-block max-w-[220px] align-bottom">{f.email}</span> : <span className="text-zinc-300">—</span>}
                     </td>
-                    <td className="px-4 py-3 hidden sm:table-cell">
-                      {f.tags.length === 0 ? (
-                        <span className="text-zinc-300 text-xs">—</span>
-                      ) : (
-                        <div className="flex flex-wrap gap-1 max-w-[260px]">
-                          {f.tags.slice(0, 3).map((t) => (
-                            <a
-                              key={t}
-                              href={`/contacts?tag=${encodeURIComponent(t)}`}
-                              className="text-[10px] bg-zinc-100 text-zinc-700 font-medium px-1.5 py-0.5 rounded hover:bg-zinc-200"
-                            >
-                              {t}
-                            </a>
-                          ))}
-                          {f.tags.length > 3 && (
-                            <span className="text-[10px] text-zinc-400 font-medium">+{f.tags.length - 3}</span>
-                          )}
-                        </div>
-                      )}
+                    <td className="px-4 py-3">
+                      <ContactTags id={f.id} tags={f.tags} suggestions={topTags} />
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-zinc-500 text-xs tabular-nums">
+                    <td className="px-4 py-3 hidden lg:table-cell text-zinc-500 text-xs whitespace-nowrap">
+                      {fmtDate(f.created)}
+                    </td>
+                    <td className="px-4 py-3 hidden xl:table-cell text-zinc-500 text-xs tabular-nums whitespace-nowrap">
                       {relativeTime(f.lastActivity)}
                     </td>
                     <td className="px-4 py-3 text-right">

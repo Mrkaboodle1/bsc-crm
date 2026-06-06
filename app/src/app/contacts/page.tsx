@@ -111,6 +111,7 @@ export default async function ContactsPage({
       paymentStatus,
       hasStripe: !!f.stripe_customer_id,
       lastActivity: f.updated_at ?? f.created_at ?? null,
+      created: f.created_at ?? null,
     }
   })
 

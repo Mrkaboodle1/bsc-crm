@@ -21,9 +21,9 @@ type Department = { key: string; label: string; Icon: LucideIcon; items: SubItem
 
 const DEPARTMENTS: Department[] = [
   { key: 'home', label: 'Home', Icon: LayoutDashboard, items: [{ label: 'Dashboard', href: '/dashboard' }] },
-  { key: 'people', label: 'People', Icon: Users, items: [
-    { label: 'Families', href: '/families' }, { label: 'Students', href: '/students' },
-    { label: 'Contacts', href: '/contacts' }, { label: 'Companies', href: '/contacts/companies' },
+  { key: 'people', label: 'Contacts', Icon: Users, items: [
+    { label: 'Contacts', href: '/contacts' }, { label: 'Families', href: '/families' },
+    { label: 'Students', href: '/students' }, { label: 'Companies', href: '/contacts/companies' },
   ] },
   { key: 'classes', label: 'Classes', Icon: GraduationCap, items: [
     { label: 'Classes', href: '/classes' }, { label: 'Roll Call', href: '/roll-call' }, { label: 'Calendar', href: '/calendar' },
