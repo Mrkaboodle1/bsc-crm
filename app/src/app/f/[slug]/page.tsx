@@ -5,6 +5,7 @@ const FORMS: Record<string, { title: string; blurb: string }> = {
   trial: { title: 'Book a Free Trial', blurb: 'Come and try a class on us! Pop your details in and the Big Star team will lock in a free trial that suits your child.' },
   enquiry: { title: 'Get in touch', blurb: 'Have a question about classes, parties or shows? Send us a message and we&apos;ll get straight back to you.' },
   party: { title: 'Birthday Party Enquiry', blurb: 'Circus birthday parties are a blast! Tell us a little about your party and we&apos;ll send through the details.' },
+  webinar: { title: 'Save my spot', blurb: 'Register for our online info session. Pop your details in and we&apos;ll email you the link to join.' },
 }
 
 export default async function PublicFormPage({ params }: { params: Promise<{ slug: string }> }) {
