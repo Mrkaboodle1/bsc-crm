@@ -35,11 +35,8 @@ const CLASS_LABEL: Record<string, string> = {
 
 function rel(iso: string | null) {
   if (!iso) return ''
-  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
-  if (m < 60) return `${Math.max(1, m)}m`
-  const h = Math.floor(m / 60); if (h < 24) return `${h}h`
-  const d = Math.floor(h / 24); if (d < 30) return `${d}d`
-  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+  // Absolute (deterministic) — avoids server/client hydration mismatch.
+  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'Australia/Brisbane' })
 }
 function initials(s: string) { const p = s.trim().split(/\s+/); return ((p[0]?.[0] ?? '') + (p.length > 1 ? p[p.length - 1]![0] : '')).toUpperCase() || '?' }
 function displayName(c: Conversation) { return c.fromName || c.familyName || c.fromEmail || 'Unknown' }
@@ -181,7 +178,7 @@ function Thread({ conv }: { conv: Conversation }) {
         {/* Inbound message */}
         <div className="max-w-[80%]">
           <div className="bg-white border border-zinc-200 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-zinc-800 whitespace-pre-wrap leading-relaxed">{conv.bodyText || '(no content)'}</div>
-          <div className="text-[10px] text-zinc-400 mt-1">{conv.receivedAt ? new Date(conv.receivedAt).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : ''}</div>
+          <div className="text-[10px] text-zinc-400 mt-1">{conv.receivedAt ? new Date(conv.receivedAt).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Australia/Brisbane' }) : ''}</div>
         </div>
         {/* Jacky draft suggestion */}
         {conv.draft && (
@@ -225,7 +222,7 @@ const SOURCE_LABEL: Record<string, string> = {
 }
 function fmtWhen(iso: string | null) {
   if (!iso) return ''
-  return new Date(iso).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+  return new Date(iso).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Australia/Brisbane' })
 }
 
 function ContactPanel({ conv }: { conv: Conversation }) {
