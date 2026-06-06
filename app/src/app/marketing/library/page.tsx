@@ -57,7 +57,7 @@ export default async function MediaLibraryPage({
       <div className="space-y-5">
         {/* Cloud-thumbnails callout */}
         <div className="bg-blue-50 border-l-4 border-blue-400 rounded-r-xl px-5 py-3 text-sm text-blue-900">
-          <strong>Thumbnails coming soon.</strong> Right now the library shows file metadata only — to preview the actual photos in the browser we need to upload them to cloud storage (Cloudflare R2 ~$0.10/mo for all 17 GB, or Vercel Blob for top-100 free). Pick one when you&apos;re ready.
+          <strong>Photo previews — optional upgrade.</strong> The library lists all your files now. To show the actual photos as thumbnails, we can host them in cloud storage (about $0.10/month for all 17&nbsp;GB). Tell Jacky when you&apos;d like that switched on.
         </div>
 
         {/* Filter form */}

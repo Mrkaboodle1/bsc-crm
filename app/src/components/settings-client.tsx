@@ -52,12 +52,7 @@ export function SettingsClient({ tenant }: { tenant: TenantProfile }) {
       <div>
         {cat === 'profile' ? <BusinessProfile tenant={tenant} />
           : cat === 'email' ? <EmailSettings tenant={tenant} />
-          : (
-          <div className="bg-white rounded-xl border border-zinc-200 p-12 text-center">
-            <h3 className="font-semibold text-zinc-800 mb-1">{labelFor}</h3>
-            <p className="text-sm text-zinc-500">This settings area is part of the staged rollout and is coming soon.</p>
-          </div>
-        )}
+          : <OtherSettings cat={cat} label={labelFor} tenant={tenant} />}
       </div>
     </div>
   )
@@ -179,6 +174,89 @@ function EmailSettings({ tenant }: { tenant: TenantProfile }) {
       </div>
     </div>
   )
+}
+
+function Card({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-xl border border-zinc-200 p-6 max-w-3xl">
+      <h3 className="font-semibold text-zinc-900 mb-1">{title}</h3>
+      {desc && <p className="text-sm text-zinc-500 mb-4">{desc}</p>}
+      {children}
+    </div>
+  )
+}
+const linkBtn = 'inline-flex items-center gap-2 bg-zinc-900 text-white font-semibold text-sm px-4 py-2 rounded-lg hover:bg-zinc-800'
+
+function IntegrationRow({ name, desc, status }: { name: string; desc: string; status: 'on' | 'soon' }) {
+  return (
+    <div className="flex items-center gap-3 py-3 border-b border-zinc-50 last:border-0">
+      <div className="flex-1 min-w-0"><div className="font-semibold text-sm text-zinc-800">{name}</div><div className="text-xs text-zinc-500">{desc}</div></div>
+      {status === 'on'
+        ? <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">Connected</span>
+        : <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-1 rounded-full">Next up</span>}
+    </div>
+  )
+}
+
+function OtherSettings({ cat, label, tenant }: { cat: string; label: string; tenant: TenantProfile }) {
+  if (cat === 'integrations') {
+    return (
+      <Card title="Integrations" desc="What's connected to your Big Star CRM.">
+        <div>
+          <IntegrationRow name="Email (Resend)" desc="Sends parent & bulk emails from admin@bigstarcircus.com.au" status="on" />
+          <IntegrationRow name="Reliable login links" desc="Sign-in emails via Resend" status="on" />
+          <IntegrationRow name="Payments (Stripe)" desc="Recurring class subscriptions" status="on" />
+          <IntegrationRow name="AI assistant (Jacky)" desc="Drafting, replies, blog & social copy" status="on" />
+          <IntegrationRow name="Accounting (Xero)" desc="Invoices, P&L, GST" status="soon" />
+          <IntegrationRow name="Facebook & Instagram (Meta)" desc="Auto-post + DMs into Chat" status="soon" />
+          <IntegrationRow name="Google Workspace" desc="Calendar sync + Drive" status="soon" />
+          <IntegrationRow name="SMS (ClickSend)" desc="Australian text messages" status="soon" />
+        </div>
+      </Card>
+    )
+  }
+  if (cat === 'billing') {
+    return (
+      <Card title="Billing" desc="Your Big Star CRM plan and payment processing.">
+        <div className="flex items-center gap-3 mb-5">
+          <span className="text-xs font-bold uppercase tracking-wide text-zinc-400">Plan</span>
+          <span className="text-sm font-semibold capitalize bg-[#D72027]/10 text-[#D72027] px-3 py-1 rounded-full">{tenant.plan || 'founder'}</span>
+        </div>
+        <p className="text-sm text-zinc-500 mb-4">Customer payments are processed through Stripe. Manage cards, refunds and payouts there.</p>
+        <a href="https://dashboard.stripe.com" target="_blank" className={linkBtn}>Open Stripe dashboard</a>
+      </Card>
+    )
+  }
+  if (cat === 'staff') {
+    return <Card title="Staff" desc="Coaches and team members are managed in the Team area."><a href="/coaches" className={linkBtn}>Go to Team → Staff</a></Card>
+  }
+  if (cat === 'sms') {
+    return (
+      <Card title="SMS" desc="Australian text messaging for reminders and updates.">
+        <div className="flex items-center justify-between py-2"><span className="text-sm text-zinc-700">Provider: <strong>ClickSend</strong></span><span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-1 rounded-full">Ready to switch on</span></div>
+        <p className="text-sm text-zinc-500 mt-2">Your ClickSend account is set up. Tell Jacky when you want to turn on class reminders and two-way texting — replies will land in your Chat inbox.</p>
+      </Card>
+    )
+  }
+  if (cat === 'calendars') {
+    return <Card title="Calendars" desc="Your class timetable, terms, holidays, shows and gigs."><a href="/calendar" className={linkBtn}>Open Calendar</a></Card>
+  }
+  if (cat === 'import') {
+    return <Card title="Import data" desc="Bring contacts in from a spreadsheet (CSV)."><a href="/families/import" className={linkBtn}>Import contacts</a></Card>
+  }
+  if (cat === 'tags') {
+    return <Card title="Tags" desc="Tags organise your contacts into groups (e.g. ‘Friday drama’, ‘2026 trial’)."><p className="text-sm text-zinc-500 mb-4">Add or remove tags right on each contact in the Contacts list — then save a tag filter as a Smart List.</p><a href="/contacts" className={linkBtn}>Go to Contacts</a></Card>
+  }
+  if (cat === 'fields') {
+    return <Card title="Custom fields" desc="Extra info you can store on a contact."><p className="text-sm text-zinc-500">Your contacts already capture name, phone, email, source, stage, tags, lifecycle and payment status. Need another field (e.g. ‘medical notes’, ‘school’)? Tell Jacky what to add and it&apos;ll appear on every contact.</p></Card>
+  }
+  if (cat === 'audit') {
+    return <Card title="Activity log" desc="A record of what happens in your CRM."><p className="text-sm text-zinc-500">Every email reply, form submission and AI draft is already tracked against its contact and shown in your Chat inbox and on each contact&apos;s timeline. A full account-wide activity log is on the roadmap.</p></Card>
+  }
+  if (cat === 'myprofile') {
+    return <Card title="My profile" desc="Your personal login."><p className="text-sm text-zinc-500">You&apos;re signed in as the account owner. To change your password or email, just ask Jacky.</p></Card>
+  }
+  return <Card title={label}>{<p className="text-sm text-zinc-500">Manage {label.toLowerCase()} here.</p>}</Card>
 }
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
