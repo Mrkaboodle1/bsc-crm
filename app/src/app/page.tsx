@@ -38,13 +38,12 @@ export default async function Home() {
       <main className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
           <h2 className="text-5xl font-extrabold text-zinc-900 mb-4 tracking-tight">
-            We&apos;re building <span className="text-[#D72027]">Big Star Circus</span>
-            <br />
-            into a real platform.
+            <span className="text-[#D72027]">Big Star Circus</span> runs on this.
           </h2>
           <p className="text-xl text-zinc-600 max-w-2xl mx-auto">
-            This is the canonical home of every family, every student, every star,
-            every roll call, every booking. Made in Australia. Built for circus schools, dance studios, gymnastics clubs — starting with one.
+            One platform for every family, student, class, roll call, payment and
+            campaign. Made in Australia. Built for circus schools, dance studios and
+            gymnastics clubs — starting with one.
           </p>
           <div className="mt-8">
             <a
@@ -66,32 +65,12 @@ export default async function Home() {
           </div>
         </div>
 
-        {/* What's next */}
+        {/* What's inside */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <FeatureCard
-            icon="📋"
-            title="Slice 1 · Foundation"
-            status="Live"
-            description="Auth + dashboard + tenant + user setup. Sign in via magic link, see today's classes."
-          />
-          <FeatureCard
-            icon="📱"
-            title="Slice 2 · Roll Call on iPad ⭐"
-            status="Next"
-            description="The killer feature. Big tap-tiles, status cycling, long-press to award stars. Auto-saves on every tap."
-          />
-          <FeatureCard
-            icon="⭐"
-            title="Slice 3 · Star Ledger"
-            status="Soon"
-            description="5-tier progression (Spark → BigStar Trainee). Auto tier-up. Coach notifications when a student levels."
-          />
-          <FeatureCard
-            icon="💳"
-            title="Slice 4 · Stripe sync"
-            status="Soon"
-            description="Live subscription state. Year-Round Membership rollout. Failed-payment recovery automation."
-          />
+          <FeatureCard icon="📱" title="Roll Call on iPad" status="Live" description="Tap-tiles, drag to reschedule, award stars, print the weekly timetable." />
+          <FeatureCard icon="📅" title="Calendar & Classes" status="Live" description="Terms, school holidays, public holidays, shows & gigs — your whole diary." />
+          <FeatureCard icon="👥" title="Contacts & Chat" status="Live" description="Tectonic-style contacts, smart lists, and one inbox for email + web enquiries." />
+          <FeatureCard icon="📣" title="Marketing suite" status="Live" description="Forms, quizzes, surveys, QR codes, store, blog, analytics — capture leads everywhere." />
         </div>
 
         {/* Footer */}

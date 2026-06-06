@@ -17,7 +17,7 @@ export default function AwaitingAccessPage() {
           </button>
         </form>
         <p className="text-xs text-zinc-400 mt-8">
-          Owners: invite this user via the Users page (Slice 5, coming soon).
+          Owners: ask Jacky to link this email to your Big Star account.
         </p>
       </div>
     </div>
