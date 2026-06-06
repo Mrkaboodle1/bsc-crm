@@ -11,7 +11,7 @@ import { MusicPlayer } from './music-player'
 import { JackyTourMount } from './jacky-tour-mount'
 import { GlobalSearch } from './global-search'
 import {
-  LayoutDashboard, Users, GraduationCap, Trophy, TrendingUp, CreditCard,
+  LayoutDashboard, Users, GraduationCap, Trophy, Megaphone, CreditCard,
   Handshake, Inbox, Settings, LogOut, Search, ClipboardList, ShieldCheck,
   Gamepad2, BookOpenCheck, MessagesSquare, type LucideIcon,
 } from 'lucide-react'
@@ -31,8 +31,13 @@ const DEPARTMENTS: Department[] = [
   { key: 'rewards', label: 'Rewards', Icon: Trophy, items: [
     { label: 'Star Rewards', href: '/star-rewards' }, { label: 'Star Ledger', href: '/stars' }, { label: 'StarBand', href: '/starband' },
   ] },
-  { key: 'growth', label: 'Growth', Icon: TrendingUp, items: [
-    { label: 'Leads', href: '/leads' }, { label: 'Marketing', href: '/marketing/social' }, { label: 'Website', href: '/sites' },
+  { key: 'growth', label: 'Marketing', Icon: Megaphone, items: [
+    { label: 'Social Media', href: '/marketing/social' }, { label: 'Leads', href: '/leads' }, { label: 'Website', href: '/sites' },
+    { label: 'Store', href: '/marketing/store' }, { label: 'Webinars', href: '/marketing/webinars' },
+    { label: 'Analytics', href: '/marketing/analytics' }, { label: 'Blog', href: '/marketing/blog' },
+    { label: 'Client Portal', href: '/marketing/client-portal' }, { label: 'Forms', href: '/marketing/forms' },
+    { label: 'Surveys', href: '/marketing/surveys' }, { label: 'Quizzes', href: '/marketing/quizzes' },
+    { label: 'QR Codes', href: '/marketing/qr-codes' }, { label: 'Domains', href: '/marketing/domains' },
   ] },
   { key: 'finance', label: 'Finance', Icon: CreditCard, items: [{ label: 'Payments', href: '/payments' }] },
   { key: 'team', label: 'Team', Icon: Handshake, items: [
