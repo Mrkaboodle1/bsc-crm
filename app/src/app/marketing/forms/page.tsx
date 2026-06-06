@@ -2,69 +2,76 @@ import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { CopyButton } from '@/components/copy-button'
-import { ExternalLink } from 'lucide-react'
+import { NewFormButton } from '@/components/new-form-button'
+import { ExternalLink, Pencil } from 'lucide-react'
 
 const BASE = 'https://app-chi-silk-29.vercel.app'
-const FORMS = [
-  { slug: 'trial', name: 'Free Trial booking', desc: 'Parents book a free trial class.' },
-  { slug: 'enquiry', name: 'General enquiry', desc: 'A catch-all contact form.' },
-  { slug: 'party', name: 'Birthday party enquiry', desc: 'Circus party bookings.' },
-]
-
-function rel(iso: string | null) {
-  if (!iso) return ''
-  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
-  if (d <= 0) return 'today'; if (d === 1) return 'yesterday'; if (d < 30) return `${d}d ago`
-  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
-}
 
 export default async function FormsPage() {
   const user = await verifySession()
   const supabase = await createServerSupabase()
+
+  const { data: forms, error } = await supabase
+    .from('forms').select('id, name, slug, fields, status').neq('status', 'archived').order('created_at', { ascending: true })
+  const needsSetup = !!error && (error.message.includes('does not exist') || error.message.includes('schema cache'))
+
   const { data: subs } = await supabase
-    .from('families')
-    .select('id, family_name, email, phone, created_at')
-    .contains('tags', ['web-form'])
-    .order('created_at', { ascending: false })
-    .limit(15)
-  const submissions = subs ?? []
+    .from('families').select('id, family_name, email, phone, created_at')
+    .contains('tags', ['web-form']).order('created_at', { ascending: false }).limit(15)
 
   return (
-    <DashboardShell user={user} currentPath="/marketing/forms" pageTitle="Forms" pageSubtitle="Shareable forms that turn visitors into contacts automatically.">
+    <DashboardShell
+      user={user}
+      currentPath="/marketing/forms"
+      pageTitle="Forms"
+      pageSubtitle="Build forms, drop them on your website, capture leads into the CRM."
+      pageActions={!needsSetup ? <NewFormButton /> : undefined}
+    >
       <div className="space-y-6 max-w-4xl">
-        <div className="grid md:grid-cols-3 gap-4">
-          {FORMS.map((f) => {
-            const url = `${BASE}/f/${f.slug}`
-            const embed = `<iframe src="${url}" width="100%" height="640" style="border:0;border-radius:16px"></iframe>`
-            return (
-              <div key={f.slug} className="bg-white rounded-xl border border-zinc-200 p-5 flex flex-col">
-                <h3 className="font-semibold text-zinc-900">{f.name}</h3>
-                <p className="text-xs text-zinc-500 mt-1 mb-4 flex-1">{f.desc}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  <a href={url} target="_blank" className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-[#D72027] hover:bg-[#A0151B] rounded-md px-2.5 py-1.5"><ExternalLink size={13} /> Open</a>
-                  <CopyButton text={url} label="Copy link" />
-                  <CopyButton text={embed} label="Embed code" />
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        {needsSetup ? (
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-5 py-4 text-sm">
+            <strong>One-time setup to switch on the Form Builder.</strong> Ask Jacky to finish the &ldquo;forms&rdquo; setup (a single database paste) and this page will let you build &amp; edit unlimited forms.
+          </div>
+        ) : (forms?.length ?? 0) === 0 ? (
+          <div className="bg-white rounded-xl border border-zinc-200 p-10 text-center">
+            <p className="font-semibold text-zinc-700">No forms yet.</p>
+            <p className="text-sm text-zinc-500 mt-1 mb-4">Create your first form — a free-trial booking, enquiry, waiver, anything.</p>
+            <NewFormButton />
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead><tr className="text-left text-[10px] font-bold uppercase tracking-wider text-zinc-500 border-b border-zinc-100">
+                <th className="px-5 py-3">Form</th><th className="px-4 py-3">Fields</th><th className="px-4 py-3">Public link</th><th className="px-4 py-3"></th>
+              </tr></thead>
+              <tbody className="divide-y divide-zinc-50">
+                {(forms ?? []).map((f) => {
+                  const url = `${BASE}/f/${f.slug}`
+                  const count = Array.isArray(f.fields) ? f.fields.filter((x: { type?: string }) => x.type !== 'heading').length : 0
+                  return (
+                    <tr key={f.id} className="hover:bg-zinc-50">
+                      <td className="px-5 py-3 font-semibold text-zinc-900">{f.name}</td>
+                      <td className="px-4 py-3 text-zinc-500">{count} field{count === 1 ? '' : 's'}</td>
+                      <td className="px-4 py-3"><div className="flex items-center gap-1.5"><a href={url} target="_blank" className="text-[#D72027] hover:underline inline-flex items-center gap-1 text-xs font-semibold"><ExternalLink size={12} /> Open</a><CopyButton text={url} label="Copy" /></div></td>
+                      <td className="px-4 py-3 text-right"><a href={`/marketing/forms/${f.id}/edit`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-900"><Pencil size={14} /> Edit</a></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
-          <div className="px-5 py-3 bg-zinc-50 border-b border-zinc-100 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">Recent submissions</span>
-            <span className="text-xs text-zinc-400">{submissions.length} shown</span>
-          </div>
-          {submissions.length === 0 ? (
-            <div className="p-8 text-center text-sm text-zinc-400">No form submissions yet. Share a form link above to start capturing leads.</div>
+          <div className="px-5 py-3 bg-zinc-50 border-b border-zinc-100 text-xs font-bold uppercase tracking-wide text-zinc-500">Recent submissions ({subs?.length ?? 0})</div>
+          {(subs?.length ?? 0) === 0 ? (
+            <div className="p-8 text-center text-sm text-zinc-400">No form submissions yet.</div>
           ) : (
             <ul className="divide-y divide-zinc-50">
-              {submissions.map((s) => (
+              {(subs ?? []).map((s) => (
                 <li key={s.id} className="px-5 py-3 flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-bold shrink-0">{(s.family_name ?? '?').slice(0, 1).toUpperCase()}</span>
                   <a href={`/contacts/${s.id}`} className="font-medium text-sm text-zinc-800 hover:text-[#D72027] flex-1 truncate">{s.family_name}</a>
-                  <span className="text-xs text-zinc-500 hidden sm:block truncate max-w-[180px]">{s.email || s.phone || ''}</span>
-                  <span className="text-[11px] text-zinc-400">{rel(s.created_at)}</span>
+                  <span className="text-xs text-zinc-500 truncate max-w-[200px]">{s.email || s.phone || ''}</span>
                 </li>
               ))}
             </ul>
