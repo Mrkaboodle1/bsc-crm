@@ -9,6 +9,7 @@ import { DashboardShell } from '@/components/dashboard-shell'
 import { ContactsSubnav } from '@/components/contacts-subnav'
 import { ContactsListView, type ContactRow } from './contacts-list-view'
 import { SmartListTabs } from './smart-list-tabs'
+import { AddContactButton } from '@/components/add-contact-button'
 
 export default async function ContactsPage({
   searchParams,
@@ -142,12 +143,15 @@ export default async function ContactsPage({
               ← Back to Contacts
             </a>
           ) : (
-            <a
-              href="/families/import"
-              className="inline-flex items-center gap-2 bg-[#D72027] hover:bg-[#A0151B] text-white font-semibold text-sm px-4 py-2 rounded-lg shadow-sm hover:shadow transition-colors"
-            >
-              Import CSV
-            </a>
+            <>
+              <a
+                href="/families/import"
+                className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-zinc-50 transition-colors"
+              >
+                Import CSV
+              </a>
+              <AddContactButton />
+            </>
           )}
         </div>
       }
