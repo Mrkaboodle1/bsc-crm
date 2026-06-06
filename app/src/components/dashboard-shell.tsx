@@ -13,7 +13,7 @@ import { GlobalSearch } from './global-search'
 import {
   LayoutDashboard, Users, GraduationCap, Trophy, TrendingUp, CreditCard,
   Handshake, Inbox, Settings, LogOut, Search, ClipboardList, ShieldCheck,
-  Gamepad2, BookOpenCheck, type LucideIcon,
+  Gamepad2, BookOpenCheck, MessagesSquare, type LucideIcon,
 } from 'lucide-react'
 
 type SubItem = { label: string; href: string }
@@ -140,14 +140,23 @@ export function DashboardShell({ user, currentPath, pageTitle, pageSubtitle, pag
       {/* Main area */}
       <div className="flex-1 lg:pl-56 pt-[96px] lg:pt-0 min-w-0">
         <div className="bg-white border-b border-zinc-200">
-          {!isCoach && subTabs.length > 1 && (
-            <div className="px-5 sm:px-8 pt-2.5 flex items-center gap-0.5 overflow-x-auto">
-              {subTabs.map((it) => {
-                const on = active?.href === it.href
-                return (
-                  <a key={it.href} href={it.href} className={`px-3 py-2 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px transition-colors ${on ? 'border-[#D72027] text-[#D72027]' : 'border-transparent text-zinc-500 hover:text-zinc-800'}`}>{it.label}</a>
-                )
-              })}
+          {!isCoach && (
+            <div className="px-5 sm:px-8 pt-2.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-0.5 overflow-x-auto">
+                {subTabs.length > 1 && subTabs.map((it) => {
+                  const on = active?.href === it.href
+                  return (
+                    <a key={it.href} href={it.href} className={`px-3 py-2 text-sm font-semibold whitespace-nowrap border-b-2 -mb-px transition-colors ${on ? 'border-[#D72027] text-[#D72027]' : 'border-transparent text-zinc-500 hover:text-zinc-800'}`}>{it.label}</a>
+                  )
+                })}
+              </div>
+              <a
+                href="/conversations"
+                title="Chat — replies from Facebook, Instagram & email in one place"
+                className="shrink-0 mb-1.5 inline-flex items-center gap-1.5 bg-[#D72027] hover:bg-[#A0151B] text-white font-semibold text-sm px-3.5 py-1.5 rounded-lg shadow-sm"
+              >
+                <MessagesSquare size={15} /> Chat
+              </a>
             </div>
           )}
           <div className="px-5 sm:px-8 py-5 sm:py-6 flex items-end justify-between gap-4 flex-wrap">
