@@ -68,6 +68,20 @@ export function PublicFormRenderer({ slug, fields }: { slug: string; fields: For
               </div>
             ) : f.type === 'consent' ? (
               <label className="flex items-start gap-2 text-sm text-zinc-700"><input type="checkbox" checked={vals[f.id] === 'yes'} onChange={(e) => set(f.id, e.target.checked ? 'yes' : '')} className="w-4 h-4 mt-0.5" /> {f.placeholder || 'I agree'}</label>
+            ) : f.type === 'radio' ? (
+              <div className="space-y-1.5">
+                {(f.options ?? []).map((o) => (
+                  <label key={o} className="flex items-center gap-2 text-sm text-zinc-700"><input type="radio" name={f.id} checked={vals[f.id] === o} onChange={() => set(f.id, o)} className="w-4 h-4" /> {o}</label>
+                ))}
+              </div>
+            ) : f.type === 'rating' ? (
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button type="button" key={n} onClick={() => set(f.id, String(n))} className="text-2xl"><span className={Number(vals[f.id] || 0) >= n ? 'opacity-100' : 'opacity-25'}>⭐</span></button>
+                ))}
+              </div>
+            ) : f.type === 'date' ? (
+              <input className={inp} type="date" value={vals[f.id] ?? ''} onChange={(e) => set(f.id, e.target.value)} />
             ) : (
               <input className={inp} type={f.type === 'email' ? 'email' : f.type === 'phone' ? 'tel' : 'text'} value={vals[f.id] ?? ''} placeholder={f.placeholder} onChange={(e) => set(f.id, e.target.value)} />
             )}
