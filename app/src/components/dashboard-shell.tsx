@@ -29,7 +29,7 @@ const DEPARTMENTS: Department[] = [
     { label: 'Classes', href: '/classes' }, { label: 'Roll Call', href: '/roll-call' }, { label: 'Calendar', href: '/calendar' },
   ] },
   { key: 'rewards', label: 'Rewards', Icon: Trophy, items: [
-    { label: 'Star Rewards', href: '/star-rewards' }, { label: 'Star Ledger', href: '/stars' }, { label: 'StarBand', href: '/starband' },
+    { label: 'Star Rewards', href: '/star-rewards' }, { label: 'Star Ledger', href: '/stars' }, { label: 'StarBand', href: '/starband/manage' },
   ] },
   { key: 'growth', label: 'Marketing', Icon: Megaphone, items: [
     { label: 'Social Media', href: '/marketing/social' }, { label: 'Leads', href: '/leads' }, { label: 'Website', href: '/sites' },
