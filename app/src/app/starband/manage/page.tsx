@@ -49,7 +49,7 @@ export default async function StarbandManagePage() {
     <DashboardShell user={user} currentPath="/starband/manage" pageTitle="StarBand" pageSubtitle="Manage wristbands, PINs, photos, medical info & pickup — and your check-in settings.">
       {needsSetup ? (
         <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-5 py-4 text-sm max-w-2xl">
-          <strong>One quick database step to switch this on.</strong> Ask Jacky to finish the StarBand admin setup (a single paste) — then you&apos;ll manage every child&apos;s band, PIN, photo, allergies and authorised pickup right here.
+          <strong>Setup note (debug):</strong> {debugErr || 'unknown'}
         </div>
       ) : (
         <>
