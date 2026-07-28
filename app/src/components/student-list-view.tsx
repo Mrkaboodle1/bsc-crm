@@ -1,4 +1,7 @@
-// Shared list view for /students and /demo/students. Pure presentational.
+// Shared list view for /students and /demo/students. Pure presentational —
+// except the optional edit/delete column, which /students turns on and demo doesn't.
+
+import { RowActions } from '@/components/row-actions'
 
 export type StudentRow = {
   id: string
@@ -27,11 +30,13 @@ export function StudentListView({
   q,
   tier,
   hrefPrefix = '/students',
+  withActions = false,
 }: {
   rows: StudentRow[]
   q: string
   tier: string
   hrefPrefix?: string
+  withActions?: boolean
 }) {
   return (
     <div className="space-y-4">
@@ -88,6 +93,7 @@ export function StudentListView({
                 <th className="px-4 py-3 hidden lg:table-cell">Status</th>
                 <th className="px-4 py-3 text-right">Stars</th>
                 <th className="px-4 py-3 text-right">Tier</th>
+                {withActions && <th className="px-2 py-3"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -142,6 +148,15 @@ export function StudentListView({
                       {'⭐'.repeat(s.starTier)}
                     </span>
                   </td>
+                  {withActions && (
+                    <td className="px-2 py-3 text-right">
+                      <RowActions
+                        editHref={`${hrefPrefix}/${s.id}`}
+                        deleteUrl={`/api/students?id=${s.id}`}
+                        confirmText={`Delete ${s.firstName} ${s.lastName ?? ''}? Their attendance and star history goes too. This cannot be undone.`}
+                      />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

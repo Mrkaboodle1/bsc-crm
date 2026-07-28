@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Mail, Phone, GripVertical } from 'lucide-react'
+import { RowActions } from '@/components/row-actions'
 
 export type PFamily = {
   id: string; family_name: string; primary_parent: string | null
@@ -72,6 +73,12 @@ export function LeadPipeline({ families, leadTotal }: { families: PFamily[]; lea
                         </div>
                         {f.source && <span className="inline-block mt-1 text-[9px] font-bold uppercase tracking-wide text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded">{SOURCE[f.source] ?? f.source}</span>}
                       </div>
+                      <RowActions
+                        className="shrink-0 -mr-1"
+                        editHref={`/contacts/${f.id}`}
+                        deleteUrl={`/api/contacts?id=${f.id}`}
+                        confirmText={`Delete ${f.family_name}? Use this for spam or test enquiries — real families should be moved to Lost instead.`}
+                      />
                     </div>
                   </div>
                 ))}

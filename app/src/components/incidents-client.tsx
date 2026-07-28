@@ -74,6 +74,14 @@ export function IncidentsClient({ initial }: { initial: Incident[] }) {
     setEditing(null)
   }
 
+  async function removeReport(r: Incident) {
+    if (!confirm(`Delete report ${r.report_no}? This is a safety record — only delete tests or duplicates.`)) return
+    const res = await fetch(`/api/incidents?id=${r.id}`, { method: 'DELETE' })
+    const d = await res.json().catch(() => ({}))
+    if (!res.ok) { alert(d.error || 'Could not delete'); return }
+    setRows((xs) => xs.filter((x) => x.id !== r.id))
+  }
+
   async function upload(file: File) {
     setUploading(true)
     const fd = new FormData(); fd.append('file', file)
@@ -173,6 +181,7 @@ export function IncidentsClient({ initial }: { initial: Incident[] }) {
                   <button onClick={() => setEditing(r)} className="text-xs font-bold bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-md">Edit</button>
                   <button onClick={() => window.print()} className="text-xs font-bold bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-md">Print / PDF</button>
                   <button onClick={() => emailReport(r)} className="text-xs font-bold bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-md">Email</button>
+                  <button onClick={() => removeReport(r)} className="text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-md">Delete</button>
                 </div>
               </div>
             </div>

@@ -103,6 +103,7 @@ export default async function StarsPage() {
         topStudent={topStudent}
         entries={entries}
         tierCounts={tierCounts}
+        withActions
       />
     </DashboardShell>
   )

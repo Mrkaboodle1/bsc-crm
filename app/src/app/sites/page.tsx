@@ -5,6 +5,8 @@ import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { KIND_LABEL, type SiteKind } from '@/lib/sites/blocks'
+import { RowActions } from '@/components/row-actions'
+import { deleteSite } from './actions'
 
 export default async function SitesIndex({
   searchParams,
@@ -130,10 +132,15 @@ export default async function SitesIndex({
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <a href={`/sites/${s.id}`} className="text-xs font-semibold text-[#D72027] hover:underline">
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <a href={`/sites/${s.id}`} className="text-xs font-semibold text-[#D72027] hover:underline align-middle">
                       Open →
                     </a>
+                    <RowActions
+                      className="ml-1 align-middle"
+                      deleteAction={deleteSite.bind(null, { id: s.id })}
+                      confirmText={`Delete the site "${s.name}" and all its pages? This cannot be undone.`}
+                    />
                   </td>
                 </tr>
               ))}

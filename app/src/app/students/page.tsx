@@ -63,7 +63,7 @@ export default async function StudentsPage({
           {error.message}
         </div>
       )}
-      <StudentListView rows={rows} q={q ?? ''} tier={tier ?? ''} />
+      <StudentListView rows={rows} q={q ?? ''} tier={tier ?? ''} withActions />
     </DashboardShell>
   )
 }

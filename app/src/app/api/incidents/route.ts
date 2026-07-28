@@ -83,3 +83,16 @@ export async function PATCH(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ ok: true, row: data })
 }
+
+export async function DELETE(req: Request) {
+  const g = await guard(); if ('error' in g) return NextResponse.json({ error: g.error }, { status: g.status })
+  // Only the owner/manager can remove an incident report — coaches can file and
+  // amend but a safety record must not be deletable by its author.
+  if (!['owner', 'manager'].includes(g.role)) return NextResponse.json({ error: 'Only admin can delete incident reports' }, { status: 403 })
+  const id = new URL(req.url).searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  const admin = createAdminSupabase()
+  const { error } = await admin.from('incident_reports').delete().eq('id', id).eq('tenant_id', g.tenantId)
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  return NextResponse.json({ ok: true })
+}

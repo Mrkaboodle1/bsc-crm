@@ -2,6 +2,7 @@
 // /demo/stars (mock data). Pure presentational, no auth.
 
 import type { DemoLedgerEntry } from '@/lib/demo-data'
+import { RowActions } from '@/components/row-actions'
 import { TIER_NAMES, TIER_THRESHOLDS } from '@/lib/demo-data'
 
 const REASON_EMOJI: Record<string, string> = {
@@ -32,12 +33,14 @@ export function StarLedgerView({
   topStudent,
   entries,
   tierCounts,
+  withActions = false,
 }: {
   weekTotalStars: number
   weekTotalAwards: number
   topStudent: { name: string; stars: number } | null
   entries: DemoLedgerEntry[]
   tierCounts: number[] // length 6: index 0 unused; 1..5 = count of students per tier
+  withActions?: boolean
 }) {
   return (
     <div className="space-y-8">
@@ -107,6 +110,13 @@ export function StarLedgerView({
                     {formatDate(e.date)} · Coach {e.coach}
                   </div>
                 </div>
+                {withActions && e.stars > 0 && (
+                  <RowActions
+                    className="shrink-0"
+                    deleteUrl={`/api/stars?id=${e.id}`}
+                    confirmText={`Undo ${e.stars} star${e.stars > 1 ? 's' : ''} for ${e.student}? Their total goes back down.`}
+                  />
+                )}
               </li>
             ))}
           </ul>

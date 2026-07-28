@@ -1,5 +1,8 @@
 // Companies list table — Tectonic-style row layout.
 
+import { RowActions } from '@/components/row-actions'
+import { deleteCompany } from './actions'
+
 export type CompanyRow = {
   id: string
   name: string
@@ -74,6 +77,7 @@ export function CompaniesList({
                 <th className="px-4 py-3 hidden md:table-cell">Category</th>
                 <th className="px-4 py-3 hidden lg:table-cell">Contact</th>
                 <th className="px-4 py-3 hidden md:table-cell">Location</th>
+                <th className="px-2 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -99,6 +103,13 @@ export function CompaniesList({
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell text-xs text-zinc-500">
                     {c.location ?? '—'}
+                  </td>
+                  <td className="px-2 py-3 text-right">
+                    <RowActions
+                      editHref={`/contacts/companies/${c.id}`}
+                      deleteAction={deleteCompany.bind(null, { id: c.id })}
+                      confirmText={`Delete ${c.name}? This cannot be undone.`}
+                    />
                   </td>
                 </tr>
               ))}

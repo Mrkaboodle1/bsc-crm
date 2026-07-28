@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Search, Printer } from 'lucide-react'
+import { RowActions } from '@/components/row-actions'
 
 export type Waiver = {
   id: string; event_type: string; parent_name: string | null; email: string | null; phone: string | null
@@ -57,6 +58,11 @@ export function SignedWaiversClient({ initial }: { initial: Waiver[] }) {
                 <span className="text-xs text-zinc-400">· signed {fmt(w.signed_at)}</span>
                 {w.consent_photo && <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">📷 photo OK</span>}
                 {w.terms_agreed && <span className="text-[10px] font-bold text-zinc-600 bg-zinc-100 px-1.5 py-0.5 rounded">T&amp;Cs ✓</span>}
+                <RowActions
+                  className="ml-auto no-print"
+                  deleteUrl={`/api/signed-waivers?id=${w.id}`}
+                  confirmText={`Delete this waiver for ${w.parent_name || 'this parent'}? A signed waiver is a legal record — only delete duplicates or test entries.`}
+                />
               </div>
               <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-zinc-700">
                 {w.children && <div><span className="text-zinc-400 text-xs">Children: </span>{w.children}</div>}

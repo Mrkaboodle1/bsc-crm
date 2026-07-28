@@ -2,6 +2,7 @@
 // · tags (add/remove inline) · created · last activity · payment status pill.
 
 import { ContactTags } from '@/components/contact-tags'
+import { RowActions } from '@/components/row-actions'
 
 export type PaymentStatus = 'subscribed' | 'trial' | 'lead' | 'not_paying' | 'unknown'
 
@@ -163,6 +164,7 @@ export function ContactsListView({
                 <th className="px-4 py-3 hidden lg:table-cell">Created</th>
                 <th className="px-4 py-3 hidden xl:table-cell">Last activity</th>
                 <th className="px-4 py-3 text-right whitespace-nowrap">Status</th>
+                <th className="px-2 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -211,6 +213,13 @@ export function ContactsListView({
                           </span>
                         </div>
                       )}
+                    </td>
+                    <td className="px-2 py-3 text-right">
+                      <RowActions
+                        editHref={`/contacts/${f.id}`}
+                        deleteUrl={`/api/contacts?id=${f.id}`}
+                        confirmText={`Delete ${f.primaryParent ?? f.name} and all their kids, enrolments and history? This cannot be undone.`}
+                      />
                     </td>
                   </tr>
                 )
