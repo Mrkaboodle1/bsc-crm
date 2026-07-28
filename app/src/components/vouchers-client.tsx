@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Check, Copy, Ticket, TrendingUp, AlertTriangle, ArrowUpRight } from 'lucide-react'
+import { Plus, Trash2, Check, Copy, Ticket, TrendingUp, AlertTriangle, ArrowUpRight, Pencil } from 'lucide-react'
 
 export type Voucher = {
   id: string
@@ -35,8 +35,9 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
   const router = useRouter()
   const [items, setItems] = useState<Voucher[]>(initial)
   const [adding, setAdding] = useState(false)
-  const [form, setForm] = useState({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term' as Voucher['use_type'], photo_url: '' })
+  const [form, setForm] = useState({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term' as Voucher['use_type'], photo_url: '', amount: '200' })
   const [uploading, setUploading] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   if (setupNeeded) return <SetupCard sql={setupSql} />
 
@@ -56,14 +57,32 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       else alert(j.error || 'Could not upload photo')
     } finally { setUploading(false) }
   }
+  function resetForm() {
+    setForm({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term', photo_url: '', amount: '200' })
+    setEditingId(null); setAdding(false)
+  }
+  function startEdit(v: Voucher) {
+    setForm({ family_name: v.family_name || '', student_name: v.student_name || '', voucher_ref: v.voucher_ref || '', redeemed_on: v.redeemed_on || '', use_type: v.use_type ?? 'term', photo_url: v.photo_url || '', amount: String(v.amount ?? 200) })
+    setEditingId(v.id); setAdding(true)
+  }
   async function add() {
     if (!form.family_name && !form.student_name) { alert('Add at least a family or child name.'); return }
+    const amount = Number(form.amount) || 200
+    const weeks = 8
+    const weekly_value = Math.round(amount / weeks)
     const term_start = form.redeemed_on || null
-    // Play On vouchers are now valid for 5 weeks of the term (35 days), not the full 10.
-    const term_end = form.redeemed_on ? addDays(form.redeemed_on, 35) : null
-    const body = { ...form, photo_url: form.photo_url || null, redeemed_on: form.redeemed_on || null, term_start, term_end, amount: 100, weekly_value: 20, weeks: 5, status: 'active' }
+    // A $200 voucher at $25/wk covers 8 weeks of term (56 days).
+    const term_end = form.redeemed_on ? addDays(form.redeemed_on, 56) : null
+    const body = { ...form, voucher_ref: form.voucher_ref.trim(), photo_url: form.photo_url || null, redeemed_on: form.redeemed_on || null, term_start, term_end, amount, weekly_value, weeks, status: 'active' }
+    if (editingId) {
+      const r = await fetch('/api/vouchers', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, id: editingId, status: undefined }) })
+      const j = await r.json(); if (j.voucher) { setItems((xs) => xs.map((v) => v.id === editingId ? j.voucher : v)); resetForm(); router.refresh() }
+      else alert(j.error || 'Could not save changes')
+      return
+    }
     const r = await fetch('/api/vouchers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-    const j = await r.json(); if (j.voucher) { setItems((xs) => [...xs, j.voucher]); setForm({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term', photo_url: '' }); setAdding(false); router.refresh() }
+    const j = await r.json(); if (j.voucher) { setItems((xs) => [...xs, j.voucher]); resetForm(); router.refresh() }
+    else alert(j.error || 'Could not save voucher')
   }
   async function setStatus(id: string, status: Voucher['status']) {
     await fetch('/api/vouchers', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) })
@@ -105,6 +124,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
             <Field label="Family name" value={form.family_name} onChange={(v) => setForm({ ...form, family_name: v })} placeholder="e.g. Brennan" />
             <Field label="Child name" value={form.student_name} onChange={(v) => setForm({ ...form, student_name: v })} placeholder="e.g. Aidyn" />
             <Field label="Voucher reference" value={form.voucher_ref} onChange={(v) => setForm({ ...form, voucher_ref: v })} placeholder="voucher code" />
+            <Field label="Voucher amount ($)" value={form.amount} onChange={(v) => setForm({ ...form, amount: v.replace(/[^0-9.]/g, '') })} placeholder="200" />
             <div><label className="text-xs font-bold uppercase tracking-wide text-zinc-400 mb-1 block">Date redeemed</label><input type="date" className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" value={form.redeemed_on} onChange={(e) => setForm({ ...form, redeemed_on: e.target.value })} /></div>
             <div>
               <label className="text-xs font-bold uppercase tracking-wide text-zinc-400 mb-1 block">Used for</label>
@@ -134,10 +154,10 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
               )}
             </div>
           </div>
-          {form.redeemed_on && <p className="text-xs text-zinc-500">→ Covers <strong>5 weeks</strong> ($20/wk), ending <strong>{fmt(addDays(form.redeemed_on, 35))}</strong>. I'll flag it 2 weeks before to convert them.</p>}
+          {form.redeemed_on && <p className="text-xs text-zinc-500">→ Covers <strong>8 weeks</strong> (${Math.round((Number(form.amount) || 200) / 8)}/wk), ending <strong>{fmt(addDays(form.redeemed_on, 56))}</strong>. An admin reminder to set up their next-term subscription is created automatically.</p>}
           <div className="flex gap-2">
-            <button onClick={add} className="bg-[#D72027] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#A0151B]">Save voucher</button>
-            <button onClick={() => setAdding(false)} className="text-sm text-zinc-500 px-3 py-2">Cancel</button>
+            <button onClick={add} className="bg-[#D72027] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#A0151B]">{editingId ? 'Save changes' : 'Save voucher'}</button>
+            <button onClick={resetForm} className="text-sm text-zinc-500 px-3 py-2">Cancel</button>
           </div>
         </div>
       )}
@@ -164,6 +184,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
               <div className="flex items-center gap-1 justify-end">
                 {v.status === 'active' && <button onClick={() => setStatus(v.id, 'converted')} className="text-[11px] font-semibold text-blue-700 hover:underline px-1.5" title="Mark as moved onto a paid membership">Converted ✓</button>}
                 {v.status === 'active' && <button onClick={() => setStatus(v.id, 'expired')} className="text-[11px] text-zinc-400 hover:text-zinc-700 px-1" title="Expired without converting">Expired</button>}
+                <button onClick={() => startEdit(v)} className="p-1 text-zinc-300 hover:text-blue-600" title="Edit this voucher"><Pencil size={13} /></button>
                 <button onClick={() => remove(v.id)} className="p-1 text-zinc-300 hover:text-red-600"><Trash2 size={13} /></button>
               </div>
             </div>
