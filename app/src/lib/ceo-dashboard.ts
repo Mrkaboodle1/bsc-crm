@@ -12,17 +12,20 @@ export type Targets = {
   target_year: number; students: number; revenue: number
   satellites: number; stadium_goal: number; youtube_subs: number; nps_target: number
 }
+// Rhett moved the goalposts on 28 Jul 2026: 650 students by END OF 2027 (not
+// 2032) via ~5 satellite studios, first satellite opening Term 1 2027. The
+// stadium show stays the long-game prize behind it.
 export const DEFAULT_TARGETS: Targets = {
-  target_year: 2032, students: 650, revenue: 1014000,
+  target_year: 2027, students: 650, revenue: 1014000,
   satellites: 5, stadium_goal: 250000, youtube_subs: 100000, nps_target: 90,
 }
 
 export const MILESTONES = [
   { students: 250, label: 'HQ stable' },
-  { students: 350, label: 'First satellite' },
-  { students: 450, label: 'Second satellite' },
-  { students: 550, label: 'Third / fourth satellite' },
-  { students: 650, label: 'Stadium ready' },
+  { students: 350, label: 'Satellite 1 live (T1 2027)' },
+  { students: 450, label: 'Satellite 2 live' },
+  { students: 550, label: 'Satellites 3–4 live' },
+  { students: 650, label: '650 — goal hit' },
 ]
 
 export type CeoDashboard = {
