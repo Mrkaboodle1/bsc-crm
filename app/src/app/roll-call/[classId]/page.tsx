@@ -3,7 +3,8 @@ import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { AttendanceTable, type RosterRow } from './attendance-table'
-import { markAttendance, removeFromClass, searchStudents, addToClass } from './actions'
+import { LessonPlansClient } from '@/components/lesson-plans-client'
+import { markAttendance, removeFromClass, searchStudents, addToClass, createAndEnrol, moveToClass, saveCoachNote, awardStar } from './actions'
 import { TERM_DATES, type Term, currentTerm, getTerm, termWeekDates, termsForYear, brisbaneToday } from '@/lib/term-dates'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -84,14 +85,16 @@ export default async function RollCallClassPage({
   // 4. Attendance across ALL the weeks in the selected term
   const { data: attendance } = await supabase
     .from('attendance')
-    .select('id, student_id, date, status, stars_awarded_today')
+    .select('id, student_id, date, status, stars_awarded_today, coach_notes')
     .eq('class_id', classId)
     .in('date', weekDates)
 
   // Index attendance by studentId+date for quick lookup
   const attByKey = new Map<string, { id: string; status: string }>()
+  const noteByStudentToday = new Map<string, string>()
   for (const a of attendance ?? []) {
     attByKey.set(`${a.student_id}::${a.date}`, { id: a.id, status: a.status })
+    if (a.date === todayIso && a.coach_notes) noteByStudentToday.set(a.student_id, a.coach_notes)
   }
 
   const roster: RosterRow[] = (enrolments ?? []).map((e, idx) => {
@@ -131,6 +134,7 @@ export default async function RollCallClassPage({
       lastName: e.student.last_name,
       dob: e.student.date_of_birth,
       age: yearsOld(e.student.date_of_birth),
+      birthdayInTerm: birthdayInTerm(e.student.date_of_birth, termRange.start, termRange.end, todayIso),
       medical: e.student.medical_notes,
       starTier: e.student.star_tier,
       totalStars: e.student.total_stars,
@@ -146,8 +150,21 @@ export default async function RollCallClassPage({
       startDate: e.start_date,
       weeks,
       totalAttended,
+      todayNote: noteByStudentToday.get(e.student.id) ?? null,
     }
   }).sort((a, b) => a.firstName.localeCompare(b.firstName))
+
+  // All other active classes — for the "move selected kids to another roll" dropdown
+  const { data: allClasses } = await supabase
+    .from('classes')
+    .select('id, name, day_of_week, start_time')
+    .order('day_of_week')
+    .order('start_time')
+  const classOptions = (allClasses ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    dayLabel: DAY_NAMES[c.day_of_week]?.slice(0, 3) ?? '',
+  }))
 
   const allYears = Array.from(new Set(TERM_DATES.map((t) => t.year))).sort()
   const termsThisYear = termsForYear(termRange.year)
@@ -214,11 +231,29 @@ export default async function RollCallClassPage({
         roster={roster}
         weekDates={weekDates}
         termLabel={`Term ${termRange.term} ${termRange.year}`}
+        todayDate={todayIso}
         onMark={markAttendance}
         onRemove={removeFromClass}
         onSearch={searchStudents}
         onAdd={addToClass}
+        onCreate={createAndEnrol}
+        onMove={moveToClass}
+        onSaveNote={saveCoachNote}
+        onAward={awardStar}
+        className={cls.name}
+        classes={classOptions}
       />
+
+      {/* Lesson plans & progress — right here under the roll (great for private lessons) */}
+      {roster.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-sm font-extrabold uppercase tracking-wide text-zinc-500 mb-3">📝 Lesson plans &amp; progress</h2>
+          <LessonPlansClient
+            students={roster.map((r) => ({ id: r.studentId, name: `${r.firstName} ${r.lastName ?? ''}`.trim() }))}
+            initialStudentId={roster.length === 1 ? roster[0]!.studentId : undefined}
+          />
+        </div>
+      )}
     </DashboardShell>
   )
 }
@@ -236,4 +271,21 @@ function yearsOld(dob: string | null): number | null {
 function shortDate(iso: string): string {
   const d = new Date(iso + 'T00:00:00+10:00')
   return `${d.getDate()}.${d.getMonth() + 1}`
+}
+
+// Does this child's birthday fall inside the displayed term? If so, label it
+// and flag if it's within the next ~2 weeks so coaches can plan to celebrate.
+function birthdayInTerm(dob: string | null, termStart: string, termEnd: string, todayIso: string): { label: string; soon: boolean } | null {
+  if (!dob) return null
+  const parts = dob.split('-')
+  if (parts.length < 3) return null
+  const [, mm, dd] = parts
+  if (!mm || !dd) return null
+  const year = parseInt(termStart.slice(0, 4), 10)
+  const bday = `${year}-${mm}-${dd}` // birthday in the term's year
+  if (bday < termStart || bday > termEnd) return null
+  const ms = (s: string) => new Date(s + 'T00:00:00+10:00').getTime()
+  const days = Math.round((ms(bday) - ms(todayIso)) / 86_400_000)
+  const label = new Date(bday + 'T00:00:00+10:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+  return { label, soon: days >= -1 && days <= 14 }
 }

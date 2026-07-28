@@ -27,12 +27,13 @@ const TYPE_ORDER = ['event', 'gig', 'show', 'private_lesson', 'rehearsal', 'work
 const inp = 'w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:border-zinc-900 focus:outline-none'
 
 export function AppointmentModal({
-  coaches, editing, defaultDate, onClose,
+  coaches, editing, defaultDate, onClose, relatedFamilyId,
 }: {
   coaches: ApptCoach[]
   editing?: ApptRecord
   defaultDate?: string
   onClose: () => void
+  relatedFamilyId?: string
 }) {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
@@ -60,10 +61,11 @@ export function AppointmentModal({
   async function save() {
     setErr(''); setBusy(true)
     try {
+      const payload = { ...f, ...(relatedFamilyId ? { related_family_id: relatedFamilyId } : {}) }
       const r = await fetch('/api/appointments', {
         method: editing ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editing ? { id: editing.id, ...f } : f),
+        body: JSON.stringify(editing ? { id: editing.id, ...payload } : payload),
       })
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || 'Could not save')

@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Trash2, ArrowUp, ArrowDown, ExternalLink, Copy, Check, GripVertical,
   User, UserSquare, Calendar, Phone, Mail, MapPin, Building2, Globe,
   Type, AlignLeft, ChevronDown, ListChecks, CircleDot, CheckSquare, Star, Heading, Plus,
+  Bold, Underline,
 } from 'lucide-react'
+import { RichText } from '@/lib/rich-text'
 
 type Field = { id: string; type: string; label: string; required?: boolean; options?: string[]; placeholder?: string }
 type Form = { id: string; name: string; slug: string; intro: string | null; fields: Field[] }
@@ -50,6 +52,42 @@ const BASE = 'https://app-chi-silk-29.vercel.app'
 const inp = 'w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-zinc-900'
 const newId = () => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `f${Math.random()}`)
 
+// A text box that grows to fit what you type — so long questions are fully
+// visible while you edit, instead of being crammed into a one-line sliver.
+function AutoTextarea({ value, onChange, taRef, className, placeholder, minRows = 2 }: {
+  value: string; onChange: (v: string) => void; taRef?: (el: HTMLTextAreaElement | null) => void
+  className?: string; placeholder?: string; minRows?: number
+}) {
+  const ref = useRef<HTMLTextAreaElement | null>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (el) { el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px` }
+  }, [value])
+  return (
+    <textarea
+      ref={(el) => { ref.current = el; taRef?.(el) }}
+      rows={minRows}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+      className={className}
+      style={{ resize: 'none', overflow: 'hidden' }}
+    />
+  )
+}
+
+// Bold / Underline buttons that wrap whatever text you've selected.
+function FormatBar({ onWrap }: { onWrap: (marker: string) => void }) {
+  const btn = 'inline-flex items-center gap-1 px-2 py-1 rounded-md border border-zinc-200 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 text-[11px] font-semibold'
+  return (
+    <div className="flex items-center gap-1.5">
+      <button type="button" onClick={() => onWrap('**')} className={btn} title="Bold the selected text"><Bold size={12} /> Bold</button>
+      <button type="button" onClick={() => onWrap('__')} className={btn} title="Underline the selected text"><Underline size={12} /> Underline</button>
+      <span className="text-[10px] text-zinc-300">select text, then click</span>
+    </div>
+  )
+}
+
 export function FormBuilder({ form }: { form: Form }) {
   const router = useRouter()
   const [name, setName] = useState(form.name)
@@ -60,12 +98,38 @@ export function FormBuilder({ form }: { form: Form }) {
   const [err, setErr] = useState('')
   const [copied, setCopied] = useState(false)
   const [over, setOver] = useState(false)
+  const [justAdded, setJustAdded] = useState<string | null>(null)
 
   const url = `${BASE}/f/${form.slug}`
+  // Track each question's text box so the Bold/Underline buttons can wrap the
+  // current selection. Key 'intro' is the intro box.
+  const taRefs = useRef<Record<string, HTMLTextAreaElement | null>>({})
+  function wrap(key: string, marker: string, getVal: () => string, setVal: (v: string) => void) {
+    const ta = taRefs.current[key]
+    if (!ta) return
+    const s = ta.selectionStart, e = ta.selectionEnd
+    const val = getVal()
+    const sel = val.slice(s, e) || 'text'
+    const next = val.slice(0, s) + marker + sel + marker + val.slice(e)
+    setVal(next)
+    requestAnimationFrame(() => { ta.focus(); ta.selectionStart = s + marker.length; ta.selectionEnd = s + marker.length + sel.length })
+  }
+  const hasFmt = (s: string) => /(\*\*|__|\*)/.test(s)
   const upd = (id: string, patch: Partial<Field>) => setFields((fs) => fs.map((f) => f.id === id ? { ...f, ...patch } : f))
   const remove = (id: string) => setFields((fs) => fs.filter((f) => f.id !== id))
   const move = (i: number, d: number) => setFields((fs) => { const a = [...fs]; const j = i + d; if (j < 0 || j >= a.length) return fs;[a[i], a[j]] = [a[j]!, a[i]!]; return a })
-  const add = (el: Element) => setFields((fs) => [...fs, { id: newId(), type: el.type, label: el.field, required: false, options: el.options ? [...el.options] : undefined }])
+  const add = (el: Element, at?: number) => {
+    const nf: Field = { id: newId(), type: el.type, label: el.field, required: false, options: el.options ? [...el.options] : undefined }
+    setFields((fs) => { const a = [...fs]; a.splice(at == null ? a.length : at, 0, nf); return a })
+    setJustAdded(nf.id)
+    setTimeout(() => setJustAdded((id) => id === nf.id ? null : id), 1800)
+  }
+  // Robust drop — works even when dropped onto an existing field box (stops the
+  // browser dropping the text *into* an input). `at` inserts at the drop spot.
+  const dropAdd = (e: React.DragEvent, at?: number) => {
+    e.preventDefault(); e.stopPropagation(); setOver(false)
+    try { const el = JSON.parse(e.dataTransfer.getData('text/plain')); if (el?.type) add(el, at) } catch { /* ignore */ }
+  }
 
   async function save() {
     setBusy(true); setErr(''); setDone(false)
@@ -91,16 +155,17 @@ export function FormBuilder({ form }: { form: Form }) {
             <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1.5 px-1">{g.group}</div>
             <div className="grid grid-cols-2 gap-1.5">
               {g.items.map((el) => (
-                <button
+                <div
                   key={el.label}
+                  role="button"
                   draggable
-                  onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify(el))}
-                  onClick={() => add(el)}
-                  className="flex flex-col items-center gap-1 p-2 rounded-lg border border-zinc-200 hover:border-[#D72027] hover:bg-red-50 text-zinc-600 hover:text-[#D72027] cursor-grab active:cursor-grabbing"
+                  onDragStart={(e) => { e.dataTransfer.effectAllowed = 'copy'; e.dataTransfer.setData('text/plain', JSON.stringify(el)) }}
+                  onClick={(e) => { add(el); (e.currentTarget as HTMLElement).blur() }}
+                  className="select-none flex flex-col items-center gap-1 p-2 rounded-lg border border-zinc-200 hover:border-[#D72027] hover:bg-red-50 text-zinc-600 hover:text-[#D72027] cursor-grab active:cursor-grabbing"
                 >
                   <el.Icon size={16} />
                   <span className="text-[10px] font-semibold text-center leading-tight">{el.label}</span>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -108,7 +173,7 @@ export function FormBuilder({ form }: { form: Form }) {
       </div>
 
       {/* RIGHT — canvas */}
-      <div className="space-y-4 max-w-2xl">
+      <div className="space-y-4 max-w-3xl">
         {/* Share bar */}
         <div className="bg-white rounded-xl border border-zinc-200 p-3 flex items-center gap-2 flex-wrap">
           <span className="text-xs text-zinc-500">Live link:</span>
@@ -120,26 +185,41 @@ export function FormBuilder({ form }: { form: Form }) {
         {/* Title card */}
         <div className="bg-white rounded-xl border border-zinc-200 p-5 space-y-3">
           <input className="w-full text-lg font-bold text-zinc-900 border-0 focus:outline-none focus:ring-0 px-0" value={name} onChange={(e) => setName(e.target.value)} placeholder="Form name" />
-          <textarea className={inp} rows={2} value={intro} onChange={(e) => setIntro(e.target.value)} placeholder="Intro text shown above the form (optional)" />
+          <div className="space-y-1.5">
+            <FormatBar onWrap={(m) => wrap('intro', m, () => intro, setIntro)} />
+            <AutoTextarea taRef={(el) => { taRefs.current['intro'] = el }} className={`${inp} leading-relaxed`} minRows={2} value={intro} onChange={setIntro} placeholder="Intro text shown above the form (optional). Press Enter for a new line." />
+            {hasFmt(intro) && <p className="text-xs text-zinc-500 leading-relaxed bg-zinc-50 border border-zinc-100 rounded-lg px-3 py-2"><span className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Preview: </span><RichText text={intro} /></p>}
+          </div>
         </div>
 
         {/* Drop zone / fields */}
         <div
           onDragOver={(e) => { e.preventDefault(); setOver(true) }}
           onDragLeave={() => setOver(false)}
-          onDrop={(e) => { e.preventDefault(); setOver(false); try { add(JSON.parse(e.dataTransfer.getData('text/plain'))) } catch { /* ignore */ } }}
+          onDrop={dropAdd}
           className={`rounded-xl border-2 border-dashed p-3 space-y-2 min-h-[140px] transition-colors ${over ? 'border-[#D72027] bg-red-50/40' : 'border-zinc-200'}`}
         >
           {fields.length === 0 && <div className="text-center text-sm text-zinc-400 py-10">Drag a form element here, or click one on the left.</div>}
           {fields.map((f, i) => (
-            <div key={f.id} className="bg-white rounded-lg border border-zinc-200 p-3">
+            <div
+              key={f.id}
+              ref={(el) => { if (el && justAdded === f.id) el.scrollIntoView({ behavior: 'smooth', block: 'center' }) }}
+              onDragOver={(e) => { e.preventDefault(); setOver(true) }}
+              onDrop={(e) => dropAdd(e, i + 1)}
+              className={`bg-white rounded-lg border p-3 transition-all ${justAdded === f.id ? 'border-[#D72027] ring-2 ring-[#D72027]/40' : 'border-zinc-200'}`}
+            >
               <div className="flex items-center gap-2 mb-2">
                 <GripVertical size={15} className="text-zinc-300 shrink-0" />
-                <input className={`${inp} flex-1`} value={f.label} onChange={(e) => upd(f.id, { label: e.target.value })} placeholder="Question / label" />
                 <span className="text-[10px] font-semibold text-zinc-400 bg-zinc-100 px-2 py-1 rounded shrink-0">{TYPE_LABEL[f.type] ?? f.type}</span>
-                <button onClick={() => move(i, -1)} className="p-1 text-zinc-400 hover:text-zinc-700"><ArrowUp size={14} /></button>
-                <button onClick={() => move(i, 1)} className="p-1 text-zinc-400 hover:text-zinc-700"><ArrowDown size={14} /></button>
-                <button onClick={() => remove(f.id)} className="p-1 text-zinc-400 hover:text-red-600"><Trash2 size={14} /></button>
+                <div className="flex-1" />
+                <button onClick={() => move(i, -1)} className="p-1 text-zinc-400 hover:text-zinc-700" title="Move up"><ArrowUp size={14} /></button>
+                <button onClick={() => move(i, 1)} className="p-1 text-zinc-400 hover:text-zinc-700" title="Move down"><ArrowDown size={14} /></button>
+                <button onClick={() => remove(f.id)} className="p-1 text-zinc-400 hover:text-red-600" title="Delete question"><Trash2 size={14} /></button>
+              </div>
+              <div className="pl-7 space-y-1.5 mb-2">
+                <FormatBar onWrap={(m) => wrap(f.id, m, () => f.label, (v) => upd(f.id, { label: v }))} />
+                <AutoTextarea taRef={(el) => { taRefs.current[f.id] = el }} className={`${inp} leading-relaxed`} minRows={f.type === 'heading' ? 1 : 2} value={f.label} onChange={(v) => upd(f.id, { label: v })} placeholder="Type your question or label here. Press Enter for a new line." />
+                {hasFmt(f.label) && <p className="text-sm text-zinc-700 leading-relaxed bg-zinc-50 border border-zinc-100 rounded-lg px-3 py-2"><span className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Preview: </span><RichText text={f.label} /></p>}
               </div>
               <div className="flex items-center gap-3 flex-wrap pl-7">
                 {f.type !== 'heading' && <label className="flex items-center gap-1.5 text-xs text-zinc-600"><input type="checkbox" checked={!!f.required} onChange={(e) => upd(f.id, { required: e.target.checked })} /> Required</label>}

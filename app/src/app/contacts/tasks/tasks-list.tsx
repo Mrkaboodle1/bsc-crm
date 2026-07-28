@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { createTask, deleteTask, setTaskStatus } from './actions'
+import { createTask, deleteTask, setTaskStatus, updateTask } from './actions'
 
 export type TaskRow = {
   id: string
@@ -44,7 +44,28 @@ export function TasksList({ rows: initial }: { rows: TaskRow[] }) {
   const [due, setDue] = useState('')
   const [pri, setPri] = useState<'urgent' | 'high' | 'normal' | 'low'>('normal')
   const [error, setError] = useState<string | null>(null)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [eTitle, setETitle] = useState('')
+  const [eDue, setEDue] = useState('')
+  const [ePri, setEPri] = useState<'urgent' | 'high' | 'normal' | 'low'>('normal')
   const [, startTransition] = useTransition()
+
+  function startEdit(t: TaskRow) {
+    setEditId(t.id)
+    setETitle(t.title)
+    setEDue(t.dueAt ? t.dueAt.slice(0, 10) : '')
+    setEPri((t.priority as 'urgent' | 'high' | 'normal' | 'low') ?? 'normal')
+  }
+  function saveEdit(t: TaskRow) {
+    if (!eTitle.trim()) return
+    const dueIso = eDue ? new Date(`${eDue}T09:00:00+10:00`).toISOString() : null
+    setRows((rs) => rs.map((r) => (r.id === t.id ? { ...r, title: eTitle.trim(), dueAt: dueIso, priority: ePri } : r)))
+    setEditId(null)
+    startTransition(async () => {
+      const res = await updateTask({ id: t.id, title: eTitle.trim(), due_at: dueIso, priority: ePri })
+      if (!res.ok) alert(res.error)
+    })
+  }
 
   function addNew() {
     if (!title.trim()) return
@@ -133,6 +154,35 @@ export function TasksList({ rows: initial }: { rows: TaskRow[] }) {
           {rows.map((t) => {
             const isDone = t.status === 'done'
             const dl = dueLabel(t.dueAt)
+            if (editId === t.id) {
+              return (
+                <li key={t.id} className="bg-white rounded-xl shadow-sm border-2 border-[#D72027] p-3 space-y-2">
+                  <input
+                    type="text"
+                    value={eTitle}
+                    autoFocus
+                    onChange={(e) => setETitle(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && saveEdit(t)}
+                    className="w-full px-3 py-2 border-2 border-zinc-200 rounded-xl text-sm font-bold focus:border-[#D72027] focus:outline-none"
+                  />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <label className="text-[10px] uppercase tracking-wider font-bold text-zinc-500">Due</label>
+                    <input type="date" value={eDue} onChange={(e) => setEDue(e.target.value)} className="px-2 py-1.5 border-2 border-zinc-200 rounded-lg text-xs" />
+                    <label className="text-[10px] uppercase tracking-wider font-bold text-zinc-500">Priority</label>
+                    <select value={ePri} onChange={(e) => setEPri(e.target.value as 'urgent' | 'high' | 'normal' | 'low')} className="px-2 py-1.5 border-2 border-zinc-200 rounded-lg text-xs font-bold">
+                      <option value="urgent">🔥 Urgent</option>
+                      <option value="high">⚡ High</option>
+                      <option value="normal">Normal</option>
+                      <option value="low">Low</option>
+                    </select>
+                    <div className="ml-auto flex gap-1">
+                      <button onClick={() => setEditId(null)} className="text-xs font-bold text-zinc-500 px-3 py-1.5 rounded-lg hover:bg-zinc-100">Cancel</button>
+                      <button onClick={() => saveEdit(t)} disabled={!eTitle.trim()} className="bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">Save</button>
+                    </div>
+                  </div>
+                </li>
+              )
+            }
             return (
               <li key={t.id} className={`bg-white rounded-xl shadow-sm border-2 p-3 flex items-start gap-3 ${isDone ? 'border-zinc-100 opacity-60' : 'border-zinc-200'}`}>
                 <button onClick={() => toggle(t)} className={`mt-0.5 w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center ${isDone ? 'bg-emerald-500 border-emerald-600 text-white' : 'border-zinc-300 hover:border-[#D72027]'}`} aria-label="Toggle done">
@@ -155,6 +205,7 @@ export function TasksList({ rows: initial }: { rows: TaskRow[] }) {
                 <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${PRIORITY_CLS[t.priority] ?? 'bg-zinc-100'}`}>
                   {t.priority}
                 </span>
+                {!isDone && <button onClick={() => startEdit(t)} className="text-zinc-300 hover:text-[#D72027] text-sm leading-none" aria-label="Edit">✏️</button>}
                 <button onClick={() => remove(t)} className="text-zinc-300 hover:text-red-600 text-base leading-none" aria-label="Delete">×</button>
               </li>
             )

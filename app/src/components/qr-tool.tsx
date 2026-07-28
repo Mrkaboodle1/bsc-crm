@@ -3,15 +3,9 @@
 import { useState } from 'react'
 import { Download, QrCode, Link as LinkIcon } from 'lucide-react'
 
-const PRESETS: { label: string; url: string }[] = [
-  { label: 'Website', url: 'https://bigstarcircus.com.au' },
-  { label: 'Free trial form', url: 'https://bigstarcircus.com.au/free-trial' },
-  { label: 'Facebook', url: 'https://facebook.com/bigstarcircus' },
-  { label: 'Instagram', url: 'https://instagram.com/bigstarcircus' },
-]
-
-export function QrTool() {
-  const [text, setText] = useState('https://bigstarcircus.com.au')
+export function QrTool({ presets = [], defaultUrl = '', filePrefix = 'qr' }: { presets?: { label: string; url: string }[]; defaultUrl?: string; filePrefix?: string }) {
+  const PRESETS = presets
+  const [text, setText] = useState(defaultUrl)
   const [size, setSize] = useState(400)
   const [colour, setColour] = useState('000000')
   const src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text || ' ')}&color=${colour}&margin=10`
@@ -22,7 +16,7 @@ export function QrTool() {
       const blob = await res.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = `bigstar-qr-${(text || 'code').replace(/[^a-z0-9]+/gi, '-').slice(0, 30)}.png`
+      a.download = `${filePrefix}-qr-${(text || 'code').replace(/[^a-z0-9]+/gi, '-').slice(0, 30)}.png`
       document.body.appendChild(a); a.click(); a.remove()
       URL.revokeObjectURL(a.href)
     } catch { /* ignore */ }
@@ -56,7 +50,7 @@ export function QrTool() {
           <div>
             <label className="block text-xs font-semibold text-zinc-600 mb-1.5">Colour</label>
             <div className="flex gap-1.5">
-              {[['000000', 'Black'], ['D72027', 'BSC red'], ['1d4ed8', 'Blue']].map(([hex, name]) => (
+              {[['000000', 'Black'], ['D72027', 'Brand red'], ['1d4ed8', 'Blue']].map(([hex, name]) => (
                 <button key={hex} onClick={() => setColour(hex)} title={name} className={`w-8 h-8 rounded-md border-2 ${colour === hex ? 'border-zinc-900' : 'border-zinc-200'}`} style={{ background: `#${hex}` }} />
               ))}
             </div>

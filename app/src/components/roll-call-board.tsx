@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Move, Check } from 'lucide-react'
 import { ClassFormButton, type Coach, type ClassRecord } from '@/components/class-form'
@@ -265,12 +266,12 @@ function Card({
 
   // Normal: tappable link to the roll.
   return (
-    <a
+    <Link
       href={`/roll-call/${cls.id}`}
       className={`relative block rounded-2xl ${palette.bg} ${palette.text} px-3 py-3 shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all border-2 border-white/30`}
     >
       {editPencil}
       {inner}
-    </a>
+    </Link>
   )
 }

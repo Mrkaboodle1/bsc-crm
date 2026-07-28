@@ -5,11 +5,12 @@
 
 import { revalidatePath } from 'next/cache'
 import { verifySession } from '@/lib/dal'
-import { createServerSupabase } from '@/lib/supabase-server'
+import { createServerSupabase, createServerSupabaseAdmin } from '@/lib/supabase-server'
+import { detectForStudent } from '@/lib/loyalty'
 import type { Status } from './attendance-grid'
 
 type MarkResult =
-  | { ok: true; attendanceId: string | null }
+  | { ok: true; attendanceId: string | null; milestonesReached?: number[] }
   | { ok: false; error: string }
 
 export async function markAttendance(input: {
@@ -64,8 +65,67 @@ export async function markAttendance(input: {
     .single()
 
   if (error) return { ok: false, error: error.message }
+
+  // Loyalty milestones: if this counts as attending, check for a newly-reached
+  // milestone so the coach sees it instantly. Best-effort — never block the roll.
+  let milestonesReached: number[] = []
+  if (input.status === 'present' || input.status === 'late' || input.status === 'makeup') {
+    try { milestonesReached = await detectForStudent(supabase, user.tenantId, input.studentId) } catch { /* ignore */ }
+  }
+
   revalidatePath(`/roll-call/${input.classId}`)
-  return { ok: true, attendanceId: data.id }
+  return { ok: true, attendanceId: data.id, milestonesReached }
+}
+
+// Save a coach's note against a student's session on a given date.
+// Notes live in attendance.coach_notes. If no attendance row exists for that
+// day yet we create one marked 'present' (a coach writing a note is taking the
+// roll for a child who's in class) — they can change the status afterwards.
+export async function saveCoachNote(input: {
+  classId: string
+  studentId: string
+  enrolmentId: string
+  date: string
+  note: string
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+  const note = input.note.trim() || null
+
+  let coachId: string | null = null
+  const { data: coachMatch } = await supabase.from('coaches').select('id').eq('user_id', user.id).maybeSingle()
+  if (coachMatch?.id) coachId = coachMatch.id
+
+  const { data: existing } = await supabase
+    .from('attendance')
+    .select('id')
+    .eq('class_id', input.classId)
+    .eq('student_id', input.studentId)
+    .eq('date', input.date)
+    .maybeSingle()
+
+  if (existing) {
+    const { error } = await supabase
+      .from('attendance')
+      .update({ coach_notes: note, marked_by_coach_id: coachId, marked_at: new Date().toISOString() })
+      .eq('id', existing.id)
+    if (error) return { ok: false, error: error.message }
+  } else {
+    const { error } = await supabase.from('attendance').insert({
+      tenant_id: user.tenantId,
+      student_id: input.studentId,
+      class_id: input.classId,
+      enrolment_id: input.enrolmentId,
+      date: input.date,
+      status: 'present',
+      coach_notes: note,
+      marked_by_coach_id: coachId,
+      marked_at: new Date().toISOString(),
+    })
+    if (error) return { ok: false, error: error.message }
+  }
+  revalidatePath(`/roll-call/${input.classId}`)
+  return { ok: true }
 }
 
 type AwardResult =
@@ -80,10 +140,12 @@ export async function awardStar(input: {
   notes: string | null
 }): Promise<AwardResult> {
   const user = await verifySession()
-  const supabase = await createServerSupabase()
+  // Use the admin client so the ledger insert is never blocked by RLS — coaches
+  // award stars too, and the coach role has no direct insert policy on star_ledger.
+  const supabase = await createServerSupabaseAdmin()
 
-  if (input.stars < 1 || input.stars > 5) {
-    return { ok: false, error: 'Stars must be between 1 and 5' }
+  if (input.stars < 1 || input.stars > 20) {
+    return { ok: false, error: 'Stars must be between 1 and 20' }
   }
 
   // Find coach for attribution
@@ -214,7 +276,7 @@ export async function searchStudents(input: { classId: string; query: string }):
 
 export async function addToClass(input: { studentId: string; classId: string }): Promise<EnrolResult> {
   const user = await verifySession()
-  const supabase = await createServerSupabase()
+  const supabase = await createServerSupabaseAdmin()
   // Reactivate a cancelled enrolment if it exists, otherwise insert a fresh one.
   const today = new Date().toISOString().slice(0, 10)
   const { data: existing } = await supabase
@@ -237,10 +299,51 @@ export async function addToClass(input: { studentId: string; classId: string }):
       class_id: input.classId,
       start_date: today,
       status: 'active',
-      term: 'Term 2 2026',
+      term: 'Term 3 2026',
     })
     if (error) return { ok: false, error: error.message }
   }
   revalidatePath(`/roll-call/${input.classId}`)
+  return { ok: true }
+}
+
+// Create a brand-new child (+ optional parent + tag) and enrol them in one go.
+export async function createAndEnrol(input: { firstName: string; lastName?: string; dob?: string; parentName?: string; parentPhone?: string; parentEmail?: string; tag?: string; classId: string }): Promise<EnrolResult> {
+  const user = await verifySession()
+  const admin = await createServerSupabaseAdmin()
+  if (!input.firstName?.trim()) return { ok: false, error: 'Enter the child’s name' }
+  const email = (input.parentEmail || '').toLowerCase().trim()
+  const phone9 = (input.parentPhone || '').replace(/\D/g, '').slice(-9)
+  let familyId: string | null = null
+  if (email || phone9) {
+    const ors: string[] = []
+    if (email) ors.push(`email.ilike.*${email}*`)
+    if (phone9) ors.push(`phone.ilike.*${phone9}*`)
+    const { data: fam } = await admin.from('families').select('id').eq('tenant_id', user.tenantId).or(ors.join(',')).limit(1)
+    if (fam && fam.length) familyId = fam[0].id
+  }
+  if (!familyId) {
+    const surname = (input.parentName || input.lastName || input.firstName).trim().split(' ').slice(-1)[0]
+    const { data: nf, error } = await admin.from('families').insert({ tenant_id: user.tenantId, family_name: surname, primary_parent: input.parentName || null, email: email || null, phone: input.parentPhone || null, lifecycle_stage: 'lead', tags: input.tag ? [input.tag] : [] }).select('id').single()
+    if (error || !nf) return { ok: false, error: error?.message || 'Could not create family' }
+    familyId = nf.id
+  }
+  const { data: st, error: se } = await admin.from('students').insert({ tenant_id: user.tenantId, family_id: familyId, first_name: input.firstName.trim(), last_name: input.lastName || null, date_of_birth: input.dob || null }).select('id').single()
+  if (se || !st) return { ok: false, error: se?.message || 'Could not add child' }
+  const { error: ee } = await admin.from('enrolments').insert({ tenant_id: user.tenantId, student_id: st.id, class_id: input.classId, start_date: new Date().toISOString().slice(0, 10), status: 'active', term: 'Term 3 2026', notes: input.tag ? `Commitment: ${input.tag}` : null })
+  if (ee) return { ok: false, error: ee.message }
+  revalidatePath(`/roll-call/${input.classId}`)
+  return { ok: true }
+}
+
+// Move selected enrolments to another class (bulk).
+export async function moveToClass(input: { enrolmentIds: string[]; toClassId: string; fromClassId: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await verifySession()
+  const admin = await createServerSupabaseAdmin()
+  if (!input.enrolmentIds?.length || !input.toClassId) return { ok: false, error: 'Nothing to move' }
+  const { error } = await admin.from('enrolments').update({ class_id: input.toClassId, status: 'active' }).in('id', input.enrolmentIds).eq('tenant_id', user.tenantId)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath(`/roll-call/${input.fromClassId}`)
+  revalidatePath(`/roll-call/${input.toClassId}`)
   return { ok: true }
 }

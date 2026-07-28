@@ -95,7 +95,7 @@ export default async function ConversationsPage() {
           The conversations inbox needs a one-time database setup. Ask Jacky to finish it.
         </div>
       ) : (
-        <ConversationsInbox conversations={conversations} />
+        <ConversationsInbox conversations={conversations} fromEmail={user.tenant?.email ?? null} />
       )}
     </DashboardShell>
   )

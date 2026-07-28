@@ -83,7 +83,10 @@ export default function StarBandRegister() {
       <div className="max-w-xl mx-auto">
         <header className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-extrabold text-zinc-900">⭐ Register a StarBand</h1>
-          <a href="/starband" className="text-sm bg-zinc-900 text-white px-3 py-1.5 rounded-full font-bold">← Kiosk</a>
+          <div className="flex gap-2">
+            <a href="/starband/bulk" className="text-sm bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white px-3 py-1.5 rounded-full font-bold">⚡ Rapid pairing</a>
+            <a href="/starband" className="text-sm bg-zinc-900 text-white px-3 py-1.5 rounded-full font-bold">← Kiosk</a>
+          </div>
         </header>
 
         <div className="bg-white rounded-2xl shadow-md border-2 border-zinc-200 p-6">

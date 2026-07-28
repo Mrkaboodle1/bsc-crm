@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { createServerSupabaseAdmin } from "@/lib/supabase-server";
+import { MusicPlayer } from "@/components/music-player";
 
 // Inter is the de-facto SaaS / fintech / dashboard font — variable-weight,
 // crisp at every size, used by Linear, Vercel, Stripe, Notion, Tectonic.
@@ -18,14 +20,21 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Big Star CRM",
-  description: "The Big Star Circus CRM — built for kids activity businesses.",
-  icons: {
-    icon: "/bigstar-logo.png",
-    apple: "/bigstar-logo.png",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  let name = 'Big Star Circus'
+  let logo = '/bigstar-logo.png'
+  try {
+    const sb = await createServerSupabaseAdmin()
+    const { data: t } = await sb.from('tenants').select('name, logo_url').order('created_at').limit(1).maybeSingle()
+    if (t?.name) name = t.name
+    if (t?.logo_url) logo = t.logo_url
+  } catch { /* fall back to defaults */ }
+  return {
+    title: `${name} CRM`,
+    description: `${name} — business platform.`,
+    icons: { icon: logo, apple: logo },
+  }
+}
 
 export default function RootLayout({
   children,
@@ -42,6 +51,8 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
       >
         {children}
+        {/* Mounted once here so the studio radio keeps playing across every page. */}
+        <MusicPlayer />
       </body>
     </html>
   );

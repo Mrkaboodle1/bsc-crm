@@ -9,12 +9,17 @@ export default async function StarbandManagePage() {
   const user = await verifySession()
   const supabase = await createServerSupabase()
 
-  const { data: studentsRaw, error } = await supabase
-    .from('students')
-    .select('id, first_name, last_name, photo_url, pin_code, allergies, medical_notes, authorised_pickup')
-    .eq('tenant_id', user.tenantId)
-    .order('first_name')
-    .limit(2000)
+  const baseCols = 'id, first_name, last_name, photo_url, pin_code, allergies, medical_notes, authorised_pickup'
+  // Try with the newer support-needs columns; fall back if migration 017 not applied yet.
+  let studentsRaw: Record<string, unknown>[] | null = null
+  const first = await supabase.from('students').select(`${baseCols}, support_needs, support_strategy`).eq('tenant_id', user.tenantId).order('first_name').limit(2000)
+  let error = first.error
+  if (first.error && first.error.message.includes('support_')) {
+    const fb = await supabase.from('students').select(baseCols).eq('tenant_id', user.tenantId).order('first_name').limit(2000)
+    studentsRaw = fb.data; error = fb.error
+  } else {
+    studentsRaw = first.data
+  }
 
   const needsSetup = !!error && (error.message.includes('does not exist') || error.message.includes('schema cache'))
 
@@ -36,13 +41,17 @@ export default async function StarbandManagePage() {
     byStudent.set(t.student_id, arr)
   }
 
-  const students: SBStudent[] = (studentsRaw ?? []).map((s) => ({
-    id: s.id,
-    name: `${s.first_name}${s.last_name ? ' ' + s.last_name : ''}`,
-    photo_url: s.photo_url, pin_code: s.pin_code, allergies: s.allergies,
-    medical_notes: s.medical_notes, authorised_pickup: s.authorised_pickup,
-    bands: byStudent.get(s.id) ?? [],
-  }))
+  const students: SBStudent[] = (studentsRaw ?? []).map((s) => {
+    const r = s as Record<string, string | null> & { id: string; first_name: string; last_name: string | null }
+    return {
+      id: r.id,
+      name: `${r.first_name}${r.last_name ? ' ' + r.last_name : ''}`,
+      photo_url: r.photo_url, pin_code: r.pin_code, allergies: r.allergies,
+      medical_notes: r.medical_notes, authorised_pickup: r.authorised_pickup,
+      support_needs: r.support_needs ?? null, support_strategy: r.support_strategy ?? null,
+      bands: byStudent.get(r.id) ?? [],
+    }
+  })
 
   return (
     <DashboardShell user={user} currentPath="/starband/manage" pageTitle="StarBand" pageSubtitle="Manage wristbands, PINs, photos, medical info & pickup — and your check-in settings.">

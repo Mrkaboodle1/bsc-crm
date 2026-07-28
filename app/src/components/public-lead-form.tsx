@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-export function PublicLeadForm({ formSlug, accent = '#D72027' }: { formSlug: string; accent?: string }) {
+export function PublicLeadForm({ formSlug, accent = '#D72027', businessName = '' }: { formSlug: string; accent?: string; businessName?: string }) {
   const [f, setF] = useState({ name: '', email: '', phone: '', childAge: '', message: '' })
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
@@ -45,7 +45,7 @@ export function PublicLeadForm({ formSlug, accent = '#D72027' }: { formSlug: str
       <button type="submit" disabled={state === 'sending'} className="w-full text-white font-extrabold text-sm px-5 py-3.5 rounded-xl shadow-md disabled:opacity-50" style={{ background: accent }}>
         {state === 'sending' ? 'Sending…' : 'Send my enquiry'}
       </button>
-      <p className="text-[11px] text-zinc-400 text-center">Big Star Circus · Molendinar, Gold Coast</p>
+      {businessName && <p className="text-[11px] text-zinc-400 text-center">{businessName}</p>}
     </form>
   )
 }

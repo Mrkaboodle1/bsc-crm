@@ -118,7 +118,7 @@ export function StudentListView({
                   <td className="px-4 py-3 hidden md:table-cell">
                     {s.familyId ? (
                       <a
-                        href={`/families/${s.familyId}`}
+                        href={`/contacts/${s.familyId}`}
                         className="text-zinc-700 hover:text-[#D72027] hover:underline font-bold"
                       >
                         {s.familyName}

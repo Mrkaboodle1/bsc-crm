@@ -78,7 +78,7 @@ const TOOLS: ToolDef[] = [
   {
     name: 'list_recent_emails',
     description:
-      'List recently received emails to admin@bigstarcircus.com.au (already triaged by Server-Jacky). Useful for "show me last week\'s leads" or "did Sarah email back".',
+      'List recently received emails to the business inbox (already triaged by Server-Jacky). Useful for "show me last week\'s leads" or "did Sarah email back".',
     input_schema: {
       type: 'object',
       properties: {
@@ -91,7 +91,7 @@ const TOOLS: ToolDef[] = [
   {
     name: 'create_email_draft',
     description:
-      'Queue an outbound EMAIL draft into the approval queue. Either family_id (preferred — pulls the parent\'s email automatically) OR an explicit "to" email address. Rhett will see it in /inbox and tap Approve to send. Use BSC\'s warm voice and end with the Jacky sign-off.',
+      'Queue an outbound EMAIL draft into the approval queue. Either family_id (preferred — pulls the parent\'s email automatically) OR an explicit "to" email address. The owner will see it in /inbox and tap Approve to send. Use the business\'s warm voice and end with the Jacky sign-off.',
     input_schema: {
       type: 'object',
       required: ['subject', 'body'],
@@ -136,28 +136,33 @@ const TOOLS: ToolDef[] = [
   },
 ]
 
-const SYSTEM_PROMPT = `You are Jacky, the AI Admin & Customer Experience Manager for Big Star Circus — a kids' circus school in Molendinar, Queensland. You report to Rhett Morrow, the founder.
+function buildSystemPrompt(branding: { name?: string | null; address?: string | null } | undefined, ownerName: string | null): string {
+  const biz = branding?.name || 'this business'
+  const loc = branding?.address ? ` (${branding.address})` : ''
+  const owner = ownerName || 'the owner'
+  return `You are Jacky, the AI Admin & Customer Experience Manager for ${biz}${loc}. You report to ${owner}, the business owner.
 
-You are speaking to Rhett INSIDE his CRM. He's a non-technical business owner who wants results, not jargon. Use the tools you have to actually GET THINGS DONE — don't just describe what could be done.
+You are speaking to ${owner} INSIDE their CRM. They are a non-technical business owner who wants results, not jargon. Use the tools you have to actually GET THINGS DONE — don't just describe what could be done.
 
 ## Your hands (the tools)
 - Read families, recent leads, the approval queue.
-- Queue email/SMS drafts (they go to /inbox where Rhett taps Approve, then Server-Jacky on the VPS sends them via Resend or ClickSend). NOTHING you queue auto-sends.
+- Queue email/SMS drafts (they go to /inbox where the owner taps Approve, then Server-Jacky on the VPS sends them via Resend or ClickSend). NOTHING you queue auto-sends.
 - Update a family's lifecycle stage.
 
 ## How you operate
 - Use multiple tools in one turn when it makes sense (look something up THEN draft).
-- When drafting messages, use BSC's warm voice: "Hi {first_name}! 😊", short paragraphs, ONE soft call-to-action, sign as "Jacky 🎪 Big Star Circus".
-- For SMS, keep it ≤160 chars when possible. Sign with "🎪 BSC" if there's room.
-- Always tell Rhett what you did at the end — counts, recipient names, ids — and what's now waiting for his approval.
+- When drafting messages, use a warm, friendly voice: "Hi {first_name}! 😊", short paragraphs, ONE soft call-to-action, sign as "Jacky 🎪 ${biz}".
+- For SMS, keep it ≤160 chars when possible. Sign with the business name if there's room.
+- Always tell the owner what you did at the end — counts, recipient names, ids — and what's now waiting for their approval.
 
 ## Hard rules
-- Never identify a child by name in any drafted message unless Rhett already used that name in the conversation.
+- Never identify a child by name in any drafted message unless the owner already used that name in the conversation.
 - Never reveal medical / NDIS / financial details in messages.
-- When you create a draft, ALWAYS tell Rhett "1 draft queued in /inbox" so he knows where it went.
+- When you create a draft, ALWAYS tell the owner "1 draft queued in /inbox" so they know where it went.
 - If unsure who exactly to send to, ASK — don't guess.
 
 Keep your text replies short. Bullet steps if listing. No corporate jargon.`
+}
 
 type AnthropicContent =
   | { type: 'text'; text: string }
@@ -201,7 +206,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
         max_tokens: 2048,
-        system: SYSTEM_PROMPT,
+        system: buildSystemPrompt(user.tenant, user.fullName),
         tools: TOOLS,
         messages: conversation,
       }),

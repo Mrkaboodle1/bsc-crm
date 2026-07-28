@@ -3,7 +3,8 @@ import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { CopyButton } from '@/components/copy-button'
 import { NewFormButton } from '@/components/new-form-button'
-import { ExternalLink, Pencil } from 'lucide-react'
+import { DeleteFormButton } from '@/components/delete-form-button'
+import { ExternalLink, Pencil, BarChart3 } from 'lucide-react'
 
 const BASE = 'https://app-chi-silk-29.vercel.app'
 
@@ -53,7 +54,11 @@ export default async function FormsPage() {
                       <td className="px-5 py-3 font-semibold text-zinc-900">{f.name}</td>
                       <td className="px-4 py-3 text-zinc-500">{count} field{count === 1 ? '' : 's'}</td>
                       <td className="px-4 py-3"><div className="flex items-center gap-1.5"><a href={url} target="_blank" className="text-[#D72027] hover:underline inline-flex items-center gap-1 text-xs font-semibold"><ExternalLink size={12} /> Open</a><CopyButton text={url} label="Copy" /></div></td>
-                      <td className="px-4 py-3 text-right"><a href={`/marketing/forms/${f.id}/edit`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-900"><Pencil size={14} /> Edit</a></td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <a href={`/marketing/forms/${f.id}/results`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-900 mr-3"><BarChart3 size={14} /> Results</a>
+                        <a href={`/marketing/forms/${f.id}/edit`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-600 hover:text-zinc-900"><Pencil size={14} /> Edit</a>
+                        <DeleteFormButton id={f.id} name={f.name} />
+                      </td>
                     </tr>
                   )
                 })}

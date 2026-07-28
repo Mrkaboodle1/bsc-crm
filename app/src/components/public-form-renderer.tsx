@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { RichText } from '@/lib/rich-text'
 
 export type FormField = { id: string; type: string; label: string; required?: boolean; options?: string[]; placeholder?: string }
 
-export function PublicFormRenderer({ slug, fields }: { slug: string; fields: FormField[] }) {
+export function PublicFormRenderer({ slug, fields, businessName = '' }: { slug: string; fields: FormField[]; businessName?: string }) {
   const [vals, setVals] = useState<Record<string, string>>({})
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle')
   const set = (id: string, v: string) => setVals((p) => ({ ...p, [id]: v }))
@@ -30,11 +31,15 @@ export function PublicFormRenderer({ slug, fields }: { slug: string; fields: For
     const phone = phoneF ? (vals[phoneF.id] ?? '') : ''
     const message = fields.filter((f) => f.type !== 'heading' && (vals[f.id] ?? '').trim())
       .map((f) => `${f.label}: ${(vals[f.id] ?? '').replace(/\|\|/g, ', ')}`).join('\n')
+    const answers = fields.filter((f) => f.type !== 'heading')
+      .map((f) => ({ label: f.label, type: f.type, value: (vals[f.id] ?? '').replace(/\|\|/g, ', ') }))
+    // A pure survey (no email/phone field) is anonymous feedback — don't make a contact.
+    const isSurvey = !emailF && !phoneF
 
-    if (!name && !email && !phone) { setState('error'); return }
+    if (!isSurvey && !name && !email && !phone) { setState('error'); return }
     setState('sending')
     try {
-      const r = await fetch('/api/forms/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formSlug: slug, name, email, phone, message }) })
+      const r = await fetch('/api/forms/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ formSlug: slug, name, email, phone, message, answers, noContact: isSurvey }) })
       if (!r.ok) throw new Error()
       setState('done')
     } catch { setState('error') }
@@ -47,11 +52,11 @@ export function PublicFormRenderer({ slug, fields }: { slug: string; fields: For
   return (
     <form onSubmit={submit} className="space-y-4">
       {fields.map((f) => {
-        if (f.type === 'heading') return <h3 key={f.id} className="text-sm font-extrabold text-zinc-900 pt-2 border-t border-zinc-100 first:border-0 first:pt-0">{f.label}</h3>
+        if (f.type === 'heading') return <h3 key={f.id} className="text-sm font-extrabold text-zinc-900 pt-2 border-t border-zinc-100 first:border-0 first:pt-0"><RichText text={f.label} /></h3>
         const req = f.required ? <span className="text-[#D72027]"> *</span> : null
         return (
           <div key={f.id}>
-            <label className="block text-xs font-semibold text-zinc-600 mb-1.5">{f.label}{req}</label>
+            <label className="block text-xs font-semibold text-zinc-600 mb-1.5 leading-relaxed"><RichText text={f.label} />{req}</label>
             {f.type === 'long_text' ? (
               <textarea className={inp} rows={3} value={vals[f.id] ?? ''} placeholder={f.placeholder} onChange={(e) => set(f.id, e.target.value)} />
             ) : f.type === 'dropdown' ? (
@@ -90,7 +95,7 @@ export function PublicFormRenderer({ slug, fields }: { slug: string; fields: For
       })}
       {state === 'error' && <p className="text-sm text-red-600">Please fill in the required fields (and a name + email or phone).</p>}
       <button type="submit" disabled={state === 'sending'} className="w-full bg-[#D72027] hover:bg-[#A0151B] text-white font-extrabold text-sm px-5 py-3.5 rounded-xl shadow-md disabled:opacity-50">{state === 'sending' ? 'Sending…' : 'Submit'}</button>
-      <p className="text-[11px] text-zinc-400 text-center">Big Star Circus · Molendinar, Gold Coast</p>
+      {businessName && <p className="text-[11px] text-zinc-400 text-center">{businessName}</p>}
     </form>
   )
 }

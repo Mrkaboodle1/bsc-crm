@@ -133,6 +133,16 @@ export function CalendarMonth({
     return chips
   }, [year, month])
 
+  // Upcoming one-off events (future only) for the right-hand column. Excludes
+  // the weekly classes and the internal "📱 post" reminders — real events only.
+  const upcoming = useMemo(() => {
+    const now = Date.now()
+    return appointments
+      .filter((a) => !a.title.startsWith('📱') && new Date(a.end_at).getTime() >= now)
+      .sort((x, y) => new Date(x.start_at).getTime() - new Date(y.start_at).getTime())
+      .slice(0, 20)
+  }, [appointments])
+
   function go(delta: number) {
     let m = month + delta, y = year
     if (m < 0) { m = 11; y-- } else if (m > 11) { m = 0; y++ }
@@ -174,6 +184,8 @@ export function CalendarMonth({
         )}
       </div>
 
+      <div className="grid lg:grid-cols-[1fr_320px] gap-4 items-start">
+      <div>
       {/* Grid */}
       <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
         <div className="grid grid-cols-7 border-b border-zinc-100 bg-zinc-50">
@@ -232,6 +244,14 @@ export function CalendarMonth({
         <span className="inline-flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> Public holiday</span>
         <span className="text-zinc-400">· faint grey = cultural &amp; religious dates</span>
       </div>
+      </div>
+      <UpcomingPanel
+        items={upcoming}
+        isManager={isManager}
+        onAdd={() => setModal({ date: todayKey.startsWith(`${year}-${pad(month + 1)}`) ? todayKey : ymd(year, month, 1) })}
+        onOpen={(a) => setModal({ editing: toRecord(a) })}
+      />
+      </div>
 
       {/* Day detail panel */}
       {dayOpen && (
@@ -288,6 +308,7 @@ function DayPanel({
         </div>
 
         <div className="p-5 space-y-2">
+          {ph && !hol && <p className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">✓ Classes run as normal today — Big Star runs all year, even public holidays.</p>}
           {events.length === 0 && <p className="text-sm text-zinc-400 py-6 text-center">Nothing on this day.</p>}
           {events.map((ev) => {
             if (ev.kind === 'holiday') {
@@ -371,5 +392,37 @@ function DayPanel({
         </div>
       </div>
     </div>
+  )
+}
+
+function UpcomingPanel({ items, isManager, onAdd, onOpen }: {
+  items: ApptRow[]; isManager: boolean; onAdd: () => void; onOpen: (a: ApptRow) => void
+}) {
+  return (
+    <aside className="bg-white rounded-2xl border border-zinc-200 p-4 self-start lg:sticky lg:top-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-zinc-900 text-sm">📅 Upcoming events</h3>
+        {isManager && <button onClick={onAdd} className="inline-flex items-center gap-1 text-xs font-semibold text-white bg-[#D72027] px-2.5 py-1.5 rounded-lg hover:bg-[#A0151B]"><Plus size={13} /> Add</button>}
+      </div>
+      {items.length === 0 && <p className="text-sm text-zinc-400 py-8 text-center">No upcoming events.<br />Tap &ldquo;Add&rdquo; to create one.</p>}
+      <div className="space-y-1.5 max-h-[calc(100vh-220px)] overflow-y-auto">
+        {items.map((a) => {
+          const meta = APPT_TYPE_META[a.type] ?? APPT_TYPE_META.other
+          const p = brisParts(a.start_at)
+          const dateLbl = new Date(a.start_at).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Australia/Brisbane' })
+          return (
+            <button key={a.id} onClick={() => onOpen(a)} className="w-full text-left flex gap-2 items-start rounded-xl border border-zinc-100 px-2.5 py-2 hover:bg-zinc-50 hover:border-zinc-200">
+              <span className="text-lg shrink-0">{meta.emoji}</span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[11px] font-bold text-[#D72027]">{dateLbl}{a.all_day ? '' : ` · ${p.time}`}</div>
+                <div className="text-sm font-medium text-zinc-800 truncate">{a.title}</div>
+                {a.location && <div className="text-[11px] text-zinc-400 truncate flex items-center gap-1"><MapPin size={10} /> {a.location}</div>}
+              </div>
+              {isManager && <span className="text-[10px] font-semibold text-zinc-300 self-center shrink-0">Edit</span>}
+            </button>
+          )
+        })}
+      </div>
+    </aside>
   )
 }

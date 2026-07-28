@@ -7,6 +7,8 @@
 
 import { verifySession } from '@/lib/dal'
 import { DashboardShell } from '@/components/dashboard-shell'
+import { StaffBriefing } from '@/components/staff-briefing'
+import { PayrollDocs } from '@/components/payroll-docs'
 import {
   ShieldCheck, FileText, AlertTriangle, ExternalLink, Printer,
   Users, ClipboardCheck, ScrollText, Flag, ListChecks, BadgeCheck,
@@ -184,6 +186,51 @@ export default async function CompliancePage() {
           <span className="inline-flex items-center gap-1.5"><Printer size={12} /> Print to PDF</span>
         </div>
       </div>
+
+      <StaffBriefing />
+      <PayrollDocs />
+
+      <section className="mb-8">
+        <h2 className="text-sm font-extrabold text-zinc-500 tracking-widest mb-3">COACH &amp; HR AGREEMENTS</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <div className="group bg-white rounded-lg border border-zinc-200 px-4 py-3.5 hover:border-[#D72027] hover:shadow-sm transition-all flex items-start gap-3">
+            <span className="w-9 h-9 rounded-md bg-red-50 text-[#D72027] flex items-center justify-center shrink-0 ring-1 ring-inset ring-red-100"><ScrollText size={16} /></span>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-bold text-zinc-900 leading-tight">Coach Training &amp; Commitment Agreement</div>
+              <p className="text-xs text-zinc-500 mt-0.5">Training repayment (bond) + confidentiality + reasonable restraint — for coaches you train up. <strong>Have a lawyer review before use.</strong></p>
+              <div className="mt-3 flex items-center gap-1.5">
+                <a href="/compliance/16_Coach_Training_Agreement.html" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-white px-3 py-1.5 rounded-md"><ExternalLink size={12} /> Open</a>
+                <a href="/compliance/16_Coach_Training_Agreement.html?print=1" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#D72027] hover:bg-[#A0151B] text-white px-3 py-1.5 rounded-md"><Printer size={12} /> Print</a>
+              </div>
+            </div>
+          </div>
+          <div className="group bg-white rounded-lg border border-zinc-200 px-4 py-3.5 hover:border-[#D72027] hover:shadow-sm transition-all flex items-start gap-3">
+            <span className="w-9 h-9 rounded-md bg-red-50 text-[#D72027] flex items-center justify-center shrink-0 ring-1 ring-inset ring-red-100"><ScrollText size={16} /></span>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-bold text-zinc-900 leading-tight">Non-Compete &amp; Restraint of Trade</div>
+              <p className="text-xs text-zinc-500 mt-0.5">QLD cascading restraint — non-solicitation (strong) + non-compete (backup). <strong>Presumed void unless reasonable — lawyer review.</strong></p>
+              <div className="mt-3 flex items-center gap-1.5">
+                <a href="/compliance/17_Non_Compete_Restraint.html" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-white px-3 py-1.5 rounded-md"><ExternalLink size={12} /> Open</a>
+                <a href="/compliance/17_Non_Compete_Restraint.html?print=1" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold bg-[#D72027] hover:bg-[#A0151B] text-white px-3 py-1.5 rounded-md"><Printer size={12} /> Print</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="text-sm font-extrabold text-zinc-500 tracking-widest mb-3">MEMBER FEEDBACK</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <a href="/f/membership-feedback" target="_blank" rel="noreferrer" className="group bg-white rounded-lg border border-zinc-200 px-4 py-3.5 hover:border-[#D72027] hover:shadow-sm transition-all flex items-start gap-3">
+            <span className="w-9 h-9 rounded-md bg-amber-50 text-[#B45309] flex items-center justify-center shrink-0 ring-1 ring-inset ring-amber-100"><FileText size={16} /></span>
+            <div><div className="text-sm font-bold text-zinc-900 leading-tight">Membership Feedback Form</div><p className="text-xs text-zinc-500 mt-0.5">Open to fill, print (Ctrl+P), or share/scan. Parents submit straight into the CRM.</p><span className="text-xs font-semibold text-[#D72027] mt-1 inline-block">Open form →</span></div>
+          </a>
+          <a href="/marketing/forms" className="group bg-white rounded-lg border border-zinc-200 px-4 py-3.5 hover:border-[#D72027] hover:shadow-sm transition-all flex items-start gap-3">
+            <span className="w-9 h-9 rounded-md bg-amber-50 text-[#B45309] flex items-center justify-center shrink-0 ring-1 ring-inset ring-amber-100"><ExternalLink size={16} /></span>
+            <div><div className="text-sm font-bold text-zinc-900 leading-tight">Edit form · Results · QR code</div><p className="text-xs text-zinc-500 mt-0.5">Marketing → Forms → Membership Feedback: edit questions, download the QR, see the live tally.</p><span className="text-xs font-semibold text-[#D72027] mt-1 inline-block">Go to Forms →</span></div>
+          </a>
+        </div>
+      </section>
 
       {/* Section list */}
       <div className="space-y-10">

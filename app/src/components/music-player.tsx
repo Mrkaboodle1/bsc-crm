@@ -8,6 +8,7 @@
 // public direct streams. Every station here is family-safe for the BSC studio.
 
 import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 
 // A station is either an HTML5 <audio> stream OR a YouTube playlist iframe.
 // SomaFM stations are direct audio (ad-free, listener-supported, free).
@@ -113,6 +114,14 @@ function saveState(s: StoredState) {
   }
 }
 
+// mm:ss for the playhead / song length.
+function fmtTime(s: number): string {
+  if (!isFinite(s) || s < 0) return '0:00'
+  const m = Math.floor(s / 60)
+  const sec = Math.floor(s % 60)
+  return `${m}:${sec.toString().padStart(2, '0')}`
+}
+
 export function MusicPlayer() {
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
@@ -121,10 +130,42 @@ export function MusicPlayer() {
   const [playing, setPlaying] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [spotOn, setSpotOn] = useState(true)
+  const [playlists, setPlaylists] = useState<Array<{ id: string; name: string; tracks: { title: string; url: string; yt?: string }[] }>>([])
+  const [plId, setPlId] = useState<string | null>(null)   // active playlist (overrides radio)
+  const [plIdx, setPlIdx] = useState(0)                    // current track index
+  const [curTime, setCurTime] = useState(0)                // playhead position (uploaded tracks)
+  const [duration, setDuration] = useState(0)              // current track length
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const spotRef = useRef<HTMLAudioElement | null>(null)
+  const wakeRef = useRef<{ release?: () => Promise<void> } | null>(null)
+  const autoNext = useRef(false)   // play the audio as soon as the next source is ready
+  const pathname = usePathname()
 
   const station = STATIONS.find((s) => s.id === stationId) ?? STATIONS[0]!
+  const activePlaylist = plId ? playlists.find((p) => p.id === plId) ?? null : null
+  const plYtIds = activePlaylist ? activePlaylist.tracks.filter((t) => t.yt).map((t) => t.yt!) : []
+  const playlistIsYt = plYtIds.length > 0   // a playlist made of YouTube songs
+  const plTrack = activePlaylist?.tracks[plIdx] ?? null
+  const audioSrc = activePlaylist ? (playlistIsYt ? '' : (plTrack?.url ?? '')) : (station.kind === 'audio' ? station.url : '')
+
+  // Load the studio's saved playlists — on mount, and again each time the
+  // player is opened (so songs you just added show up without a full refresh).
+  useEffect(() => {
+    if (mounted && !open) return
+    fetch('/api/playlists').then((r) => r.json()).then((j) => { if (j?.ok) setPlaylists(j.rows) }).catch(() => {})
+  }, [open, mounted])
+
+  // Keep the screen awake while music is playing so the tablet doesn't sleep
+  // (and pause) mid-class. Re-acquire when the tab becomes visible again.
+  useEffect(() => {
+    const nav = navigator as Navigator & { wakeLock?: { request: (t: 'screen') => Promise<{ release?: () => Promise<void> }> } }
+    async function acquire() { try { if (nav.wakeLock) wakeRef.current = await nav.wakeLock.request('screen') } catch { /* not supported */ } }
+    async function release() { try { await wakeRef.current?.release?.() } catch { /* ignore */ } wakeRef.current = null }
+    if (playing) acquire(); else release()
+    const onVis = () => { if (document.visibilityState === 'visible' && playing) acquire() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => { document.removeEventListener('visibilitychange', onVis) }
+  }, [playing])
 
   // Hydrate from localStorage after mount
   useEffect(() => {
@@ -210,8 +251,8 @@ export function MusicPlayer() {
     setError(null)
     // YouTube stations are visually-controlled by the iframe itself — clicking
     // play/pause here just shows/hides the embed. The iframe's autoplay does
-    // the rest.
-    if (station.kind === 'youtube') {
+    // the rest. (Playlists always use the audio element.)
+    if (playlistIsYt || (!activePlaylist && station.kind === 'youtube')) {
       setPlaying((p) => !p)
       return
     }
@@ -230,41 +271,79 @@ export function MusicPlayer() {
     }
   }
 
+  // Play one of the studio's saved playlists, from the top.
+  function pickPlaylist(id: string) {
+    const pl = playlists.find((p) => p.id === id)
+    if (!pl || !pl.tracks.length) { setError('That playlist has no songs yet.'); return }
+    setError(null); setPlId(id); setPlIdx(0)
+    // YouTube playlist → the iframe handles playback; just show it.
+    if (pl.tracks.some((t) => t.yt)) { audioRef.current?.pause(); setPlaying(true); return }
+    // Uploaded playlist → React sets the <audio> src; onCanPlay starts it.
+    audioRef.current?.pause(); autoNext.current = true; setPlaying(true)
+  }
+
+  // Jump to a specific song in the active playlist (uploaded OR YouTube).
+  function playTrackAt(i: number) {
+    if (!activePlaylist || !activePlaylist.tracks.length) return
+    const n = activePlaylist.tracks.length
+    const idx = ((i % n) + n) % n
+    setError(null)
+    setCurTime(0)
+    if (!playlistIsYt) autoNext.current = true // uploaded: onCanPlay starts it; YT: iframe reloads on src change
+    setPlIdx(idx)
+    setPlaying(true)
+  }
+  function nextTrack() { if (activePlaylist) playTrackAt(plIdx + 1) }
+  function prevTrack() {
+    if (!activePlaylist) return
+    // iPod behaviour: >3s into a song, the back button restarts it; otherwise go to the previous song.
+    const a = audioRef.current
+    if (!playlistIsYt && a && a.currentTime > 3) { a.currentTime = 0; setCurTime(0); return }
+    playTrackAt(plIdx - 1)
+  }
+  // Drag the playhead to anywhere in the song (uploaded tracks only).
+  function seek(t: number) {
+    const a = audioRef.current
+    if (a && isFinite(t)) { a.currentTime = t; setCurTime(t) }
+  }
+
   function pick(id: string) {
     const target = STATIONS.find((s) => s.id === id)
     if (!target) return
     const wasPlaying = playing
+    setPlId(null) // leaving playlist mode → back to radio
     setStationId(id)
     setError(null)
-    const audio = audioRef.current
-    if (target.kind === 'youtube') {
-      // Stop any audio-stream playback so we don't double-play
-      if (audio) audio.pause()
-      setPlaying(wasPlaying) // keep playing-state through the swap
-      return
-    }
-    if (!audio) return
-    audio.pause()
-    audio.src = target.url
-    audio.load()
-    if (wasPlaying) {
-      audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false))
-    }
+    audioRef.current?.pause()
+    if (target.kind === 'youtube') { setPlaying(wasPlaying); return }
+    if (wasPlaying) autoNext.current = true   // onCanPlay will start the new station
   }
 
   if (!mounted) return null
+  // Hide the floating widget on public/booking/login pages — staff-only tool.
+  if (pathname === '/' || pathname.startsWith('/login') || pathname.startsWith('/book')) return null
 
   return (
     <>
-      {/* Hidden audio element — only used for audio-stream stations */}
-      {station.kind === 'audio' && (
+      {/* Hidden audio element — used for radio streams AND uploaded playlist tracks */}
+      {((activePlaylist && !playlistIsYt) || station.kind === 'audio') && (
         <audio
           ref={audioRef}
-          src={station.url}
+          src={audioSrc}
           preload="none"
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
-          onError={() => setError('Station went off-air — try another.')}
+          onError={() => setError(activePlaylist ? 'Could not play that track.' : 'Station went off-air — try another.')}
+          onCanPlay={() => { if (autoNext.current) { autoNext.current = false; audioRef.current?.play().then(() => setPlaying(true)).catch(() => {}) } }}
+          onTimeUpdate={(e) => setCurTime(e.currentTarget.currentTime)}
+          onLoadedMetadata={(e) => setDuration(isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0)}
+          onDurationChange={(e) => setDuration(isFinite(e.currentTarget.duration) ? e.currentTarget.duration : 0)}
+          onEnded={() => {
+            // Auto-advance to the next song; onCanPlay starts it once it's loaded.
+            if (!activePlaylist || playlistIsYt || !activePlaylist.tracks.length) return
+            autoNext.current = true
+            setPlIdx((i) => (i + 1) % activePlaylist.tracks.length)
+          }}
         />
       )}
 
@@ -274,10 +353,10 @@ export function MusicPlayer() {
           <div className="bg-white rounded-2xl shadow-2xl border-2 border-[#D72027] w-80 overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white px-4 py-3 flex items-center gap-3">
-              <span className="text-2xl">{station.emoji}</span>
+              <span className="text-2xl">{activePlaylist ? '🎵' : station.emoji}</span>
               <div className="flex-1 min-w-0">
-                <div className="font-extrabold text-sm truncate">{station.name}</div>
-                <div className="text-[10px] opacity-80 truncate">{station.vibe}</div>
+                <div className="font-extrabold text-sm truncate">{activePlaylist ? activePlaylist.name : station.name}</div>
+                <div className="text-[10px] opacity-80 truncate">{activePlaylist ? (plTrack?.title ?? 'Your playlist') : station.vibe}</div>
               </div>
               <button
                 onClick={() => setOpen(false)}
@@ -290,10 +369,13 @@ export function MusicPlayer() {
 
             {/* Controls */}
             <div className="p-4 space-y-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                {activePlaylist && (
+                  <button onClick={prevTrack} className="w-10 h-10 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-700 text-base" aria-label="Previous song" title="Previous song">⏮</button>
+                )}
                 <button
                   onClick={toggle}
-                  className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-md transition-all ${
+                  className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-md transition-all shrink-0 ${
                     playing
                       ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white'
                       : 'bg-gradient-to-br from-[#FFC107] to-amber-500 text-zinc-900'
@@ -302,18 +384,38 @@ export function MusicPlayer() {
                 >
                   {playing ? '⏸' : '▶'}
                 </button>
-                <div className="flex-1">
+                {activePlaylist && (
+                  <button onClick={nextTrack} className="w-10 h-10 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-700 text-base" aria-label="Next song" title="Next song">⏭</button>
+                )}
+                <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-zinc-600">{playing ? 'Now playing' : 'Paused'}</div>
-                  <div className="text-[10px] text-zinc-400 mt-0.5">
-                    {station.kind === 'youtube' && playing
-                      ? 'YouTube playlist · use volume on the video'
-                      : playing ? 'Streaming live' : 'Tap play'}
+                  <div className="text-[10px] text-zinc-400 mt-0.5 truncate">
+                    {playlistIsYt ? 'YouTube playlist' : activePlaylist ? (plTrack?.title || 'Your playlist') : (station.kind === 'youtube' && playing ? 'YouTube playlist · use volume on the video' : playing ? 'Streaming live' : 'Tap play')}
                   </div>
                 </div>
               </div>
 
+              {/* Scrub bar — drag to anywhere in the song (uploaded playlist tracks) */}
+              {activePlaylist && !playlistIsYt && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-zinc-400 w-8 tabular-nums">{fmtTime(curTime)}</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={duration || 0}
+                    step={0.1}
+                    value={Math.min(curTime, duration || 0)}
+                    onChange={(e) => seek(parseFloat(e.target.value))}
+                    className="flex-1 accent-[#D72027]"
+                    aria-label="Song position"
+                    disabled={!duration}
+                  />
+                  <span className="text-[10px] text-zinc-400 w-8 tabular-nums text-right">{fmtTime(duration)}</span>
+                </div>
+              )}
+
               {/* YouTube iframe — only when a YouTube station is active and playing */}
-              {station.kind === 'youtube' && playing && (
+              {!activePlaylist && station.kind === 'youtube' && playing && (
                 <div className="rounded-xl overflow-hidden border-2 border-amber-200">
                   <iframe
                     title={station.name}
@@ -325,8 +427,57 @@ export function MusicPlayer() {
                 </div>
               )}
 
-              {/* Volume — only for audio streams; YouTube uses its own controls */}
-              {station.kind === 'audio' && (
+              {/* YouTube playlist (a coach's saved YouTube songs) — starts on the chosen
+                  song, then continues through the rest and loops back round. */}
+              {playlistIsYt && playing && plYtIds[plIdx] && (
+                <div className="rounded-xl overflow-hidden border-2 border-amber-200">
+                  <iframe
+                    key={plIdx}
+                    title={activePlaylist?.name || 'Playlist'}
+                    width="100%"
+                    height="180"
+                    src={`https://www.youtube.com/embed/${plYtIds[plIdx]}?autoplay=1&modestbranding=1&rel=0${plYtIds.length > 1 ? `&playlist=${plYtIds.slice(plIdx + 1).concat(plYtIds.slice(0, plIdx)).join(',')}` : ''}`}
+                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  />
+                </div>
+              )}
+
+              {/* Song list — see every song and tap any one to play it (iPod-style) */}
+              {activePlaylist && activePlaylist.tracks.length > 0 && (
+                <div className="border-t border-zinc-100 pt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500 truncate">🎵 {activePlaylist.name}</div>
+                    <button
+                      onClick={() => { setPlId(null); audioRef.current?.pause() }}
+                      className="text-[9px] font-bold text-zinc-400 hover:text-zinc-700 shrink-0"
+                      title="Back to radio stations"
+                    >
+                      ← Radio
+                    </button>
+                  </div>
+                  <div className="max-h-44 overflow-y-auto space-y-0.5 pr-1">
+                    {activePlaylist.tracks.map((t, i) => {
+                      const cur = i === plIdx
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => playTrackAt(i)}
+                          className={`w-full text-left rounded-lg px-2 py-1.5 text-xs flex items-center gap-2 ${
+                            cur ? 'bg-gradient-to-br from-[#FFC107] to-amber-400 text-zinc-900 font-extrabold' : 'hover:bg-zinc-100 text-zinc-700'
+                          }`}
+                        >
+                          <span className="w-4 text-center shrink-0 text-[11px]">{cur && playing ? '▶' : i + 1}</span>
+                          <span className="truncate">{t.title}</span>
+                          {t.yt && <span className="ml-auto text-[8px] opacity-50 shrink-0">YT</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Volume — for radio streams AND uploaded playlists; YouTube uses its own controls */}
+              {((activePlaylist && !playlistIsYt) || (!activePlaylist && station.kind === 'audio')) && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-zinc-500">🔈</span>
                   <input
@@ -370,6 +521,22 @@ export function MusicPlayer() {
                   })}
                 </div>
               </div>
+
+              {/* Your playlists */}
+              {playlists.length > 0 && (
+                <div className="border-t border-zinc-100 pt-3">
+                  <div className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500 mb-2">🎵 Your playlists</div>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {playlists.map((pl) => (
+                      <button key={pl.id} onClick={() => pickPlaylist(pl.id)}
+                        className={`text-left rounded-lg px-2 py-1.5 text-xs flex items-center justify-between gap-2 ${plId === pl.id ? 'bg-gradient-to-br from-[#FFC107] to-amber-400 text-zinc-900 font-extrabold shadow' : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 font-bold'}`}>
+                        <span className="truncate">🎶 {pl.name}</span>
+                        <span className="text-[9px] opacity-70 shrink-0">{pl.tracks.length}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {error && (
                 <div className="text-[10px] text-red-700 bg-red-50 border-l-2 border-red-400 px-2 py-1 rounded">

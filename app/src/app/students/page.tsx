@@ -2,6 +2,7 @@ import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { StudentListView, type StudentRow } from '@/components/student-list-view'
+import { AddStudentButton } from '@/components/add-student-button'
 
 export default async function StudentsPage({
   searchParams,
@@ -30,6 +31,9 @@ export default async function StudentsPage({
 
   const { data, error } = await query
 
+  const { data: famRows } = await supabase.from('families').select('id, family_name, primary_parent').order('family_name')
+  const families = (famRows ?? []).map((fm) => ({ id: fm.id, name: fm.primary_parent ? `${fm.family_name} (${fm.primary_parent})` : fm.family_name }))
+
   const rows: StudentRow[] = (data ?? []).map((s) => {
     const fam = Array.isArray(s.family) ? s.family[0] : s.family
     return {
@@ -52,6 +56,7 @@ export default async function StudentsPage({
       currentPath="/students"
       pageTitle="Students"
       pageSubtitle={`${rows.length} students${q ? ` matching "${q}"` : ''}${tier ? ` · tier ${tier}` : ''}`}
+      pageActions={<AddStudentButton families={families} />}
     >
       {error && (
         <div className="bg-red-50 border-l-4 border-red-500 text-red-800 rounded-r-xl px-4 py-3 text-sm mb-4">

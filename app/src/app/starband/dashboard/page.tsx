@@ -42,6 +42,7 @@ export default function StarBandDashboard() {
           <div className="text-xs text-zinc-500 mt-1">Today · auto-refreshes every 5s</div>
         </div>
         <div className="flex gap-2">
+          <a href="/starband/confirm" className="text-sm bg-emerald-600 text-white px-3 py-1.5 rounded-full font-bold">Confirm Roll</a>
           <a href="/starband" className="text-sm bg-zinc-900 text-white px-3 py-1.5 rounded-full font-bold">Kiosk</a>
           <a href="/starband/register" className="text-sm bg-amber-400 text-zinc-900 px-3 py-1.5 rounded-full font-bold">Register</a>
         </div>

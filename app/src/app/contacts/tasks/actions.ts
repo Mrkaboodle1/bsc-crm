@@ -67,6 +67,32 @@ export async function setTaskStatus(input: { id: string; status: 'open' | 'in_pr
   return { ok: true }
 }
 
+export async function updateTask(input: {
+  id: string
+  title?: string
+  due_at?: string | null
+  priority?: 'urgent' | 'high' | 'normal' | 'low'
+}): Promise<Result> {
+  const user = await verifySession()
+  const supabase = await createServerSupabase()
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  if (input.title !== undefined) {
+    const t = input.title.trim()
+    if (!t) return { ok: false, error: 'Title required' }
+    patch.title = t
+  }
+  if (input.due_at !== undefined) patch.due_at = input.due_at || null
+  if (input.priority !== undefined) patch.priority = input.priority
+  const { error } = await supabase
+    .from('tasks')
+    .update(patch)
+    .eq('id', input.id)
+    .eq('tenant_id', user.tenantId)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath('/contacts/tasks')
+  return { ok: true }
+}
+
 export async function deleteTask(input: { id: string }): Promise<Result> {
   const user = await verifySession()
   const supabase = await createServerSupabase()

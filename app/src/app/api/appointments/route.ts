@@ -73,9 +73,12 @@ export async function PATCH(req: Request) {
   const g = await guard(); if ('error' in g) return g.error
   const body = await req.json().catch(() => ({}))
   if (!body.id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
-  const row = buildRow(body)
+  const row: Record<string, unknown> = buildRow(body)
   if (!row.title) return NextResponse.json({ error: 'Give the event a name' }, { status: 400 })
   if (!row.start_at || !row.end_at) return NextResponse.json({ error: 'A date is required' }, { status: 400 })
+  // Don't clobber the family/student links if the editor didn't send them.
+  if (!('related_family_id' in body)) delete row.related_family_id
+  if (!('related_student_id' in body)) delete row.related_student_id
   const { error } = await g.admin.from('appointments').update(row).eq('id', body.id).eq('tenant_id', g.tenantId)
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ ok: true })

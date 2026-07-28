@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server'
 import { createServerSupabaseAdmin } from '@/lib/supabase-server'
+import { notifyParentOnCheck } from '@/lib/starband-notify'
 
 export const runtime = 'nodejs'
 
@@ -25,8 +26,8 @@ export async function POST(req: Request) {
     // Multi-tag lookup (wristband / sticker / card all resolve to same student).
     const { data: tag } = await sb.from('nfc_tags').select('student_id').eq('nfc_uid', nfc_uid).eq('is_active', true).maybeSingle()
     const studentFilter = tag
-      ? sb.from('students').select('id, tenant_id, first_name, last_name, stars_total, xp_total, attendance_streak').eq('id', tag.student_id)
-      : sb.from('students').select('id, tenant_id, first_name, last_name, stars_total, xp_total, attendance_streak').eq('nfc_uid', nfc_uid)
+      ? sb.from('students').select('id, tenant_id, family_id, first_name, last_name, stars_total, xp_total, attendance_streak').eq('id', tag.student_id)
+      : sb.from('students').select('id, tenant_id, family_id, first_name, last_name, stars_total, xp_total, attendance_streak').eq('nfc_uid', nfc_uid)
     const { data: student } = await studentFilter.maybeSingle()
     if (!student) return NextResponse.json({ ok: false, error: 'no_student', message: 'StarBand not registered yet.' }, { status: 404 })
 
@@ -61,12 +62,16 @@ export async function POST(req: Request) {
     const newXP = (student.xp_total || 0) + XP_PER_CHECKOUT
     await sb.from('students').update({ stars_total: newStars, xp_total: newXP }).eq('id', student.id)
 
+    // Safety layer: text the parent that their child has been collected (gated).
+    const notify = await notifyParentOnCheck(sb, { student, action: 'out', collectedBy: collected_by })
+
     return NextResponse.json({
       ok: true,
       action: 'checked_out',
       student: { name: `${student.first_name} ${student.last_name}`, stars: newStars, xp: newXP, streak: student.attendance_streak },
       stars_awarded: STARS_PER_CHECKOUT,
       xp_awarded: XP_PER_CHECKOUT,
+      parent_notified: notify.sent,
       message: `Goodbye ${student.first_name}! See you next time.`,
     })
   } catch (err) {

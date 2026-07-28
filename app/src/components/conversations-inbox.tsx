@@ -47,7 +47,7 @@ const CHANNEL: Record<Channel, { label: string; Icon: typeof Mail }> = {
   instagram: { label: 'Instagram', Icon: MessagesSquare },
 }
 
-export function ConversationsInbox({ conversations }: { conversations: Conversation[] }) {
+export function ConversationsInbox({ conversations, fromEmail = null }: { conversations: Conversation[]; fromEmail?: string | null }) {
   const [tab, setTab] = useState<Tab>('all')
   const [selId, setSelId] = useState<string | null>(conversations[0]?.id ?? null)
   const [q, setQ] = useState('')
@@ -131,7 +131,7 @@ export function ConversationsInbox({ conversations }: { conversations: Conversat
             <p className="text-sm mt-1">Pick a conversation on the left to read &amp; reply.</p>
           </div>
         ) : (
-          <Thread key={sel.id} conv={sel} />
+          <Thread key={sel.id} conv={sel} fromEmail={fromEmail} />
         )}
       </div>
 
@@ -148,7 +148,7 @@ export function ConversationsInbox({ conversations }: { conversations: Conversat
   )
 }
 
-function Thread({ conv }: { conv: Conversation }) {
+function Thread({ conv, fromEmail = null }: { conv: Conversation; fromEmail?: string | null }) {
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState<string[]>([])
@@ -203,7 +203,7 @@ function Thread({ conv }: { conv: Conversation }) {
           <>
             <textarea value={reply} onChange={(e) => setReply(e.target.value)} rows={2} placeholder={`Reply to ${displayName(conv)}…`} className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-zinc-900 resize-none" />
             <div className="flex items-center justify-between mt-2">
-              <span className="text-[11px] text-zinc-400">Sends from admin@bigstarcircus.com.au · your signature is added automatically</span>
+              <span className="text-[11px] text-zinc-400">{fromEmail ? `Sends from ${fromEmail}` : 'Sends from your business email'} · your signature is added automatically</span>
               <button onClick={send} disabled={sending || !reply.trim()} className="inline-flex items-center gap-1.5 bg-[#D72027] text-white font-semibold text-sm px-4 py-1.5 rounded-lg disabled:opacity-50 hover:bg-[#A0151B]">
                 <Send size={14} /> {sending ? 'Sending…' : 'Send'}
               </button>

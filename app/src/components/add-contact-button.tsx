@@ -28,7 +28,7 @@ function Modal({ onClose }: { onClose: () => void }) {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
-  const [f, setF] = useState({ name: '', primary_parent: '', email: '', phone: '', source: '', lifecycle_stage: 'lead', tags: '' })
+  const [f, setF] = useState({ name: '', primary_parent: '', email: '', phone: '', child1: '', child2: '', emergency_name: '', emergency_phone: '', source: '', lifecycle_stage: 'lead', tags: '' })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
@@ -56,6 +56,14 @@ function Modal({ onClose }: { onClose: () => void }) {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Phone"><input className={inp} value={f.phone} onChange={(e) => set('phone', e.target.value)} placeholder="0400 000 000" /></Field>
             <Field label="Email"><input className={inp} value={f.email} onChange={(e) => set('email', e.target.value)} placeholder="name@email.com" /></Field>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="1st child"><input className={inp} value={f.child1} onChange={(e) => set('child1', e.target.value)} placeholder="Child's name" /></Field>
+            <Field label="2nd child"><input className={inp} value={f.child2} onChange={(e) => set('child2', e.target.value)} placeholder="Child's name (if any)" /></Field>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Emergency contact"><input className={inp} value={f.emergency_name} onChange={(e) => set('emergency_name', e.target.value)} placeholder="e.g. Grandma Jane" /></Field>
+            <Field label="Emergency phone"><input className={inp} value={f.emergency_phone} onChange={(e) => set('emergency_phone', e.target.value)} placeholder="0400 000 000" /></Field>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Field label="How they found us"><select className={inp} value={f.source} onChange={(e) => set('source', e.target.value)}>{SOURCES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>

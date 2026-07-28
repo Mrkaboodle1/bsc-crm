@@ -3,6 +3,7 @@ import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { ContactsSubnav } from '@/components/contacts-subnav'
+import { CompanyEditButton } from './company-editor'
 
 const CATEGORY_LABEL: Record<string, string> = {
   school: '🏫 School',
@@ -46,6 +47,25 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       }
     >
       <ContactsSubnav active="/contacts/companies" />
+
+      <div className="mb-5">
+        <CompanyEditButton
+          company={{
+            id: company.id,
+            name: company.name,
+            category: company.category,
+            email: company.email,
+            phone: company.phone,
+            website: company.website,
+            address: company.address,
+            city: company.city,
+            state: company.state,
+            postal_code: company.postal_code,
+            description: company.description,
+            notes: company.notes,
+          }}
+        />
+      </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         <div className="xl:col-span-2 space-y-5">

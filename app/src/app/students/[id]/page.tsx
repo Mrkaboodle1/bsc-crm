@@ -3,6 +3,7 @@ import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { StudentProfileView, type StudentProfile } from '@/components/student-profile-view'
+import { StudentAdminPanel } from '@/components/student-admin-panel'
 
 export default async function StudentProfilePage({
   params,
@@ -67,12 +68,18 @@ export default async function StudentProfilePage({
       pageTitle={`${profile.firstName}${profile.lastName ? ` ${profile.lastName}` : ''}`}
       pageSubtitle={profile.age !== null ? `${profile.age} years old · Tier ${profile.starTier} · ${profile.totalStars} stars` : 'Student profile'}
       pageActions={
-        <a
-          href="/students"
-          className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-50"
-        >
-          ← All students
-        </a>
+        <div className="flex items-center gap-2">
+          <StudentAdminPanel
+            student={{ id: profile.id, firstName: profile.firstName, lastName: profile.lastName, dob: profile.dob, medical: profile.medical, familyName: profile.family?.name ?? null }}
+            canDelete={user.role === 'owner' || user.role === 'manager'}
+          />
+          <a
+            href="/students"
+            className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-50"
+          >
+            ← All students
+          </a>
+        </div>
       }
     >
       <StudentProfileView profile={profile} />

@@ -13,30 +13,13 @@ import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { TagPicker } from './tag-picker'
+import { ContactProfileEditor, ContactKidsEditor } from './contact-profile-editor'
+import { ContactAppointments } from './contact-appointments'
 import { Composer } from './composer'
 import { DndPanel, type DndState } from './dnd-panel'
 import { ContactTasksPanel, type ContactTask } from './contact-tasks-panel'
-
-const LIFECYCLE_CLS: Record<string, string> = {
-  active: 'bg-emerald-100 text-emerald-800',
-  trial: 'bg-blue-100 text-blue-800',
-  lead: 'bg-amber-100 text-amber-800',
-  paused: 'bg-zinc-100 text-zinc-600',
-  past: 'bg-zinc-100 text-zinc-500',
-  lost: 'bg-red-50 text-red-700',
-}
-
-const SOURCE_LABEL: Record<string, string> = {
-  fb_ad: '📘 Facebook ad',
-  instagram: '📸 Instagram',
-  google: '🔍 Google search',
-  word_of_mouth: '💬 Word of mouth',
-  school: '🏫 School',
-  walkin: '🚪 Walk-in',
-  open_day: '🎪 Open day',
-  email: '✉️ Email',
-  other: '✨ Other',
-}
+import { WaiverCards, type Waiver } from './waiver-cards'
+import { getContactPayments, customerLink } from '@/lib/stripe-payments'
 
 export default async function ContactDetailPage({
   params,
@@ -77,7 +60,55 @@ export default async function ContactDetailPage({
     all:   Boolean(dndRow && (dndRow as Record<string, unknown>).dnd_all),
   }
 
+  // Forms & waivers pulled from Tectonic — child names, medical, source, class.
+  const waiverFilter = family.email
+    ? `family_id.eq.${family.id},email.eq.${family.email.toLowerCase()}`
+    : `family_id.eq.${family.id}`
+  const { data: waiversData } = await supabase
+    .from('signed_waivers')
+    .select('id, event_type, children, medical, emergency, answers, created_at')
+    .or(waiverFilter)
+    .order('created_at', { ascending: false })
+    .limit(10)
+  const waivers = (waiversData ?? []) as Array<{ id: string; event_type: string | null; children: string | null; medical: string | null; emergency: string | null; answers: Record<string, unknown> | null; created_at: string }>
+  const ans = (w: { answers: Record<string, unknown> | null }) => (w.answers ?? {}) as Record<string, unknown>
+  const latestSource = (waivers.map(ans).find((a) => a.source)?.source as string) || family.source || null
+  const latestHeard = (waivers.map(ans).find((a) => a.how_heard)?.how_heard as string) || null
+
+  // Payment history — Stripe charges for subscribers + one-off SHW/KNO payments from bookings.
+  const stripePayments = await getContactPayments({ customerId: family.stripe_customer_id })
+  const wbFilter = family.email ? `family_id.eq.${family.id},email.eq.${family.email.toLowerCase()}` : `family_id.eq.${family.id}`
+  const { data: wbRows } = await supabase
+    .from('workshop_bookings')
+    .select('id, amount_paid, paid, created_at, holiday_workshops(date, title)')
+    .or(wbFilter)
+  const workshopPayments = (wbRows ?? [])
+    .filter((b) => b.paid && (Number(b.amount_paid) || 0) > 0)
+    .map((b) => {
+      const w = Array.isArray(b.holiday_workshops) ? b.holiday_workshops[0] : b.holiday_workshops
+      const isKno = /kids night out/i.test((w?.title as string) || '')
+      const dateStr = w?.date ? new Date((w.date as string) + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : ''
+      return { id: b.id as string, amount: Number(b.amount_paid) || 0, currency: 'aud', description: `${isKno ? 'Kids Night Out' : 'Holiday Workshop'}${dateStr ? ' — ' + dateStr : ''}`, status: 'succeeded', created: Math.floor(new Date((w?.date as string) || b.created_at).getTime() / 1000), refunded: false, link: customerLink(family.stripe_customer_id) }
+    })
+  const payments = [...stripePayments, ...workshopPayments].sort((a, b) => b.created - a.created)
+  const totalPaid = payments.reduce((s, p) => s + (p.refunded ? 0 : p.amount), 0)
+
   const students = (family.students ?? []) as Array<{ id: string; first_name: string; last_name: string | null; date_of_birth: string | null }>
+
+  // Classes (for the "add to class" picker) + each kid's current classes.
+  const kidIds = students.map((s) => s.id)
+  const [{ data: classList }, { data: enrolRows }] = await Promise.all([
+    supabase.from('classes').select('id, name').eq('tenant_id', user.tenantId).eq('status', 'active').order('name'),
+    kidIds.length
+      ? supabase.from('enrolments').select('id, student_id, class_id, status, classes(name)').in('student_id', kidIds).eq('status', 'active')
+      : Promise.resolve({ data: [] as never[] }),
+  ])
+  const enrolmentsByKid: Record<string, Array<{ id: string; classId: string; className: string }>> = {}
+  for (const e of (enrolRows ?? []) as Array<{ id: string; student_id: string; class_id: string; classes: { name: string }[] | { name: string } | null }>) {
+    const cn = Array.isArray(e.classes) ? e.classes[0]?.name : e.classes?.name
+    ;(enrolmentsByKid[e.student_id] ||= []).push({ id: e.id, classId: e.class_id, className: cn || 'Class' })
+  }
+  const classes = (classList ?? []) as Array<{ id: string; name: string }>
   const subs = (family.subscriptions ?? []) as Array<{ id: string; plan: string | null; weekly_amount: number | null; status: string; current_period_end: string | null; next_charge_date: string | null }>
   const activeSubs = subs.filter((s) => s.status === 'active')
 
@@ -131,13 +162,17 @@ export default async function ContactDetailPage({
   }
   timeline.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
 
-  // Recent appointments (right rail)
-  const { data: upcomingAppts } = await supabase
-    .from('appointments')
-    .select('id, title, type, start_at, status')
-    .eq('related_family_id', family.id)
-    .order('start_at', { ascending: false })
-    .limit(5)
+  // Appointments for this family (right rail — editable)
+  const [{ data: upcomingAppts }, { data: coachesData }] = await Promise.all([
+    supabase
+      .from('appointments')
+      .select('id, title, type, start_at, end_at, all_day, location, description, notes, assigned_coach_id, fee, status')
+      .eq('related_family_id', family.id)
+      .order('start_at', { ascending: false })
+      .limit(10),
+    supabase.from('coaches').select('id, full_name').order('full_name'),
+  ])
+  const coachList = (coachesData ?? []) as { id: string; full_name: string }[]
 
   // Tasks for this contact — degrade gracefully if migration 008 not applied
   const { data: tasksData, error: tasksErr } = await supabase
@@ -186,41 +221,14 @@ export default async function ContactDetailPage({
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
         {/* LEFT — profile */}
         <aside className="xl:col-span-4 space-y-4">
-          <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
-            <div className="flex items-start gap-3 mb-4">
-              <span className="w-14 h-14 rounded-full bg-gradient-to-br from-[#D72027] to-[#FFC107] text-white flex items-center justify-center text-base font-extrabold shrink-0">
-                {initials(family.primary_parent ?? family.family_name)}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-lg font-extrabold text-zinc-900 truncate">
-                  {family.primary_parent ?? family.family_name}
-                </div>
-                {family.primary_parent && (
-                  <div className="text-xs text-zinc-500 truncate">{family.family_name} family</div>
-                )}
-                {family.lifecycle_stage && (
-                  <span className={`inline-block mt-1.5 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded ${LIFECYCLE_CLS[family.lifecycle_stage] ?? 'bg-zinc-100 text-zinc-500'}`}>
-                    {family.lifecycle_stage}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Tag picker */}
-            <div className="mb-4">
-              <TagPicker contactId={family.id} initialTags={family.tags ?? []} />
-            </div>
-
-            {/* Contact fields */}
-            <dl className="space-y-2 text-sm border-t border-zinc-100 pt-3">
-              <Row label="Email" value={family.email} link={family.email ? `mailto:${family.email}` : null} />
-              <Row label="Phone" value={family.phone} link={family.phone ? `tel:${family.phone}` : null} />
-              {family.emergency_phone && <Row label="Emergency" value={family.emergency_phone} />}
-              {family.address && <Row label="Address" value={family.address} />}
-              <Row label="Source" value={family.source ? (SOURCE_LABEL[family.source] ?? family.source) : '—'} />
-              <Row label="Created" value={family.created_at ? new Date(family.created_at).toLocaleDateString('en-AU') : '—'} />
-            </dl>
-          </div>
+          <ContactProfileEditor
+            family={{
+              id: family.id, family_name: family.family_name, primary_parent: family.primary_parent,
+              email: family.email, phone: family.phone, emergency_phone: family.emergency_phone,
+              address: family.address, source: family.source, lifecycle_stage: family.lifecycle_stage,
+            }}
+            tagPicker={<TagPicker contactId={family.id} initialTags={family.tags ?? []} />}
+          />
 
           {/* Billing */}
           <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
@@ -254,25 +262,11 @@ export default async function ContactDetailPage({
             )}
           </div>
 
-          {/* Kids */}
-          <div className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
-            <div className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 mb-2">
-              Kids ({students.length})
-            </div>
-            {students.length === 0 ? (
-              <p className="text-xs text-zinc-500">No kids linked yet.</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {students.map((s) => (
-                  <li key={s.id}>
-                    <a href={`/students/${s.id}`} className="text-sm font-bold text-zinc-700 hover:text-[#D72027] hover:underline">
-                      {s.first_name} {s.last_name ?? ''} {s.date_of_birth && `· ${yearsOld(s.date_of_birth)}y`}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {/* Kids — editable */}
+          <ContactKidsEditor familyId={family.id} initial={students} classes={classes} enrolments={enrolmentsByKid} />
+
+          {/* Forms & Waivers — click a card to see the full form + signature */}
+          <WaiverCards waivers={waivers as Waiver[]} />
         </aside>
 
         {/* MIDDLE — composer + conversation */}
@@ -347,35 +341,42 @@ export default async function ContactDetailPage({
             initial={contactTasks}
             tableMissing={tasksTableMissing}
           />
-          <RailPanel icon="📅" label="Appointments" count={upcomingAppts?.length ?? 0}>
-            {!upcomingAppts || upcomingAppts.length === 0 ? (
-              <p className="text-xs text-zinc-500">None on file.</p>
+          <ContactAppointments appts={(upcomingAppts ?? []) as never} coaches={coachList} familyId={family.id} />
+          <RailPanel icon="💲" label="Payments" count={payments.length}>
+            <div className="text-xs space-y-1.5">
+              {(family.weekly_fee_total ?? 0) > 0 && <div className="flex items-baseline justify-between"><span className="font-bold text-zinc-800">Weekly fee</span><span className="font-bold text-zinc-900">${family.weekly_fee_total}/wk</span></div>}
+              {activeSubs.map((s) => <div key={s.id} className="flex items-baseline justify-between"><span className="capitalize text-zinc-600">{(s.plan ?? '—').replace('_', ' ')}</span><span className="text-zinc-500">${s.weekly_amount ?? '?'}</span></div>)}
+              {payments.length > 0 ? (
+                <div className="pt-1.5 mt-1 border-t border-zinc-100 space-y-1.5">
+                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-400">Payment history · ${totalPaid.toFixed(0)} paid</div>
+                  {payments.map((p) => {
+                    const inner = (
+                      <>
+                        <span className="text-zinc-600 truncate group-hover:text-[#635BFF]" title={p.description ?? ''}>{new Date(p.created * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} · {p.description || 'Payment'}{p.link && <span className="text-zinc-300"> ↗</span>}</span>
+                        <span className={`shrink-0 font-bold ${p.refunded ? 'text-zinc-400 line-through' : 'text-emerald-700'}`}>${p.amount.toFixed(0)}</span>
+                      </>
+                    )
+                    return p.link
+                      ? <a key={p.id} href={p.link} target="_blank" rel="noreferrer" className="group flex items-baseline justify-between gap-2 hover:bg-zinc-50 rounded px-1 -mx-1">{inner}</a>
+                      : <div key={p.id} className="flex items-baseline justify-between gap-2">{inner}</div>
+                  })}
+                </div>
+              ) : (family.weekly_fee_total ?? 0) === 0 && activeSubs.length === 0 ? (
+                <p className="text-zinc-500">No payments on file yet.</p>
+              ) : null}
+              {family.stripe_customer_id && <a href={`https://dashboard.stripe.com/customers/${family.stripe_customer_id}`} target="_blank" rel="noreferrer" className="inline-block text-[#635BFF] font-bold pt-1">Open in Stripe →</a>}
+            </div>
+          </RailPanel>
+          <RailPanel icon="🔗" label="Attribution">
+            {latestSource || latestHeard ? (
+              <div className="text-xs space-y-1">
+                {latestSource && <div><span className="font-bold text-zinc-700">Source:</span> <span className="text-zinc-600">{latestSource}</span></div>}
+                {latestHeard && <div><span className="font-bold text-zinc-700">Heard via:</span> <span className="text-zinc-600">{latestHeard}</span></div>}
+              </div>
             ) : (
-              <ul className="space-y-1.5 text-xs">
-                {upcomingAppts.map((a) => (
-                  <li key={a.id}>
-                    <div className="font-bold text-zinc-800 truncate">{a.title}</div>
-                    <div className="text-[10px] text-zinc-500">{new Date(a.start_at).toLocaleString('en-AU', { dateStyle: 'medium', timeStyle: 'short' })}</div>
-                  </li>
-                ))}
-              </ul>
+              <p className="text-xs text-zinc-500">No source on file yet.</p>
             )}
           </RailPanel>
-          <RailPanel icon="💲" label="Payments" count={activeSubs.length}>
-            {activeSubs.length === 0 ? (
-              <p className="text-xs text-zinc-500">No active subscriptions.</p>
-            ) : (
-              <ul className="space-y-1.5 text-xs">
-                {activeSubs.map((s) => (
-                  <li key={s.id} className="flex items-baseline justify-between">
-                    <span className="font-bold capitalize text-zinc-800">{(s.plan ?? '—').replace('_', ' ')}</span>
-                    <span className="text-zinc-500">${s.weekly_amount ?? '?'}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </RailPanel>
-          <RailPanel icon="🔗" label="Attribution" body="Page-tracking pixel comes in phase 3. First / latest source will appear here." />
 
           {/* DND + delete — Tectonic equivalent of the DND tab */}
           <DndPanel
@@ -394,17 +395,6 @@ export default async function ContactDetailPage({
         </div>
       )}
     </DashboardShell>
-  )
-}
-
-function Row({ label, value, link }: { label: string; value: string | null; link?: string | null }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <dt className="text-[10px] uppercase tracking-wider font-bold text-zinc-500 shrink-0">{label}</dt>
-      <dd className="text-zinc-900 text-right text-sm font-bold truncate">
-        {value ? (link ? <a href={link} className="hover:underline">{value}</a> : value) : '—'}
-      </dd>
-    </div>
   )
 }
 
@@ -438,17 +428,3 @@ function RailPanel({
   )
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) return (parts[0]![0] + parts[parts.length - 1]![0]).toUpperCase()
-  return name.slice(0, 2).toUpperCase()
-}
-
-function yearsOld(dob: string): number {
-  const birth = new Date(dob)
-  const now = new Date()
-  let age = now.getFullYear() - birth.getFullYear()
-  const m = now.getMonth() - birth.getMonth()
-  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--
-  return age
-}

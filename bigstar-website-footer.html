@@ -1,0 +1,122 @@
+<!--
+============================================================================
+ BIG STAR CIRCUS — NEW WEBSITE FOOTER  (for bigstarcircus.com.au)
+============================================================================
+ For the web developer / whoever manages bigstarcircus.com.au:
+
+ HOW TO USE
+ - This is a self-contained footer (HTML + inline <style>). Paste it into a
+   "Custom HTML" block in your theme footer / page builder footer template so
+   it shows on EVERY page.
+ - It uses the brand colours: red #D72027, yellow #FFC107, on a dark base.
+ - Replace the logo URL on line marked  <!-- LOGO -->  with the official
+   Big Star logo if you prefer (a placeholder Big Star logo is set so it works
+   out of the box).
+ - Check each link href and point it to the correct page on the site. Three
+   links go to the new CRM tools (Free Trial form, Shop, Parent Hub) — leave
+   those as-is so enquiries flow into the CRM, or swap for site pages.
+ - Remove this comment block before publishing.
+
+ PLAIN-ENGLISH LAYOUT (4 columns + brand + bottom bar):
+   • Brand:    logo, one-line tagline, address, phone, email
+   • Classes:  Classes, Prices, Free Trial, Holiday Workshops, Parties, Shows
+   • Company:  About Us, Our Coaches, Contact Us, Blog
+   • Policies: Terms of Use, Terms of Service, Make-Up Class Policy,
+               Privacy Policy, Media Consent
+   • Connect:  Facebook, Instagram, YouTube, TikTok + Play On! vouchers + CTA
+   • Bottom:   ABN, copyright (2026)
+============================================================================
+-->
+<footer class="bsc-footer">
+  <style>
+    .bsc-footer{background:#140a0c;color:#cfc6c8;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6}
+    .bsc-footer a{color:#cfc6c8;text-decoration:none;transition:color .15s}
+    .bsc-footer a:hover{color:#fff}
+    .bsc-footer .bsc-wrap{max-width:1200px;margin:0 auto;padding:56px 24px 28px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:36px}
+    .bsc-footer h4{color:#FFC107;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;margin:0 0 16px}
+    .bsc-footer ul{list-style:none;margin:0;padding:0}
+    .bsc-footer li{margin:0 0 10px}
+    .bsc-footer .bsc-logo{height:64px;width:auto;margin-bottom:14px}
+    .bsc-footer .bsc-tag{color:#fff;font-weight:600;margin:0 0 16px}
+    .bsc-footer .bsc-contact{font-size:14px;color:#a89ea1}
+    .bsc-footer .bsc-contact a{color:#a89ea1}
+    .bsc-footer .bsc-social{display:flex;gap:10px;margin-bottom:18px}
+    .bsc-footer .bsc-social a{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.08);color:#fff;font-weight:700}
+    .bsc-footer .bsc-social a:hover{background:#D72027}
+    .bsc-footer .bsc-cta{display:inline-block;background:#D72027;color:#fff;font-weight:800;padding:11px 18px;border-radius:10px;margin-bottom:16px}
+    .bsc-footer .bsc-cta:hover{background:#A0151B;color:#fff}
+    .bsc-footer .bsc-vouchers{display:block;font-size:12px;color:#a89ea1}
+    .bsc-footer .bsc-bottom{border-top:1px solid rgba(255,255,255,.1)}
+    .bsc-footer .bsc-bottom-in{max-width:1200px;margin:0 auto;padding:18px 24px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;color:#8a8083}
+    @media(max-width:900px){.bsc-footer .bsc-wrap{grid-template-columns:1fr 1fr;gap:28px}}
+    @media(max-width:560px){.bsc-footer .bsc-wrap{grid-template-columns:1fr;text-align:left}}
+  </style>
+
+  <div class="bsc-wrap">
+    <!-- BRAND -->
+    <div>
+      <!-- LOGO --><img class="bsc-logo" src="https://app-chi-silk-29.vercel.app/bigstar-logo.png" alt="Big Star Circus">
+      <p class="bsc-tag">Making circus stars every day on the Gold Coast.</p>
+      <p class="bsc-contact">
+        Unit 1/14 Harper Street,<br>Molendinar, Gold Coast QLD 4214<br>
+        <a href="tel:+61489188179">0489 188 179</a><br>
+        <a href="mailto:admin@bigstarcircus.com.au">admin@bigstarcircus.com.au</a>
+      </p>
+    </div>
+
+    <!-- CLASSES -->
+    <div>
+      <h4>Classes</h4>
+      <ul>
+        <li><a href="/classes">Our Classes</a></li>
+        <li><a href="/prices">Prices</a></li>
+        <li><a href="/free-trial">Free Trial</a></li>
+        <li><a href="/holiday-workshops">Holiday Workshops</a></li>
+        <li><a href="/parties">Birthday Parties</a></li>
+        <li><a href="/shows">Shows &amp; Gigs</a></li>
+      </ul>
+    </div>
+
+    <!-- COMPANY -->
+    <div>
+      <h4>Company</h4>
+      <ul>
+        <li><a href="/about-us">About Us</a></li>
+        <li><a href="/coaches">Our Coaches</a></li>
+        <li><a href="/contact-us">Contact Us</a></li>
+        <li><a href="/blog">Blog &amp; News</a></li>
+      </ul>
+    </div>
+
+    <!-- POLICIES -->
+    <div>
+      <h4>Policies</h4>
+      <ul>
+        <li><a href="/terms-of-use">Terms of Use</a></li>
+        <li><a href="/terms-of-service">Terms of Service</a></li>
+        <li><a href="/make-up-class-policy">Make-Up Class Policy</a></li>
+        <li><a href="/privacy-policy">Privacy Policy</a></li>
+        <li><a href="/media-consent">Media Consent</a></li>
+      </ul>
+    </div>
+
+    <!-- CONNECT -->
+    <div>
+      <h4>Connect</h4>
+      <div class="bsc-social">
+        <a href="https://facebook.com/BScircus" aria-label="Facebook" title="Facebook">f</a>
+        <a href="https://instagram.com/bigstarcircus" aria-label="Instagram" title="Instagram">IG</a>
+        <a href="https://youtube.com/@RhettTilly" aria-label="YouTube" title="YouTube">▶</a>
+      </div>
+      <a class="bsc-cta" href="https://app-chi-silk-29.vercel.app/f/free-trial">Book a Free Trial</a>
+      <span class="bsc-vouchers">✓ Play On! Sports Vouchers accepted<br>✓ NDIS friendly</span>
+    </div>
+  </div>
+
+  <div class="bsc-bottom">
+    <div class="bsc-bottom-in">
+      <span>© 2026 BigStar Circus Pty Ltd. All Rights Reserved.</span>
+      <span>ABN 18 678 780 722 · Molendinar, Gold Coast QLD</span>
+    </div>
+  </div>
+</footer>

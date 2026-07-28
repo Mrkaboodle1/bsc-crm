@@ -11,7 +11,7 @@
 // Returns { text: string } or { variants: string[] } depending on task.
 
 import { NextRequest, NextResponse } from 'next/server'
-import { verifySession } from '@/lib/dal'
+import { verifySession, type TenantBranding } from '@/lib/dal'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -20,10 +20,14 @@ type Task = 'rewrite' | 'extend' | 'shorten' | 'social' | 'email' | 'hero' | 'fr
 type Tone = 'professional' | 'friendly' | 'playful' | 'urgent'
 type Platform = 'facebook' | 'instagram' | 'linkedin' | 'twitter' | 'tiktok' | 'email'
 
-const SYSTEM = `You write for Big Star Circus — a kids circus school on the Gold Coast (Molendinar, QLD).
-Voice: warm, confident, jargon-free, slightly cheeky. Real circus, real performers,
-real kids. Never sappy or overhyped. Never use "amazing" or "magical".
+function systemFor(t?: TenantBranding): string {
+  const name = t?.name || 'this business'
+  const about = t?.mission ? ` ${t.mission}` : ''
+  const loc = t?.address ? ` Located at ${t.address}.` : ''
+  return `You write for ${name}.${about}${loc}
+Voice: warm, confident, jargon-free, slightly cheeky. Real and specific, never sappy or overhyped. Never use "amazing" or "magical".
 Output ONLY the requested text. No preamble, no labels, no markdown, no quotes around the answer.`
+}
 
 function taskPrompt(task: Task, opts: {
   prompt: string
@@ -32,8 +36,9 @@ function taskPrompt(task: Task, opts: {
   maxWords?: number
   platform?: Platform
   variants?: number
+  businessName?: string
 }): string {
-  const { prompt, context, tone = 'friendly', maxWords, platform, variants = 1 } = opts
+  const { prompt, context, tone = 'friendly', maxWords, platform, variants = 1, businessName = 'the business' } = opts
   const toneLine = `Tone: ${tone}.`
   const maxLine = maxWords ? `Maximum ${maxWords} words.` : ''
   const ctxLine = context ? `Context to draw from:\n${context}\n` : ''
@@ -52,7 +57,7 @@ function taskPrompt(task: Task, opts: {
       return `Convert the following into 3–5 concise bullet points (no leading dashes — one bullet per line). ${toneLine}\n\n${prompt}`
 
     case 'hero':
-      return `Write a high-converting hero section for Big Star Circus.
+      return `Write a high-converting hero section for ${businessName}.
 ${toneLine}
 Topic / context: ${prompt}
 ${ctxLine}
@@ -97,8 +102,10 @@ ${varLine}`
 }
 
 export async function POST(req: NextRequest) {
+  let branding: TenantBranding | undefined
   try {
-    await verifySession()
+    const user = await verifySession()
+    branding = user.tenant
   } catch {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
@@ -128,6 +135,7 @@ export async function POST(req: NextRequest) {
     maxWords: body.maxWords ? Number(body.maxWords) : undefined,
     platform: body.platform as Platform | undefined,
     variants,
+    businessName: branding?.name,
   })
 
   try {
@@ -140,7 +148,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: SYSTEM },
+          { role: 'system', content: systemFor(branding) },
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.85,

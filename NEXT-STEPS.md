@@ -5,6 +5,87 @@
 
 ---
 
+## ☑️ TO REVIEW — built 2026-06-12, Rhett to test later
+
+These are LIVE on the site but not yet click-tested by Rhett:
+
+- [ ] **Coach notes on roll call** — open ℹ next to a child → "Coach note · today" box. Kids with a note show 📝.
+- [ ] **⚡ Rapid Band Pairing** (`/starband/bulk`) — tap band → tap child → paired. For when the NFC bands arrive.
+- [ ] **3 editors** now editable: Workshops (pencil), Social posts (⋯ → Edit), Reward designs (pencil).
+- [ ] **5 earlier CRUD fixes**: edit/delete Companies, delete a Contact, edit a Task, delete a Form, Quizzes removed.
+
+### ☑️ TO REVIEW — mega-batch built 2026-06-12 (afternoon)
+
+**Marketing content (ready to send — your approval needed):**
+- [ ] `KNO-CAMPAIGN-CONTENT-2026.md` — every Kids Night Out email + text for 2026 (Glow Circus 15 Aug, Beach Party 14 Nov), themed + ready.
+- [ ] `MONTHLY-NEWSLETTERS-2026.md` — newsletters for June→Dec, each with events folded in, free-trial CTA, term dates.
+- [ ] `SOCIAL-POSTS-2026.md` — Insta + Facebook captions + image ideas, month by month.
+
+**Research (kept fresh — "my job"):**
+- [ ] `EVENTS-RADAR.md` — refreshed Jun–Dec 2026 GC family events (Funanza 9 Aug confirmed, FlipAntics, GC Show, school-holiday dates). A few dates marked VERIFY.
+- [ ] `ADS-PLAYBOOK.md` — ad timing around events + **I need Joe's Meta Ad Library link or screenshots** to decode his live ads.
+- [ ] Competitor email structure (Flipside, Circa) → baked into the newsletter template.
+
+**Coach hiring (Tamara leaving ~26 Aug):**
+- [ ] `COACH-HIRE-KIT.md` — SEEK ad, interview Qs, onboarding checklist, Tamara handover.
+- [ ] SEEK ad in CRM (Team → Hire Kit) now states **contractor + ABN + invoices + BSC pays super** — LIVE.
+- [ ] Training Agreement (doc 16) + Non-Compete (doc 17) already in Compliance.
+
+**One thing I need from you:** Joe's Meta Ad Library link (or screenshots) to decode his ads.
+
+### ☑️ TO REVIEW — Stripe connected + Workshops/KNO loaded + booking pages (2026-06-13)
+
+**🔒 ACTION: roll your Stripe key.** A live secret key was pasted in chat, so for safety
+regenerate it (Stripe → Developers → API keys → roll). The booking payment links + loaded
+data are NOT affected by rolling. Just tell me the new key (via the Desktop file) so I can
+keep pulling Stripe data in future. The key is saved locally in app/.env.local (gitignored),
+NOT in the live site.
+
+**Stripe is connected** — I can pull payments, subscriptions, customers anytime.
+- 55 active subscriptions.
+- **Holiday workshop bookings loaded into the CRM tracker** — 34 paid places across 9 days
+  (Wed 1 July busiest at 8). Pulled live from Stripe. Re-sync anytime.
+- **Kids Night Out:** the 21 tickets were your 30 May night (done). New **Kids Night Out
+  tracker** page built (in the Classes menu), with **15 Aug (Glow)** + **14 Nov (Beach Party)**
+  loaded, ready to fill when bookings open.
+
+**New public booking pages in the CRM (for your review — NOT on your live website yet):**
+- [ ] `/book/workshops` — school-holiday form + "Make Payment $60" button (Stripe).
+- [ ] `/book/kids-night-out` — KNO form (incl. pizza choice) + "Make Payment $60" button.
+- Both save the booking into the CRM, then show a Stripe **$60 payment link**.
+- ⚠️ **Please test the payment flow yourself before sharing publicly.** I did not touch your
+  live bigstarcircus.com.au site — these live on the CRM so you can try them first.
+- ❓ **Confirm KNO time:** your website says **4–9pm**, your playbook says 5:30–8:30pm. I set
+  the tracker to 5:30–8:30 — tell me which is right and I'll fix it in one click.
+
+**Still to do when you're back:** send your **Play On voucher list** → I'll add those kids to
+the workshop day counts for true totals.
+
+### ☑️ TO REVIEW — Workshop tracker + Voucher upgrade (built 2026-06-13)
+
+**Holiday Workshop tracker (CRM → Holiday Workshops):**
+- [ ] Day-by-day **headcount sheet** (kids per day, $ collected, totals) at the top.
+- [ ] **"Add booking"** on each day — log each Stripe booking (parent, # kids, $ paid, member?).
+- [ ] **Export to Excel** button.
+- [ ] **Circus craft activity** field per day (dropdown of ideas built in).
+- [ ] Pre-loaded the **10 winter-break weekdays (29 Jun–10 Jul)** — DELETE any days you're not running.
+
+**Play On vouchers (CRM → Play On Vouchers):**
+- [ ] **Photo of the voucher** (take a pic on your phone) + **"Used for: Term / Workshop / Both"** tag.
+
+**ACTION NEEDED (one paste):** run `schema/028_workshop_voucher_tracking.sql` in Supabase to
+switch on the new fields (kids-per-day, $ collected, activity, voucher photo/use-type).
+
+**Stripe:** I can't log into your Stripe (no key connected). To pull who's already booked:
+either (a) export your Stripe payments to a spreadsheet and send it to me, or (b) give me a
+**read-only Stripe key** once and I'll pull workshop + sub data anytime.
+
+**Craft activity ideas (one per day):** clown paper-plate faces · juggling scarves · circus
+posters · sock poi · ringmaster hats · animal masks · star wands · balloon juggling balls ·
+big-top diorama · acrobat puppets · carnival bunting.
+
+---
+
 ## ✅ What I built autonomously this morning (no credentials needed)
 
 | # | Deliverable | File path | Why it matters |

@@ -3,12 +3,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Building2, User, CreditCard, UsersRound, Mail, MessageSquare, CalendarDays, Plug, SlidersHorizontal, Upload, Tag, ScrollText, Bold, Italic, ImagePlus, RotateCcw } from 'lucide-react'
+import { uploadMedia } from '@/app/media/actions'
 
 export type TenantProfile = {
   name: string | null; abn: string | null; email: string | null; phone: string | null
   website: string | null; address: string | null; founded_year: number | null
   primary_colour: string | null; accent_colour: string | null; logo_url: string | null
   slug: string | null; plan: string | null; email_signature: string | null
+  tagline?: string | null; mission?: string | null
+  headerLocation?: string | null; ownerName?: string | null
+  socials?: { facebook?: string; instagram?: string; youtube?: string; tiktok?: string }
 }
 
 const CATS = [
@@ -59,18 +63,13 @@ export function SettingsClient({ tenant }: { tenant: TenantProfile }) {
 }
 
 function defaultSignature(t: TenantProfile): string {
-  return [
-    'Warm regards,',
-    `The ${t.name || 'Big Star Circus'} Team`,
-    '',
-    `Phone: ${t.phone || '0489 188 179'}`,
-    `Email: ${t.email || 'admin@bigstarcircus.com.au'}`,
-    `Web: ${(t.website || 'bigstarcircus.com.au').replace(/^https?:\/\//, '')}`,
-    t.address || 'Unit 1/14 Harper Street, Molendinar QLD 4214',
-  ].join('\n')
+  const lines = ['Warm regards,', `The ${t.name || 'Team'} Team`, '']
+  if (t.phone) lines.push(`Phone: ${t.phone}`)
+  if (t.email) lines.push(`Email: ${t.email}`)
+  if (t.website) lines.push(`Web: ${t.website.replace(/^https?:\/\//, '')}`)
+  if (t.address) lines.push(t.address)
+  return lines.join('\n')
 }
-
-const BSC_LOGO_URL = 'https://app-chi-silk-29.vercel.app/bigstar-logo.png'
 
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 function defaultSignatureHtml(t: TenantProfile): string {
@@ -141,7 +140,7 @@ function EmailSettings({ tenant }: { tenant: TenantProfile }) {
           <Tool onClick={() => exec('bold')} title="Bold"><Bold size={14} /></Tool>
           <Tool onClick={() => exec('italic')} title="Italic"><Italic size={14} /></Tool>
           <span className="w-px h-5 bg-zinc-200 mx-1" />
-          <Tool onClick={() => insertImage(BSC_LOGO_URL)} title="Insert your Big Star logo"><ImagePlus size={14} /> Insert logo</Tool>
+          <Tool onClick={() => tenant.logo_url ? insertImage(tenant.logo_url) : window.alert('Add your logo first in Business Profile → Brand, then come back.')} title="Insert your logo"><ImagePlus size={14} /> Insert logo</Tool>
           <Tool onClick={() => { const u = window.prompt('Paste the web link (URL) of the image to insert:'); if (u) insertImage(u.trim()) }} title="Insert another image"><ImagePlus size={14} /> Insert image…</Tool>
         </div>
         {/* Editable area */}
@@ -152,7 +151,7 @@ function EmailSettings({ tenant }: { tenant: TenantProfile }) {
           onInput={sync}
           className="min-h-[180px] border border-t-0 border-zinc-200 rounded-b-lg px-4 py-3 text-sm text-zinc-800 leading-relaxed focus:outline-none focus:border-zinc-400 [&_img]:inline-block"
         />
-        <p className="text-[11px] text-zinc-400 mt-2">Tip: click <strong>Insert logo</strong> to drop your Big Star logo in. Want a different image? Use <strong>Insert image…</strong> and paste its web link — or send it to me and I&apos;ll host it for you.</p>
+        <p className="text-[11px] text-zinc-400 mt-2">Tip: click <strong>Insert logo</strong> to drop your logo in. Want a different image? Use <strong>Insert image…</strong> and paste its web link — or send it to me and I&apos;ll host it for you.</p>
 
         <div className="mt-5">
           <div className="text-xs font-semibold text-zinc-600 mb-1.5">Preview — how the bottom of your emails will look</div>
@@ -201,9 +200,9 @@ function IntegrationRow({ name, desc, status }: { name: string; desc: string; st
 function OtherSettings({ cat, label, tenant }: { cat: string; label: string; tenant: TenantProfile }) {
   if (cat === 'integrations') {
     return (
-      <Card title="Integrations" desc="What's connected to your Big Star CRM.">
+      <Card title="Integrations" desc={`What's connected to your ${tenant.name || 'business'} CRM.`}>
         <div>
-          <IntegrationRow name="Email (Resend)" desc="Sends parent & bulk emails from admin@bigstarcircus.com.au" status="on" />
+          <IntegrationRow name="Email (Resend)" desc={`Sends parent & bulk emails${tenant.email ? ` from ${tenant.email}` : ''}`} status="on" />
           <IntegrationRow name="Reliable login links" desc="Sign-in emails via Resend" status="on" />
           <IntegrationRow name="Payments (Stripe)" desc="Recurring class subscriptions" status="on" />
           <IntegrationRow name="AI assistant (Jacky)" desc="Drafting, replies, blog & social copy" status="on" />
@@ -217,7 +216,7 @@ function OtherSettings({ cat, label, tenant }: { cat: string; label: string; ten
   }
   if (cat === 'billing') {
     return (
-      <Card title="Billing" desc="Your Big Star CRM plan and payment processing.">
+      <Card title="Billing" desc="Your plan and payment processing.">
         <div className="flex items-center gap-3 mb-5">
           <span className="text-xs font-bold uppercase tracking-wide text-zinc-400">Plan</span>
           <span className="text-sm font-semibold capitalize bg-[#D72027]/10 text-[#D72027] px-3 py-1 rounded-full">{tenant.plan || 'founder'}</span>
@@ -276,16 +275,37 @@ function BusinessProfile({ tenant }: { tenant: TenantProfile }) {
     name: tenant.name || '', abn: tenant.abn || '', email: tenant.email || '', phone: tenant.phone || '',
     website: tenant.website || '', address: tenant.address || '', founded_year: tenant.founded_year || '',
     primary_colour: tenant.primary_colour || '#D72027', accent_colour: tenant.accent_colour || '#FFC107', logo_url: tenant.logo_url || '',
+    tagline: tenant.tagline || '', mission: tenant.mission || '',
+    headerLocation: tenant.headerLocation || '', ownerName: tenant.ownerName || '',
+    facebook: tenant.socials?.facebook || '', instagram: tenant.socials?.instagram || '', youtube: tenant.socials?.youtube || '', tiktok: tenant.socials?.tiktok || '',
   })
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [err, setErr] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const logoInput = useRef<HTMLInputElement>(null)
   const set = (k: string, v: string) => setF((p) => ({ ...p, [k]: v }))
+
+  async function onLogoFile(file: File | null) {
+    if (!file) return
+    setUploading(true); setErr('')
+    try {
+      const fd = new FormData(); fd.append('file', file); fd.append('alt', `${f.name || 'Business'} logo`)
+      const res = await uploadMedia(fd)
+      if (!res.ok) throw new Error(res.error)
+      set('logo_url', res.data.url)
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Logo upload failed') } finally { setUploading(false) }
+  }
 
   async function save() {
     setBusy(true); setErr(''); setDone(false)
     try {
-      const r = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f) })
+      const payload = {
+        name: f.name, abn: f.abn, email: f.email, phone: f.phone, website: f.website, address: f.address,
+        founded_year: f.founded_year, primary_colour: f.primary_colour, accent_colour: f.accent_colour, logo_url: f.logo_url,
+        profile: { tagline: f.tagline, mission: f.mission, headerLocation: f.headerLocation, ownerName: f.ownerName, socials: { facebook: f.facebook, instagram: f.instagram, youtube: f.youtube, tiktok: f.tiktok } },
+      }
+      const r = await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || 'Could not save')
       setDone(true); router.refresh(); setTimeout(() => setDone(false), 2500)
@@ -294,6 +314,10 @@ function BusinessProfile({ tenant }: { tenant: TenantProfile }) {
 
   return (
     <div className="space-y-5 max-w-3xl">
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+        <strong>This page makes the platform yours.</strong> Everything here — your name, logo, colours, contact details and links — flows through the whole system automatically. Set it once.
+      </div>
+
       <div className="bg-white rounded-xl border border-zinc-200 p-6">
         <h3 className="font-semibold text-zinc-900 mb-1">General information</h3>
         <p className="text-sm text-zinc-500 mb-5">Your business details, shown across the platform and on invoices.</p>
@@ -302,8 +326,21 @@ function BusinessProfile({ tenant }: { tenant: TenantProfile }) {
           <Field label="ABN"><input className={input} value={f.abn} onChange={(e) => set('abn', e.target.value)} /></Field>
           <Field label="Business email"><input className={input} value={f.email} onChange={(e) => set('email', e.target.value)} /></Field>
           <Field label="Business phone"><input className={input} value={f.phone} onChange={(e) => set('phone', e.target.value)} /></Field>
-          <Field label="Website"><input className={input} value={f.website} onChange={(e) => set('website', e.target.value)} /></Field>
+          <Field label="Website"><input className={input} value={f.website} onChange={(e) => set('website', e.target.value)} placeholder="https://…" /></Field>
           <Field label="Founded year"><input className={input} value={String(f.founded_year)} onChange={(e) => set('founded_year', e.target.value)} /></Field>
+        </div>
+        <div className="grid gap-4 mt-4">
+          <Field label="Tagline" hint="One short line — e.g. ‘Making circus stars every day.’"><input className={input} value={f.tagline} onChange={(e) => set('tagline', e.target.value)} /></Field>
+          <Field label="Mission / about" hint="A sentence or two about your business — used in AI copy and your website."><textarea className={input} rows={2} value={f.mission} onChange={(e) => set('mission', e.target.value)} /></Field>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-zinc-200 p-6">
+        <h3 className="font-semibold text-zinc-900 mb-1">Sidebar header</h3>
+        <p className="text-sm text-zinc-500 mb-5">What shows under your logo in the top-left corner of the app.</p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Studio location" hint="e.g. Molendinar, Gold Coast"><input className={input} value={f.headerLocation} onChange={(e) => set('headerLocation', e.target.value)} /></Field>
+          <Field label="Owner name" hint="e.g. Rhett Morrow"><input className={input} value={f.ownerName} onChange={(e) => set('ownerName', e.target.value)} /></Field>
         </div>
       </div>
 
@@ -314,15 +351,35 @@ function BusinessProfile({ tenant }: { tenant: TenantProfile }) {
 
       <div className="bg-white rounded-xl border border-zinc-200 p-6">
         <h3 className="font-semibold text-zinc-900 mb-1">Brand</h3>
-        <p className="text-sm text-zinc-500 mb-5">Your logo and brand colours.</p>
+        <p className="text-sm text-zinc-500 mb-5">Your logo and brand colours — these appear in the app header, on emails and on your public pages.</p>
+        <div className="flex items-center gap-4 mb-5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {f.logo_url ? <img src={f.logo_url} alt="logo" className="w-16 h-16 rounded-lg object-contain border border-zinc-200 bg-zinc-50 p-1" /> : <div className="w-16 h-16 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 flex items-center justify-center text-zinc-300"><ImagePlus size={22} /></div>}
+          <div>
+            <input ref={logoInput} type="file" accept="image/*" className="hidden" onChange={(e) => onLogoFile(e.target.files?.[0] ?? null)} />
+            <button type="button" onClick={() => logoInput.current?.click()} disabled={uploading} className="inline-flex items-center gap-2 bg-zinc-900 text-white text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50"><Upload size={15} /> {uploading ? 'Uploading…' : 'Upload logo'}</button>
+            <p className="text-[11px] text-zinc-400 mt-1.5">PNG or JPG, square works best. Or paste a link below.</p>
+          </div>
+        </div>
         <div className="grid sm:grid-cols-3 gap-4">
-          <Field label="Logo URL"><input className={input} value={f.logo_url} onChange={(e) => set('logo_url', e.target.value)} placeholder="https://…" /></Field>
+          <Field label="Logo link (URL)"><input className={input} value={f.logo_url} onChange={(e) => set('logo_url', e.target.value)} placeholder="https://…" /></Field>
           <Field label="Primary colour">
             <div className="flex items-center gap-2"><input type="color" value={f.primary_colour} onChange={(e) => set('primary_colour', e.target.value)} className="w-10 h-9 rounded border border-zinc-200" /><input className={input} value={f.primary_colour} onChange={(e) => set('primary_colour', e.target.value)} /></div>
           </Field>
           <Field label="Accent colour">
             <div className="flex items-center gap-2"><input type="color" value={f.accent_colour} onChange={(e) => set('accent_colour', e.target.value)} className="w-10 h-9 rounded border border-zinc-200" /><input className={input} value={f.accent_colour} onChange={(e) => set('accent_colour', e.target.value)} /></div>
           </Field>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-zinc-200 p-6">
+        <h3 className="font-semibold text-zinc-900 mb-1">Social links</h3>
+        <p className="text-sm text-zinc-500 mb-5">Used on your public pages, QR codes and email footer.</p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Facebook"><input className={input} value={f.facebook} onChange={(e) => set('facebook', e.target.value)} placeholder="https://facebook.com/…" /></Field>
+          <Field label="Instagram"><input className={input} value={f.instagram} onChange={(e) => set('instagram', e.target.value)} placeholder="https://instagram.com/…" /></Field>
+          <Field label="YouTube"><input className={input} value={f.youtube} onChange={(e) => set('youtube', e.target.value)} placeholder="https://youtube.com/@…" /></Field>
+          <Field label="TikTok"><input className={input} value={f.tiktok} onChange={(e) => set('tiktok', e.target.value)} placeholder="https://tiktok.com/@…" /></Field>
         </div>
       </div>
 

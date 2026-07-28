@@ -3,12 +3,13 @@
 import { useState, useMemo, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { Search, Pencil, X, Trash2, Plus, AlertTriangle, ExternalLink, MonitorSmartphone, LayoutDashboard } from 'lucide-react'
+import { Search, Pencil, X, Trash2, Plus, AlertTriangle, ExternalLink, MonitorSmartphone, LayoutDashboard, ShieldCheck } from 'lucide-react'
 
 export type Band = { id: string; nfc_uid: string; kind: string; label: string | null }
 export type SBStudent = {
   id: string; name: string; photo_url: string | null; pin_code: string | null
   allergies: string | null; medical_notes: string | null; authorised_pickup: string | null
+  support_needs?: string | null; support_strategy?: string | null
   bands: Band[]
 }
 export type SBSettings = { auto_text?: boolean; default_mode?: string }
@@ -31,6 +32,7 @@ export function StarbandAdmin({ students, settings }: { students: SBStudent[]; s
           <div className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">StarBand screens</div>
           <a href={KIOSK} target="_blank" className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-700 border border-zinc-200 rounded-lg px-3 py-2 hover:bg-zinc-50"><MonitorSmartphone size={15} /> Open reception kiosk</a>
           <a href="/starband/dashboard" className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-700 border border-zinc-200 rounded-lg px-3 py-2 hover:bg-zinc-50"><LayoutDashboard size={15} /> Who&apos;s checked in</a>
+          <a href="/starband/confirm" className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-700 border border-zinc-200 rounded-lg px-3 py-2 hover:bg-zinc-50"><ShieldCheck size={15} /> Confirm roll + evacuation register</a>
           <a href="/starband/register" className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-700 border border-zinc-200 rounded-lg px-3 py-2 hover:bg-zinc-50"><Plus size={15} /> Register a band</a>
         </div>
       </div>
@@ -106,7 +108,7 @@ function EditModal({ student, onClose }: { student: SBStudent; onClose: () => vo
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
-  const [f, setF] = useState({ pin_code: student.pin_code ?? '', photo_url: student.photo_url ?? '', allergies: student.allergies ?? '', medical_notes: student.medical_notes ?? '', authorised_pickup: student.authorised_pickup ?? '' })
+  const [f, setF] = useState({ pin_code: student.pin_code ?? '', photo_url: student.photo_url ?? '', allergies: student.allergies ?? '', medical_notes: student.medical_notes ?? '', authorised_pickup: student.authorised_pickup ?? '', support_needs: student.support_needs ?? '', support_strategy: student.support_strategy ?? '' })
   const [newBand, setNewBand] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -146,6 +148,8 @@ function EditModal({ student, onClose }: { student: SBStudent; onClose: () => vo
           <Field label="⚠️ Allergies"><input className={inp} value={f.allergies} onChange={(e) => set('allergies', e.target.value)} placeholder="e.g. Nuts, dairy" /></Field>
           <Field label="Medical notes"><input className={inp} value={f.medical_notes} onChange={(e) => set('medical_notes', e.target.value)} placeholder="e.g. Asthma — puffer in bag" /></Field>
           <Field label="Authorised pickup (who may collect)"><input className={inp} value={f.authorised_pickup} onChange={(e) => set('authorised_pickup', e.target.value)} placeholder="e.g. Mum (Sarah), Dad (Tom), Nan (Lyn)" /></Field>
+          <Field label="🧠 Support needs"><input className={inp} value={f.support_needs} onChange={(e) => set('support_needs', e.target.value)} placeholder="e.g. ADHD, autism, anxiety" /></Field>
+          <Field label="What works for this child (coach tip)"><input className={inp} value={f.support_strategy} onChange={(e) => set('support_strategy', e.target.value)} placeholder="e.g. Give him a job; warn before transitions" /></Field>
 
           <div>
             <div className="text-xs font-semibold text-zinc-600 mb-1.5">Wristbands / tags</div>

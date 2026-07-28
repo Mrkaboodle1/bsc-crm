@@ -1,0 +1,1764 @@
+{
+  "source": "D:/BSC/Student Roll/Bigstar Roll Call Sheets 2026 Term 2.xlsx",
+  "parsedSheets": [
+    {
+      "sheet": " T1 Monday Acro",
+      "day": "Monday",
+      "headerRow": 4,
+      "columns": {
+        "name": 3,
+        "pay": 15,
+        "care": 22,
+        "notes": 25
+      }
+    },
+    {
+      "sheet": "T1 Tuesday Aerial",
+      "day": "Tuesday",
+      "headerRow": 3,
+      "columns": {
+        "name": 3,
+        "pay": 15,
+        "care": 22,
+        "notes": 24
+      }
+    },
+    {
+      "sheet": "T1 Wednesday AM HS Circus",
+      "day": "Wednesday",
+      "headerRow": 3,
+      "columns": {
+        "name": 3,
+        "pay": 15,
+        "care": 22,
+        "notes": 23
+      }
+    },
+    {
+      "sheet": "T1 Wednesday PM Circus",
+      "day": "Wednesday",
+      "headerRow": 3,
+      "columns": {
+        "name": 3,
+        "pay": 15,
+        "care": 22,
+        "notes": 24
+      }
+    },
+    {
+      "sheet": "T1 Thursday AM HS Circus",
+      "day": "Thursday",
+      "headerRow": 3,
+      "columns": {
+        "name": 3,
+        "pay": 15,
+        "care": 22,
+        "notes": 23
+      }
+    },
+    {
+      "sheet": "T1 Thursday PM Circus Fusion",
+      "day": "Thursday",
+      "headerRow": 3,
+      "columns": {
+        "name": 3,
+        "pay": 15,
+        "care": 22,
+        "notes": 25
+      }
+    },
+    {
+      "sheet": "T1 Friday Circus & Aerial",
+      "day": "Friday",
+      "headerRow": 3,
+      "columns": {
+        "name": 3,
+        "pay": 15,
+        "care": 22,
+        "notes": 23
+      }
+    },
+    {
+      "sheet": "T2 Saturday AM Fusion",
+      "day": "Saturday",
+      "headerRow": 3,
+      "columns": {
+        "name": 3,
+        "pay": 15,
+        "care": 22,
+        "notes": 23
+      }
+    }
+  ],
+  "classes": [
+    {
+      "sheet": " T1 Monday Acro",
+      "day": "Monday",
+      "title": "Monday Private Lessons",
+      "isPrivate": true,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Isla 9-10am (20)",
+          "caregiver": "Tiarne - 0480 483 420 Support Worker",
+          "notes": "XERO INVOICE",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Robina College 10-12pm",
+          "caregiver": "Shannon and Jodie",
+          "notes": "Xero invoice",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": " T1 Monday Acro",
+      "day": "Monday",
+      "title": "Specialise 12:30-2:30PM",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Naomi Duggan (6)3pm",
+          "caregiver": "Melissa - 0411 894 290 melissa.duggan13@gmail.com    and father Micheal",
+          "notes": "Naomi is autistic - Mum is Melissa",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": " T1 Monday Acro",
+      "day": "Monday",
+      "title": "Monday 3:45 - 4:45pm CIRCUS ACRO",
+      "isPrivate": false,
+      "coach": "Rodrigo (0406 9901 124)  and Trainee: Louis (mum) Anna - 0413 110 870",
+      "students": [
+        {
+          "raw": "Joseph  (JT)",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "23.02 Cash paid  usually pays on Fridays",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Selina (JT)",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "23.02 Cash paid  usually pays on Fridays",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Elias  Kudrina",
+          "caregiver": "Katarina Kudrina - 0493 492 062  katarinaelevate@gmail.com",
+          "notes": "* ELIAS HAS AHERNIAIA * REFUND MUMMA",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Amelia (5) brother Archie",
+          "caregiver": "Steve (Dad) Angela (Mum) angelaford08@hotmail.com",
+          "notes": "Free trial - Subscription",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Archie (7) sister Amelia",
+          "caregiver": "Steve (Dad) Angela (Mum) angelaford08@hotmail.com +61417000274",
+          "notes": "Free trial - Subscription",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Macy Scott (7)",
+          "caregiver": "Jaimie 0433438910 jaimie.a.scott@gmail.com",
+          "notes": "FREE TRIAL - Subscription Attends Monday and Tuesday",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Lydia Lignos (5)",
+          "caregiver": "Billie Lingno   blignos@hotmail.com",
+          "notes": "Free trial\r\nMonday Circus Gymnastic 3:45pm-4:45pm (5 to 8yrs) Wednesday Circus Fusion 3:45pm-4:45pm (5 to 8yrs) Friday Aerial Jr 3:45pm-4:45pm (5 to 8yrs)",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Isabelle pike 5yr",
+          "caregiver": "katherine restifo - 0401 638 327 - katrestifo@outlook.com",
+          "notes": "free trial Monday , wed, Friday",
+          "pay": "Play on",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Mia Haynes",
+          "caregiver": "Jordan Haynes - 0434 881 420",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Sophia Rabelo Ferreira",
+          "caregiver": "Jaqueline - 0432 974 532",
+          "notes": "",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Marley",
+          "caregiver": "zoe- 0404 673 722 -  zoe.k.armstrong@gmail.com",
+          "notes": "",
+          "pay": "PLAY ON VOUCHER",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": " T1 Monday Acro",
+      "day": "Monday",
+      "title": "Monday 4:45 - 5:45pm CIRCUS ACRO",
+      "isPrivate": false,
+      "coach": "Rodrigo (0406 9901 124 )",
+      "students": [
+        {
+          "raw": "Louis - (JT)",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "23.02 Cash paid  usually pays on Fridays",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Eleia - (JT)",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "23.02 Cash paid  usually pays on Fridays",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Aubrey Harders (10)",
+          "caregiver": "Katie Harders\r\n0438 165 382",
+          "notes": "FREE TRIAL - Subscription",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Lia Anderson",
+          "caregiver": "Yuka - 0402 835 600 - works at PDOG next door",
+          "notes": "FT = Monday Circus Gymnastic 4:45pm-5:45pm (9 to 14yrs) Friday Aerial Jr 3:45pm-4:45pm (5 to 8yrs)",
+          "pay": "Sub",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Yuki Carey",
+          "caregiver": "Yoko Carey 061433929811\r\nusa_dyc@yahoo.com",
+          "notes": "Coming Friday too for FT",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Bella Rowell 9yr",
+          "caregiver": "Pauline -0438 941 518 - paul.kev2015@gmail.com",
+          "notes": "NOTE she cant make it to Monday acro clas for Monday 16tgh instead she is coming to the wedenday 18th FT",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "lilly",
+          "caregiver": "Sophie Vail - 0400 968 771",
+          "notes": "* rhett has reddeedm play on vousher and will change her subscriton for term 3 to $25",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": " T1 Monday Acro",
+      "day": "Monday",
+      "title": "Monday 5:45 - 6:45pm ADULT AERIAL",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Total Enrolled",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Total Attended",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Tuesday Aerial",
+      "day": "Tuesday",
+      "title": "Tuesday Private Lessons",
+      "isPrivate": true,
+      "coach": "Tamara 0481 882 333  and Trainee: Charlie -  Kelly mum 0401 388 088",
+      "students": [
+        {
+          "raw": "Aidyn Brennan (7) 9:45-10:30",
+          "caregiver": "Angela Brennan (Angie) 0401978119  Mother - Brie is Support Worker",
+          "notes": "Add email details to CRM - planner reject invoice due to date",
+          "pay": "Rhett to Invoice",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Llaton 11-12pm",
+          "caregiver": "Tyler Social Worker",
+          "notes": "Behaviour can become intense",
+          "pay": "Rhett to Invoice",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Carry 3pm",
+          "caregiver": "Chinese Carol Pickering 0413 853 529",
+          "notes": "Special needs",
+          "pay": "CC $60",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Tues 9am-9:45am   TODDLER CIRCUS",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "(No MORE KIDS )Tues  3:45-4:45pm  JUNIOR AERIAL",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Mia Prout",
+          "caregiver": "Laura Prout - 0424 552 496  laura_versace@hotmail.com",
+          "notes": "",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Narvah Prout",
+          "caregiver": "Laura Prout - 0424 552 496  laura_versace@hotmail.com",
+          "notes": "",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Kodi Cooper",
+          "caregiver": "Alexandra Faka'ata - 0402 724 541  a.fakaata@gmail.com",
+          "notes": "EMAIL FROM CARER: Alexandra Faka'ata       Tyla and Kodi are now on a reunification plan to return to living with their parents (primarily mother) over the next 6 months.\r\n I have advised the parents that they are welcome to attend these classes but the girls reside in my care during the week and they are not authorised to collect them or take them after these classes. If I am not in attendance it would usually be my mother, Julie Armenopoulos, who is the secondary emergency contact.\r\n\r\nHer details are as follows  Julie Armenopoulos   0407 200 889",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Bronti Bishop",
+          "caregiver": "Rose Bishop - 0448 830 921  rosannaleah.alexander@gmail.com",
+          "notes": "Play On Voucher received 18.02.2026",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Charli Menger (JT) (Lexi)",
+          "caregiver": "Contact Mum\r\nKellie McLaughlin 0401 388 088 kellie.ssv@gmail.com (Dad Steven)",
+          "notes": "Charlie on Play On - Lexi is Subscribed",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Donniella (6) (GIGI)",
+          "caregiver": "Rachelle - 0423 088 855  rachellegil@live.com.au",
+          "notes": "",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Lydia",
+          "caregiver": "billi - blignos@hotmail.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Lauren",
+          "caregiver": "julianan mum - 0433 933 323",
+          "notes": "Mary is grandmother and is making payment",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Matilda (7)",
+          "caregiver": "Loretta Jordan (Mum) 0497 635 340  loretojordan9@gmail.com",
+          "notes": "Has previously done a little Aerial before FREE TRIAL but Play On Voucher for Term 1 if she enjoys herself  follow up text 17.02.26",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Macy Scott (7)",
+          "caregiver": "Jaimie 0433438910 jaimie.a.scott@gmail.com",
+          "notes": "Free trial on 03.02 converted to subscription x 2 classes Monday and Tuesday",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Summer Masiero Worth (6)",
+          "caregiver": "Ana Masiero 0451917253  medeirosmasieroanapaula@gmail.com",
+          "notes": "(I spoke with Mother Ana Masiero 0451917253  via phone)  Mother in law Lisa Gordon will bring Summer or  Michael Father FOLLOW UP Email 17.02.26",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Azzurra",
+          "caregiver": "Cristina Filipazzi  - 0466 802 116 - cfilipazzi1@gmail.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "(NO MORE KIDS )Tues 5pm-6pm  SENIOR AERIAL",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Quinn Humphris (9)",
+          "caregiver": "Kath - 0438 304 345 \r\nadam.humphris@yahoo.com",
+          "notes": "",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Summer Killoran",
+          "caregiver": "racheal - 0432 183 846  rachelkilloran@hotmail.com",
+          "notes": "Lucas Monday 3:45pm Circus Acro\r\nSummer Monday 4:45pm Circus Acro\r\nSummer Tuesday 5-6 Senior Aerial",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Abigal brass (Thomas sister)",
+          "caregiver": "Rachel Brass 0406 759 537  rav_van@hotmail.com   Oliver father - 0406748264",
+          "notes": "Josephine Brass, Thomas and Abigail PLAY ON VOUCHER TERM 2 ONLY",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Tyla Faka'ata",
+          "caregiver": "Alexandra Faka'ata - 0402 724 541  a.fakaata@gmail.com",
+          "notes": "EMAIL FROM CARER: Alexandra Faka'ata       Tyla and Kodi are now on a reunification plan to return to living with their parents (primarily mother) over the next 6 months.\r\n I have advised the parents that they are welcome to attend these classes but the girls reside in my care during the week and they are not authorised to collect them or take them after these classes. If I am not in attendance it would usually be my mother, Julie Armenopoulos, who is the secondary emergency contact.\r\n\r\nHer details are as follows Julie Armenopoulos 0407 200 889",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Olivia \tCerveny",
+          "caregiver": "KrystieCeveny - 0478 744 350  krystiecerveny@hotmail.com",
+          "notes": "",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Charli Menger (JT) (Lexi)",
+          "caregiver": "Contact Mum\r\nKellie McLaughlin 0401 388 088 kellie.ssv@gmail.com (Dad Steven)",
+          "notes": "Charlie on Play On - Lexi is Subscribed",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Arabella Flynn",
+          "caregiver": "Shelley - 0493 051 315 justshelz@gmail.com",
+          "notes": "Check payments in CRM Or stripe",
+          "pay": "?",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Alkira Aplin",
+          "caregiver": "Sasha 0412773069 saashaaplin81@hotmail.com.au  - Tuesday 5pm Snr Aerial and Wednesday 4:45pm Circus Fusion",
+          "notes": "Charged one child two times a week, what other day does she come?",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Mary Donnerly",
+          "caregiver": "Jen 0410 236 674 - Jen Donnerly   jendonnelly772@gmail.com",
+          "notes": "Free trial converted to Subscription - Playon  Voucher received 24.02.26",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Ayla (10) friend of Lexi",
+          "caregiver": "Kim Roskosch 0405242089  kimscott@onthenet.com.au",
+          "notes": "Free trial converted to Subscription/ not coming anymore",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Lexi",
+          "caregiver": "Contact Mum\r\nKellie McLaughlin 0401 388 088 kellie.ssv@gmail.com (Dad Steven)",
+          "notes": "",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Tuesday Aerial",
+      "day": "Tuesday",
+      "title": "Tues 6:15-7:15pm TEEN AERIAL",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Eleia( louies sister )",
+          "caregiver": "anna & simon",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Lola Ebed",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Chloe Lewis",
+          "caregiver": "Need details",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Lily (sister of Ayla in previous class)",
+          "caregiver": "Kim Roskosch 0405242089  kimscott@onthenet.com.au",
+          "notes": "Subscribed after sister Ayla attended",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Amarith Gandhum (9)",
+          "caregiver": "Indi Gandhum\r\nindi@thegandhums.com\r\n0461 598 484",
+          "notes": "Is 9 but other classes are full and she has done Aerial for 1.5 years and has her own silks at home",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Michaela Whitehouse",
+          "caregiver": "michaela.w3@icloud.com  0466 260 858",
+          "notes": "Student from Robina College on Mondays - wont be in on the 03.03 but ask about subscription",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Wednesday AM HS Circus",
+      "day": "Wednesday",
+      "title": "Wednesday (unsectioned)",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Wed 9:30am HS ACRO $20 per class",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Joseph B",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Selina B",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Eleia  (JT)",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Louis  (JT)",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Dekota Woollard",
+          "caregiver": "Montanna Woollard   0484 532 337  montannawoollard@hotmail.com",
+          "notes": "",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Tilda Bingham  (6)",
+          "caregiver": "Amber - 0408 004 984 amber.trim@hotmail.com",
+          "notes": "",
+          "pay": "Play",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Andre Horne",
+          "caregiver": "rebecca - 0431 323 132  rebecca.jutrisa@gmail.com",
+          "notes": "GLITTERY SMILE \r\nFree trial - Play On - converted to Subscription x3 HS classes",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Phoenix Horne",
+          "caregiver": "rebecca - 0431 323 132  rebecca.jutrisa@gmail.com",
+          "notes": "GLITTERY SMILE \r\nFree trial - Play On - converted to Subscription x3 HS classes",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Evie Papas",
+          "caregiver": "Melissa Papas 0407 661 018  melissa_y@live.com",
+          "notes": "Melissa is Photographer  \r\nFree trial converted to Subscription x3 HS classes",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Annelise Ripepi sister",
+          "caregiver": "Courtney Ripepi - 0429 293 238 \r\ncourtneyripepi@outlook.com",
+          "notes": "Follow Up after Free Trial",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Zola and Juni",
+          "caregiver": "Casey - 0449 162 556 -",
+          "notes": "ONLY TERM 2",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Eleia",
+          "caregiver": "Tara - 0489 222 412 - thesonyxfamily@gmail.com",
+          "notes": "free trial 6th May",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Mimi",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Wed 10:30am HS CIRCUS $20 per class",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Joseph B",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Selina B",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Eleia  (JT)",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Louis  (JT)",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Dekota Woollard",
+          "caregiver": "Montanna Woollard   0484 532 337  montannawoollard@hotmail.com",
+          "notes": "Paid $50 cash on 11.03 will brng extra $10 next week",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Tilda Bingham  (6)",
+          "caregiver": "Amber - 0408 004 984 amber.trim@hotmail.com",
+          "notes": "",
+          "pay": "CC",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Andre Horne",
+          "caregiver": "rebecca - 0431 323 132  rebecca.jutrisa@gmail.com",
+          "notes": "GLITTERY SMILE \r\nFree trial - Play On - converted to Subscription x3 HS classes",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Phoenix Horne",
+          "caregiver": "rebecca - 0431 323 132  rebecca.jutrisa@gmail.com",
+          "notes": "GLITTERY SMILE \r\nFree trial - Play On - converted to Subscription x3 HS classes",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Evie Papas",
+          "caregiver": "Melissa Papas 0407 661 018  melissa_y@live.com",
+          "notes": "Melissa is Photographer  \r\nFree trial converted to Subscription x3 HS classes",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Annelise Ripepi",
+          "caregiver": "Courtney Ripepi - 0429 293 238 \r\ncourtneyripepi@outlook.com",
+          "notes": "Follow Up after Free Trial",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Wed 11:30am HS AERIAL $20 per class",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Joseph B",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Selina B",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Eleia  (JT)",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Louis  (JT)",
+          "caregiver": "Anna - 0413 110 870 anna@ilovemyexercise.com.au",
+          "notes": "Dad Simon",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Dekota Woollard",
+          "caregiver": "Montanna Woollard   0484 532 337  montannawoollard@hotmail.com",
+          "notes": "",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Tilda Bingham  (6)",
+          "caregiver": "Amber - 0408 004 984 amber.trim@hotmail.com",
+          "notes": "",
+          "pay": "CC",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Andre Horne",
+          "caregiver": "rebecca - 0431 323 132",
+          "notes": "GLITTERY SMILE \r\nFree trial - Play On - converted to Subscription x3 HS classes",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Phoenix Horne",
+          "caregiver": "rebecca - 0431 323 132",
+          "notes": "GLITTERY SMILE \r\nFree trial - Play On - converted to Subscription x3 HS classes",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Evie Papas",
+          "caregiver": "Melissa Papas 0407 661 018  melissa_y@live.com",
+          "notes": "Melissa is Photographer  \r\nFree trial converted to Subscription x3 HS classes",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Annelise Ripepi",
+          "caregiver": "Courtney Ripepi - 0429 293 238 \r\ncourtneyripepi@outlook.com",
+          "notes": "",
+          "pay": "Sub",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Wednesday PM Circus",
+      "day": "Wednesday",
+      "title": "Wednesday Private Lessons",
+      "isPrivate": true,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Specialise 1:30pm-2:30pm",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Wednesday PM Circus",
+      "day": "Wednesday",
+      "title": "Wednesday Private Lessons",
+      "isPrivate": true,
+      "coach": "",
+      "students": []
+    },
+    {
+      "sheet": "T1 Wednesday PM Circus",
+      "day": "Wednesday",
+      "title": "Wed 3:45 - 4:45pm CIRCUS FUSION",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Jackson Maybury (5)",
+          "caregiver": "Belinda - 0438 439 533",
+          "notes": "Free trial - Subscription",
+          "pay": "CC",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Gleb Petratchkov",
+          "caregiver": "Tanya - 0426 440 378\r\ntanya.stavila777@gmail.com",
+          "notes": "no subscription - unpaid fees from last year? Emaioed Rhett 25.02.26",
+          "pay": "?",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Millie Sanchez",
+          "caregiver": "Valentina - 0429 698 093",
+          "notes": "Make up class Tues 3rd March - Payments failed last three weeks subscription",
+          "pay": "sqaure",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Lily (7) sister India",
+          "caregiver": "Emma Mother 0418973622",
+          "notes": "Lily and India are sisters",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "India (5) sister Lily",
+          "caregiver": "Emma Mother 0418973622",
+          "notes": "processed voucher 04.02.26 Lily and India are sisters",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Tyrell",
+          "caregiver": "Sharni- 0455 373 519",
+          "notes": "Free trial - Play On voucher processed 04.02.26 - will subscribe next term  Decided on Wed class",
+          "pay": "Sub",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Iona",
+          "caregiver": "sian - 0431 220 895 sian.stephens@outlook.com",
+          "notes": "Free trial - Subscription",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Stirling",
+          "caregiver": "sian - 0431 220 895 sian.stephens@outlook.com",
+          "notes": "Free trial - Subscription - Not continur in term 2",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Elizabeth-Rose Holden (Izzy)",
+          "caregiver": "Carlos 0415 643 864\r\ncarlosifus@gmail.com",
+          "notes": "",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Alice Holden",
+          "caregiver": "Carlos 0415 643 864\r\ncarlosifus@gmail.com",
+          "notes": "",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Harlow Heath",
+          "caregiver": "Jacqui - 0418 395 611 - jac.finn@outlook.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Millie Sherlock (8)",
+          "caregiver": "Kelly (Mum) 0401 685 222",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "scralett",
+          "caregiver": "Richard - 0403085508",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Ruby",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Aurelia",
+          "caregiver": "Savanna Elliott - 0432 518 912 - savannahjr259@gmail.com",
+          "notes": "play on voucher for term 2 only",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Archer",
+          "caregiver": "Savanna Elliott - 0432 518 912 - savannahjr259@gmail.com",
+          "notes": "play on voucher for term 2 only",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "matilda",
+          "caregiver": "Chloe - 0401 452 666",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Marley",
+          "caregiver": "zoe- 0404 673 722 -  zoe.k.armstrong@gmail.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Wednesday PM Circus",
+      "day": "Wednesday",
+      "title": "Wed 4:45 - 5:45pm CIRCUS FUSION",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Arabella Holmes",
+          "caregiver": "Katie Homles 0434 991 756",
+          "notes": "Voucher proscess 04.02.26  - previously subscribed",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Eleia Levar (JT)",
+          "caregiver": "Ana - 0413 110 870",
+          "notes": "",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Quinn Humphris",
+          "caregiver": "Katherine - 0438304345 Dad Adam\r\nadam.humphris@yahoo.com",
+          "notes": "Payments in stripe under adam.humphris@yahoo.com but not redorded in Tectonic?",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Kendall Okeefey",
+          "caregiver": "belinda - 0490 096 339\r\nbelinda@bokis.com.au",
+          "notes": "Free trial - Subscription Awaiting Make up class info 25.02.26",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Alkira Aplin",
+          "caregiver": "Sasha 0412773069 saashaaplin81@hotmail.com.au  - Tuesday 5pm Snr Aerial and Wednesday 4:45pm Circus Fusion",
+          "notes": "Free Trial - Subscription",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Elizabeth (Izzy)  Holden",
+          "caregiver": "Carlosifus - 0415 643 864",
+          "notes": "Elizabeth (Izzy) Holden - Alice  Holden (Sisters)\r\nFree Trial - Subscription",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Alice  Holden",
+          "caregiver": "Carlosifus - 0415 643 864",
+          "notes": "Elizabeth (Izzy) Holden - Alice  Holden (Sisters)\r\nFree Trial - Subscription",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Winnie Lardner (10)  (connected to Elke)",
+          "caregiver": "Kate Lardner 0413343694 \r\nklardner1@gmail.com",
+          "notes": "Free Trial - Subscription",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Elkie Barnett (connected to Winnie)",
+          "caregiver": "rebecca barnett\r\nrebeccabarnett@live.com\r\n0422 501 511",
+          "notes": "Kate Lardner 0413343694 may bring Elkie as her and Winnie are friends",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "bella free trail",
+          "caregiver": "Pauline - 0438 941 518 - paul.kev2015@gmail.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Kera",
+          "caregiver": "Ashley - 0475 426 147 a.phillimore@hotmail.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Thursday AM HS Circus",
+      "day": "Thursday",
+      "title": "Thursday Private Lessons",
+      "isPrivate": true,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Lucas 10-11am",
+          "caregiver": "AUM Suport Coordinator Ann Langley 0491 618 784 ann@aumsc.com.au   accounts@aumsc.com.au",
+          "notes": "Social Worker Jaden 0435790718",
+          "pay": "NDIS",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Thursday PM Circus Fusion",
+      "day": "Thursday",
+      "title": "Thursday Private Lessons",
+      "isPrivate": true,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Lucus NDIS 10-11am",
+          "caregiver": "jayden social worker 0435 790 718",
+          "notes": "kenetic, tarren 0404 732 187, 1300 185 345",
+          "pay": "NDIS",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Moo Moo 3-3:45",
+          "caregiver": "tina - 0408395097",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Thursday PM Circus Fusion",
+      "day": "Thursday",
+      "title": "Thursday 3:45 - 4:45pm CIRCUS FUSION",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Zavier White",
+          "caregiver": "Kylie White - 0431 067 162",
+          "notes": "taken off sub and now efpos payment $30",
+          "pay": "casual , $30",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Eden",
+          "caregiver": "Mum 0405 800 074 zoe.pettiona@gmail.com",
+          "notes": "paid in full term 2",
+          "pay": "payed tem 2 in fullPLAY ON",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Thursday PM Circus Fusion",
+      "day": "Thursday",
+      "title": "Thursday 4:45 - 5:45pm CIRCUS FUSION",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Robert Graham",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Thomas Brass",
+          "caregiver": "Rachel Brass 0406 759 537  rav_van@hotmail.com   Oliver father - 0406748264",
+          "notes": "Josephine Brass, Thomas and Abigail PLAY ON VOUCHER TERM 2 ONLY",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Saylah Pyers",
+          "caregiver": "Carly - 0419 220 219",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Louis Levar (JT)",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Charlotte Fuller",
+          "caregiver": "Jennifer Fuller 0403 216 756",
+          "notes": "",
+          "pay": "DD",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Aisha",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Quilla Newall",
+          "caregiver": "Bianca - 0434 521 026 - biancanewall@gmail.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Nina",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Thursday PM Circus Fusion",
+      "day": "Thursday",
+      "title": "Thursday 5:45-6:45- Performance Troup",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Charlie McLaughlin (JT)",
+          "caregiver": "Kelly - 0401 388 088",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Louis Levar Levar (JT)",
+          "caregiver": "Anna -0413 110 870",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Eleia Levar Levar (JT)",
+          "caregiver": "Anna - 0413 110 870",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Friday Circus & Aerial",
+      "day": "Friday",
+      "title": "Friday (unsectioned)",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Rize group",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Friday Circus & Aerial",
+      "day": "Friday",
+      "title": "Robina collage 5 weeks 11:30-12:30ma",
+      "isPrivate": false,
+      "coach": "",
+      "students": []
+    },
+    {
+      "sheet": "T1 Friday Circus & Aerial",
+      "day": "Friday",
+      "title": "Friday 3:45 - 4:45pm JUNIOR AERIAL",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Ruby May",
+          "caregiver": "Nicole - 0450 351 567 \r\nnicolebe1988@gmail.com",
+          "notes": "check payments",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Josephine Brass",
+          "caregiver": "Rachel Brass 0406 759 537  rav_van@hotmail.com   Oliver father - 0406748264",
+          "notes": "Josephine Brass, Thomas and Abigail FOR TERM 2 ONLY",
+          "pay": "SUB",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Nova Scott (6) (Axels sister)",
+          "caregiver": "Nicole Scott 0420636027",
+          "notes": "Loved free trial - subscribtion paused - Play On Voucher",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Axel (nova's brother)",
+          "caregiver": "Nicole Scott 0420636027",
+          "notes": "Loved free trial - subscribed",
+          "pay": "SUB",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Millie Sherlock (8)",
+          "caregiver": "Kelly (Mum) 0401 685 222",
+          "notes": "away on the 6th March , hospital for demestic volienace , make sure to be easy on the kid when she comes back",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Theodore  (Orlando brother)",
+          "caregiver": "Lenna-Maree Moxley  0400 792 577   lennamareemoxey@hotmail.com",
+          "notes": "Loved free trial - Play On Voucher",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Orlando (Theodore brother)",
+          "caregiver": "Lenna-Maree Moxley  0400 792 577   lennamareemoxey@hotmail.com",
+          "notes": "Loved free trial - subscribed",
+          "pay": "SUB",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Yuki Carey",
+          "caregiver": "Yoko Carey 061433929811\r\nusa_dyc@yahoo.com",
+          "notes": "FT = Monday Circus Gymnastic 4:45pm-5:45pm (9 to 14yrs) Friday Aerial Jr 3:45pm-4:45pm (5 to 8yrs)",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Poppy Whittaker",
+          "caregiver": "",
+          "notes": "Racheal 0403 701 478",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Everly Murrell",
+          "caregiver": "Lili Murrell 0426 954 543",
+          "notes": "term 2 play on voucher",
+          "pay": "play on",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Zahli Jamieson",
+          "caregiver": "Nikki - 0423 614 613",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Mia Hall",
+          "caregiver": "Tayla - 0428 213 613 - thehalls16@hotmail.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Ava Radley",
+          "caregiver": "Amy Radley  - 0478 752 288 - amy.grayburn@outlook.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Juliette",
+          "caregiver": "alanna 0434 550 039",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T1 Friday Circus & Aerial",
+      "day": "Friday",
+      "title": "Friday 4:45 - 5:45pm SENIOR AERIAL",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Siara Czvalinga",
+          "caregiver": "Edit - 0431 240 394",
+          "notes": "Play On voucher processed 04.02.25 - previously subscribed",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Penelope Levonis",
+          "caregiver": "stephanie - 0435281371 s.s.levonis@gmail.com",
+          "notes": "Free Trial - Play On Voucher 20.02.25 - Subscription to come",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Isabella",
+          "caregiver": "Natasha Muller 0413 861 514  natasha.bates.3@gmail.com",
+          "notes": "Free Trial  -  Subscriber - Play On",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Kalie blackmore",
+          "caregiver": "daneia blackmore 0435 944 015\r\ndiddilitte@hotmail.com",
+          "notes": "Free Trial - Play On",
+          "pay": "PLAY ON",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Alya",
+          "caregiver": "",
+          "notes": "",
+          "pay": "cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Quil",
+          "caregiver": "Ashley - 0475 426 147 - a.phillimore@hotmail.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Blake Wilkins",
+          "caregiver": "Stephanie - 0432 803 096\r\nsteph.wilkins@outlook.com.au",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T2 Saturday AM Fusion",
+      "day": "Saturday",
+      "title": "Saturday Private Lessons",
+      "isPrivate": true,
+      "coach": "",
+      "students": [
+        {
+          "raw": "Moo Moo 8:15am",
+          "caregiver": "Tina 0408 395 097",
+          "notes": "rhett has confirmed 27/01",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    },
+    {
+      "sheet": "T2 Saturday AM Fusion",
+      "day": "Saturday",
+      "title": "Tom 10:00-11:00",
+      "isPrivate": false,
+      "coach": "",
+      "students": [
+        {
+          "raw": "CIRCUS FUSION 9am - 10am",
+          "caregiver": "",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Isabelle Edden (7)",
+          "caregiver": "Katrina 0467 090 717",
+          "notes": "",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Sophia Rabelo Ferreira",
+          "caregiver": "Jaqueline - 0432 974 532",
+          "notes": "we need updated email , phone number they come every second week , cant contact them",
+          "pay": "Cash",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Elyse Carmichael",
+          "caregiver": "Marie 0459 309 348",
+          "notes": "Rreddemed Playon voucher 7th Feb",
+          "pay": "Play On",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Ella Bowyer",
+          "caregiver": "Anna 0450 219 963",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Charlie-Sue Havron",
+          "caregiver": "Amanda 0419 397 771",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Everly Lawson",
+          "caregiver": "Monica 0434 819 221",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Layla Ferguson (5)",
+          "caregiver": "Fortnightly Dad Nick (Shared custody) - 0432 316 558",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Maple & Rosie",
+          "caregiver": "Samantha - 0458 110 223",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Amelia Khan",
+          "caregiver": "riana - +61421699924",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Maleah",
+          "caregiver": "elsa - 0424 457 269",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "William Murphy",
+          "caregiver": "Vicki 0402 055 735",
+          "notes": "Free Trial to play on Saturdrys",
+          "pay": "Play On",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Alexander Crichton",
+          "caregiver": "Aileish 0405 273 197 \r\naileish.okeefe@outlook.com",
+          "notes": "",
+          "pay": "SUB",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Abrahan (7)",
+          "caregiver": "Reem Az (mother)",
+          "notes": "confirmed for FT on the 14th Feb",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Luna moore",
+          "caregiver": "Katie - 0415744918",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Avid (8)",
+          "caregiver": "Rosa Peterson 0419 969 698",
+          "notes": "Free Trial - Play On voucher",
+          "pay": "Sub",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Isabella",
+          "caregiver": "Natasha Muller 0413 861 514",
+          "notes": "No experience but keen to try",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "laya",
+          "caregiver": "Kelsi - 0401 450 696",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "phenix",
+          "caregiver": "Kelsi - 0401 450 696",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        },
+        {
+          "raw": "Leila Edwards",
+          "caregiver": "Savannah Edwards - 0424 881 406 - savannahiedwards@outlook.com",
+          "notes": "",
+          "pay": "",
+          "commitment": "",
+          "started": ""
+        }
+      ]
+    }
+  ]
+}

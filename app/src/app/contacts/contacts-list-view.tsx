@@ -152,7 +152,7 @@ export function ContactsListView({
           <p className="text-xs text-zinc-500 mt-1">Try clearing a filter or adjusting your search.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-zinc-200 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 border-b border-zinc-200">
               <tr className="text-left text-[10px] font-bold uppercase tracking-wider text-zinc-500">
@@ -162,7 +162,7 @@ export function ContactsListView({
                 <th className="px-4 py-3">Tags</th>
                 <th className="px-4 py-3 hidden lg:table-cell">Created</th>
                 <th className="px-4 py-3 hidden xl:table-cell">Last activity</th>
-                <th className="px-4 py-3 text-right">Status</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -200,7 +200,7 @@ export function ContactsListView({
                     <td className="px-4 py-3 hidden xl:table-cell text-zinc-500 text-xs tabular-nums whitespace-nowrap">
                       {relativeTime(f.lastActivity)}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
                       <span className={`inline-flex items-center text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${payment.cls}`}>
                         {payment.label}
                       </span>

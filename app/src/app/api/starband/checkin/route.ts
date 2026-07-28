@@ -6,6 +6,7 @@
 
 import { NextResponse } from 'next/server'
 import { createServerSupabaseAdmin } from '@/lib/supabase-server'
+import { autoMarkRoll, notifyParentOnCheck, brisbaneNow } from '@/lib/starband-notify'
 
 export const runtime = 'nodejs'
 
@@ -29,8 +30,8 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     const studentFilter = tag
-      ? sb.from('students').select('id, tenant_id, first_name, last_name, stars_total, xp_total, attendance_streak').eq('id', tag.student_id)
-      : sb.from('students').select('id, tenant_id, first_name, last_name, stars_total, xp_total, attendance_streak').eq('nfc_uid', nfc_uid)
+      ? sb.from('students').select('id, tenant_id, family_id, first_name, last_name, stars_total, xp_total, attendance_streak').eq('id', tag.student_id)
+      : sb.from('students').select('id, tenant_id, family_id, first_name, last_name, stars_total, xp_total, attendance_streak').eq('nfc_uid', nfc_uid)
 
     const { data: student, error } = await studentFilter.maybeSingle()
     if (error) throw error
@@ -68,12 +69,25 @@ export async function POST(req: Request) {
     const newStreak = (student.attendance_streak || 0) + 1
     await sb.from('students').update({ stars_total: newStars, attendance_streak: newStreak }).eq('id', student.id)
 
+    // Safety layer: auto-mark the Roll Call, then text the parent (gated).
+    const ctx = brisbaneNow()
+    const roll = await autoMarkRoll(sb, student, ctx)
+    const notify = await notifyParentOnCheck(sb, {
+      student,
+      action: 'in',
+      autoMarkedClass: roll.className,
+      pretty: ctx.pretty,
+    })
+
     return NextResponse.json({
       ok: true,
       action: 'checked_in',
       student: { name: `${student.first_name} ${student.last_name}`, stars: newStars, xp: student.xp_total, streak: newStreak },
       session_id: session.id,
       stars_awarded: STARS_PER_CHECKIN,
+      roll_marked: roll.marked,
+      roll_class: roll.className,
+      parent_notified: notify.sent,
       message: `Welcome ${student.first_name}!`,
     })
   } catch (err) {

@@ -23,7 +23,7 @@ export async function PATCH(req: Request) {
   const b = await req.json().catch(() => ({}))
   if (!b.id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
   const patch: Record<string, unknown> = {}
-  for (const f of ['pin_code', 'photo_url', 'allergies', 'medical_notes', 'authorised_pickup'] as const) {
+  for (const f of ['pin_code', 'photo_url', 'allergies', 'medical_notes', 'authorised_pickup', 'support_needs', 'support_strategy'] as const) {
     if (f in b) patch[f] = t(b[f])
   }
   if (Object.keys(patch).length === 0) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
