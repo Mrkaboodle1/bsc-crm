@@ -16,6 +16,8 @@ const PROTECTED_PREFIXES = [
   '/students',
   '/classes',
   '/stars',
+  '/star-rewards',
+  '/rewards',
   '/leads',
   '/bookings',
   '/marketing',
@@ -23,6 +25,27 @@ const PROTECTED_PREFIXES = [
   '/reporting',
   '/coaches',
   '/settings',
+  // Added 30 Jul 2026 — these were reachable with a dead session, so pages
+  // rendered stale and API calls failed with a confusing "Not signed in".
+  '/finance',
+  '/contacts',
+  '/expansion',
+  '/ceo',
+  '/workshops',
+  '/kids-night-out',
+  '/incidents',
+  '/credentials',
+  '/compliance',
+  '/coaching',
+  '/coach-portal',
+  '/automations',
+  '/sites',
+  '/memberships',
+  '/pos',
+  '/media',
+  '/account',
+  '/roster',
+  '/starband',
 ]
 
 export async function proxy(request: NextRequest) {

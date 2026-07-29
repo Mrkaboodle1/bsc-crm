@@ -107,6 +107,13 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       for (const file of files) {
         const fd = new FormData(); fd.append('file', file)
         const r = await fetch('/api/vouchers/parse', { method: 'POST', body: fd })
+        if (r.status === 401) {
+          // Session expired while the page sat open — take them to log in
+          // and bring them straight back here afterwards.
+          alert('Your login timed out — the page will take you to sign in again. Your PDFs are safe, just upload them again after.')
+          window.location.href = '/login?next=/finance/vouchers'
+          return
+        }
         const j = await r.json()
         if (!r.ok) { errors.push(`${file.name}: ${j.error || 'could not read'}`); continue }
         parsed.push(toParsed(j))
