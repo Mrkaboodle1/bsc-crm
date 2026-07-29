@@ -40,6 +40,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
   const [uploading, setUploading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [parsedNote, setParsedNote] = useState('')
+  const [queue, setQueue] = useState<{ form: Partial<{ family_name: string; student_name: string; voucher_ref: string; redeemed_on: string; use_type: Voucher['use_type']; photo_url: string; amount: string }>; note: string }[]>([])
 
   if (setupNeeded) return <SetupCard sql={setupSql} />
 
@@ -61,37 +62,60 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
   }
   function resetForm() {
     setForm({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term', photo_url: '', amount: '200' })
-    setEditingId(null); setAdding(false); setParsedNote('')
+    setEditingId(null); setAdding(false); setParsedNote(''); setQueue([])
   }
   function startEdit(v: Voucher) {
     setForm({ family_name: v.family_name || '', student_name: v.student_name || '', voucher_ref: v.voucher_ref || '', redeemed_on: v.redeemed_on || '', use_type: v.use_type ?? 'term', photo_url: v.photo_url || '', amount: String(v.amount ?? 200) })
     setEditingId(v.id); setAdding(true)
   }
-  async function readPdf(file: File) {
+  type Parsed = { form: Partial<typeof form>; note: string }
+
+  function toParsed(j: { fields?: Record<string, unknown>; photo_url?: string; family_match?: { family_name: string; primary_parent: string }; warning?: string }): Parsed {
+    const f = (j.fields || {}) as Record<string, string | number | null>
+    const bits = [
+      f.voucher_ref ? `voucher ${f.voucher_ref}` : null,
+      f.child_name ? `child ${f.child_name}` : null,
+      f.child_dob ? `DOB ${f.child_dob}` : null,
+      f.parent_name ? `parent ${f.parent_name}` : null,
+      j.family_match ? `✓ matched to existing family "${j.family_match.family_name}"` : '— no existing family matched, check the name',
+    ].filter(Boolean).join(' · ')
+    return {
+      form: {
+        voucher_ref: (f.voucher_ref as string) || '',
+        student_name: (f.child_name as string) || '',
+        family_name: j.family_match?.primary_parent || (f.parent_name as string) || '',
+        redeemed_on: new Date().toISOString().slice(0, 10),
+        amount: f.amount ? String(f.amount) : '200',
+        photo_url: j.photo_url || '',
+      },
+      note: (j.warning ? j.warning + ' · ' : '') + 'Read from PDF: ' + bits + '. Check it, then Save.',
+    }
+  }
+
+  function loadParsed(p: Parsed, remaining: number) {
+    setForm((prev) => ({ ...prev, use_type: prev.use_type, ...p.form }) as typeof form)
+    setParsedNote(p.note + (remaining > 0 ? ` (${remaining} more voucher${remaining > 1 ? 's' : ''} queued after this one)` : ''))
+  }
+
+  // One PDF per child — a mum with 2-3 kids selects all the PDFs at once and
+  // the form walks through them: save one, the next loads pre-filled.
+  async function readPdfs(files: File[]) {
     setUploading(true)
     try {
-      const fd = new FormData(); fd.append('file', file)
-      const r = await fetch('/api/vouchers/parse', { method: 'POST', body: fd })
-      const j = await r.json()
-      if (!r.ok) { alert(j.error || 'Could not read the PDF'); return }
-      const f = j.fields || {}
-      setForm((prev) => ({
-        ...prev,
-        voucher_ref: f.voucher_ref || prev.voucher_ref,
-        student_name: f.child_name || prev.student_name,
-        family_name: j.family_match?.primary_parent || f.parent_name || prev.family_name,
-        redeemed_on: new Date().toISOString().slice(0, 10),
-        amount: f.amount ? String(f.amount) : prev.amount,
-        photo_url: j.photo_url || prev.photo_url,
-      }))
-      const bits = [
-        f.voucher_ref ? `voucher ${f.voucher_ref}` : null,
-        f.child_name ? `child ${f.child_name}` : null,
-        f.child_dob ? `DOB ${f.child_dob}` : null,
-        f.parent_name ? `parent ${f.parent_name}` : null,
-        j.family_match ? `✓ matched to existing family "${j.family_match.family_name}"` : '— no existing family matched, check the name',
-      ].filter(Boolean).join(' · ')
-      setParsedNote((j.warning ? j.warning + ' · ' : '') + 'Read from PDF: ' + bits + '. Check it, then Save.')
+      const parsed: Parsed[] = []
+      const errors: string[] = []
+      for (const file of files) {
+        const fd = new FormData(); fd.append('file', file)
+        const r = await fetch('/api/vouchers/parse', { method: 'POST', body: fd })
+        const j = await r.json()
+        if (!r.ok) { errors.push(`${file.name}: ${j.error || 'could not read'}`); continue }
+        parsed.push(toParsed(j))
+      }
+      if (errors.length) alert('Some files could not be read:\n' + errors.join('\n'))
+      if (!parsed.length) return
+      const [first, ...rest] = parsed
+      setQueue(rest)
+      loadParsed(first, rest.length)
     } finally { setUploading(false) }
   }
 
@@ -116,7 +140,17 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       return
     }
     const r = await fetch('/api/vouchers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-    const j = await r.json(); if (j.voucher) { setItems((xs) => [...xs, j.voucher]); resetForm(); router.refresh() }
+    const j = await r.json()
+    if (j.voucher) {
+      setItems((xs) => [...xs, j.voucher])
+      if (queue.length) {
+        // next kid's voucher from the same upload — keep the form open, pre-filled
+        const [next, ...rest] = queue
+        setQueue(rest)
+        loadParsed(next, rest.length)
+      } else { resetForm() }
+      router.refresh()
+    }
     else alert(j.error || 'Could not save voucher')
   }
   async function setStatus(id: string, status: Voucher['status']) {
@@ -159,10 +193,10 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
             <label className="flex items-center gap-3 border-2 border-dashed border-[#D72027]/40 bg-red-50/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-red-50">
               <FileText size={20} className="text-[#D72027] shrink-0" />
               <span className="text-sm">
-                <span className="font-bold text-zinc-900">{uploading ? 'Reading the voucher…' : 'Upload the voucher PDF — I’ll read it for you'}</span>
-                <span className="block text-xs text-zinc-500">Voucher number, child, parent and dates fill in automatically. You just check and save.</span>
+                <span className="font-bold text-zinc-900">{uploading ? 'Reading the voucher(s)…' : 'Upload voucher PDFs — I’ll read them for you'}</span>
+                <span className="block text-xs text-zinc-500">Two or three kids? Select ALL their voucher PDFs at once — save one, the next loads itself. You just check and save each.</span>
               </span>
-              <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) readPdf(f); e.target.value = '' }} />
+              <input type="file" accept="application/pdf,.pdf" multiple className="hidden" onChange={(e) => { const fs = Array.from(e.target.files || []); if (fs.length) readPdfs(fs); e.target.value = '' }} />
             </label>
           )}
           {parsedNote && <p className="text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg px-3 py-2">{parsedNote}</p>}
