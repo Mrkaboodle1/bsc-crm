@@ -253,41 +253,57 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
         </div>
       )}
 
-      {/* list */}
+      {/* list — grouped one family at a time: mum's name once, then a line
+          per child with THEIR voucher code, so multi-kid families read the
+          way Rhett thinks about them. */}
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
         <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr_auto] gap-2 px-4 py-2.5 bg-zinc-50 text-[11px] font-bold uppercase tracking-wide text-zinc-400">
-          <span>Family / Child</span><span>Voucher</span><span>Term ends</span><span>Status</span><span></span>
+          <span>Family → their kids</span><span>Voucher</span><span>Term ends</span><span>Status</span><span></span>
         </div>
         {items.length === 0 && <div className="px-4 py-10 text-center text-sm text-zinc-400">No vouchers logged yet. Tap “Log a voucher” after you redeem one on the Play On portal.</div>}
-        {items.map((v) => {
-          const d = daysTo(v.term_end); const soon = v.status === 'active' && d !== null && d <= 14
-          return (
-            <div key={v.id} className={`grid grid-cols-[1.4fr_1fr_1fr_1fr_auto] gap-2 px-4 py-3 border-t border-zinc-100 items-center text-sm ${soon ? 'bg-amber-50/50' : ''}`}>
-              <div className="flex items-center gap-2">
-                {v.photo_url && (isPdf(v.photo_url)
-                  ? <a href={v.photo_url} target="_blank" rel="noreferrer" title="View voucher PDF" className="w-9 h-9 rounded border border-zinc-200 shrink-0 flex items-center justify-center bg-red-50">📄</a>
-                  : <a href={v.photo_url} target="_blank" rel="noreferrer" title="View voucher photo"><img src={v.photo_url} alt="" className="w-9 h-9 rounded object-cover border border-zinc-200 shrink-0" /></a>)}
-                <div className="min-w-0">
-                  <div className="font-semibold text-zinc-900 truncate">{v.family_name || '—'}</div>
-                  <div className="text-xs text-zinc-500 truncate">
-                    {v.student_name}
-                    {v.voucher_ref && <span className="ml-1.5 font-mono text-[10px] font-bold bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200 px-1.5 py-0.5 rounded" title="This child's voucher">{v.voucher_ref}</span>}
-                    {v.use_type ? ` · ${USE_LABEL[v.use_type]}` : ''}
+        {(() => {
+          const groups: { key: string; label: string; rows: Voucher[] }[] = []
+          for (const v of items) {
+            const key = (v.family_name || '—').trim().toLowerCase()
+            let grp = groups.find((x) => x.key === key)
+            if (!grp) { grp = { key, label: v.family_name || '—', rows: [] }; groups.push(grp) }
+            grp.rows.push(v)
+          }
+          return groups.map((grp) => (
+            <div key={grp.key} className="border-t border-zinc-200">
+              <div className="px-4 pt-2.5 pb-1 flex items-center gap-2">
+                <span className="font-bold text-zinc-900">{grp.label}</span>
+                {grp.rows.length > 1 && <span className="text-[10px] font-bold text-zinc-400 bg-zinc-100 rounded-full px-2 py-0.5">{grp.rows.length} kids</span>}
+              </div>
+              {grp.rows.map((v) => {
+                const d = daysTo(v.term_end); const soon = v.status === 'active' && d !== null && d <= 14
+                return (
+                  <div key={v.id} className={`grid grid-cols-[1.4fr_1fr_1fr_1fr_auto] gap-2 pl-8 pr-4 py-2 items-center text-sm ${soon ? 'bg-amber-50/50' : ''}`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {v.photo_url && (isPdf(v.photo_url)
+                        ? <a href={v.photo_url} target="_blank" rel="noreferrer" title="View voucher PDF" className="w-8 h-8 rounded border border-zinc-200 shrink-0 flex items-center justify-center bg-red-50 text-sm">📄</a>
+                        : <a href={v.photo_url} target="_blank" rel="noreferrer" title="View voucher photo"><img src={v.photo_url} alt="" className="w-8 h-8 rounded object-cover border border-zinc-200 shrink-0" /></a>)}
+                      <div className="min-w-0">
+                        <span className="font-semibold text-zinc-800">{v.student_name || '—'}</span>
+                        {v.voucher_ref && <span className="ml-1.5 font-mono text-[10px] font-bold bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200 px-1.5 py-0.5 rounded" title="This child's voucher code">{v.voucher_ref}</span>}
+                        {v.use_type && <span className="block text-[11px] text-zinc-400">{USE_LABEL[v.use_type]}</span>}
+                      </div>
+                    </div>
+                    <div className="text-zinc-600">{v.voucher_ref || '—'}<div className="text-[11px] text-zinc-400">${Number(v.amount).toFixed(0)}</div></div>
+                    <div className="text-zinc-600">{fmt(v.term_end)}{v.status === 'active' && d !== null && <div className={`text-[11px] ${soon ? 'text-amber-700 font-semibold' : 'text-zinc-400'}`}>{d < 0 ? 'overdue' : `${d} days left`}</div>}</div>
+                    <div><span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${STATUS_CHIP[v.status]}`}>{v.status}</span></div>
+                    <div className="flex items-center gap-1 justify-end">
+                      {v.status === 'active' && <button onClick={() => setStatus(v.id, 'converted')} className="text-[11px] font-semibold text-blue-700 hover:underline px-1.5" title="Mark as moved onto a paid membership">Converted ✓</button>}
+                      {v.status === 'active' && <button onClick={() => setStatus(v.id, 'expired')} className="text-[11px] text-zinc-400 hover:text-zinc-700 px-1" title="Expired without converting">Expired</button>}
+                      <button onClick={() => startEdit(v)} className="p-1 text-zinc-300 hover:text-blue-600" title="Edit this voucher"><Pencil size={13} /></button>
+                      <button onClick={() => remove(v.id)} className="p-1 text-zinc-300 hover:text-red-600"><Trash2 size={13} /></button>
+                    </div>
                   </div>
-                </div>
-              </div>
-              <div className="text-zinc-600">{v.voucher_ref || '—'}<div className="text-[11px] text-zinc-400">${Number(v.amount).toFixed(0)}</div></div>
-              <div className="text-zinc-600">{fmt(v.term_end)}{v.status === 'active' && d !== null && <div className={`text-[11px] ${soon ? 'text-amber-700 font-semibold' : 'text-zinc-400'}`}>{d < 0 ? 'overdue' : `${d} days left`}</div>}</div>
-              <div><span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${STATUS_CHIP[v.status]}`}>{v.status}</span></div>
-              <div className="flex items-center gap-1 justify-end">
-                {v.status === 'active' && <button onClick={() => setStatus(v.id, 'converted')} className="text-[11px] font-semibold text-blue-700 hover:underline px-1.5" title="Mark as moved onto a paid membership">Converted ✓</button>}
-                {v.status === 'active' && <button onClick={() => setStatus(v.id, 'expired')} className="text-[11px] text-zinc-400 hover:text-zinc-700 px-1" title="Expired without converting">Expired</button>}
-                <button onClick={() => startEdit(v)} className="p-1 text-zinc-300 hover:text-blue-600" title="Edit this voucher"><Pencil size={13} /></button>
-                <button onClick={() => remove(v.id)} className="p-1 text-zinc-300 hover:text-red-600"><Trash2 size={13} /></button>
-              </div>
+                )
+              })}
             </div>
-          )
-        })}
+          ))
+        })()}
       </div>
     </div>
   )
