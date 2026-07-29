@@ -40,7 +40,12 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
   const [uploading, setUploading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [parsedNote, setParsedNote] = useState('')
-  const [queue, setQueue] = useState<{ form: Partial<{ family_name: string; student_name: string; voucher_ref: string; redeemed_on: string; use_type: Voucher['use_type']; photo_url: string; amount: string }>; note: string }[]>([])
+  // Multi-kid mode: upload 2-3 voucher PDFs at once and the form shows the
+  // whole family on one screen — mum at the top, one row per child with their
+  // own voucher code, ONE save button.
+  type MultiKid = { student_name: string; voucher_ref: string; amount: string; photo_url: string }
+  const [multi, setMulti] = useState<{ family_name: string; redeemed_on: string; use_type: Voucher['use_type']; kids: MultiKid[] } | null>(null)
+  const [savingAll, setSavingAll] = useState(false)
 
   if (setupNeeded) return <SetupCard sql={setupSql} />
 
@@ -62,7 +67,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
   }
   function resetForm() {
     setForm({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term', photo_url: '', amount: '200' })
-    setEditingId(null); setAdding(false); setParsedNote(''); setQueue([])
+    setEditingId(null); setAdding(false); setParsedNote(''); setMulti(null)
   }
   function startEdit(v: Voucher) {
     setForm({ family_name: v.family_name || '', student_name: v.student_name || '', voucher_ref: v.voucher_ref || '', redeemed_on: v.redeemed_on || '', use_type: v.use_type ?? 'term', photo_url: v.photo_url || '', amount: String(v.amount ?? 200) })
@@ -122,10 +127,53 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       }
       if (errors.length) alert('Some files could not be read:\n' + errors.join('\n'))
       if (!parsed.length) return
-      const [first, ...rest] = parsed
-      setQueue(rest)
-      loadParsed(first, rest.length)
+      if (parsed.length === 1) { loadParsed(parsed[0], 0); return }
+      // 2+ vouchers = one family screen. Mum's name comes from whichever PDF
+      // named a parent; each kid keeps their own code and PDF.
+      const famName = parsed.map((p) => p.form.family_name).find(Boolean) || ''
+      setMulti({
+        family_name: famName,
+        redeemed_on: new Date().toISOString().slice(0, 10),
+        use_type: 'term',
+        kids: parsed.map((p) => ({
+          student_name: p.form.student_name || '',
+          voucher_ref: p.form.voucher_ref || '',
+          amount: p.form.amount || '200',
+          photo_url: p.form.photo_url || '',
+        })),
+      })
+      setParsedNote(`Read ${parsed.length} vouchers for the same family — check the names and codes below, then save them all in one go.`)
     } finally { setUploading(false) }
+  }
+
+  async function saveAll() {
+    if (!multi) return
+    if (!multi.family_name.trim()) { alert('Add the family name (the mum).'); return }
+    const bad = multi.kids.find((k) => !k.student_name.trim())
+    if (bad) { alert('Every child needs a name.'); return }
+    setSavingAll(true)
+    try {
+      const t = termFor(multi.redeemed_on)
+      const weeksLeft = t ? Math.max(1, Math.round((new Date(t.end).getTime() - new Date(multi.redeemed_on).getTime()) / 604800000)) : 8
+      const saved: Voucher[] = []
+      for (const kid of multi.kids) {
+        const amount = Number(kid.amount) || 200
+        const body = {
+          family_name: multi.family_name.trim(), student_name: kid.student_name.trim(),
+          voucher_ref: kid.voucher_ref.trim(), amount,
+          weekly_value: Math.round(amount / weeksLeft), weeks: weeksLeft,
+          redeemed_on: multi.redeemed_on, term_start: multi.redeemed_on, term_end: t?.end ?? null,
+          use_type: multi.use_type, photo_url: kid.photo_url || null, status: 'active',
+        }
+        const r = await fetch('/api/vouchers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        const j = await r.json()
+        if (j.voucher) saved.push(j.voucher)
+        else { alert(`${kid.student_name}: ${j.error || 'could not save'} — the ones before were saved.`); break }
+      }
+      if (saved.length) { setItems((xs) => [...xs, ...saved]); router.refresh() }
+      if (saved.length === multi.kids.length) resetForm()
+      else if (saved.length) setMulti({ ...multi, kids: multi.kids.slice(saved.length) })
+    } finally { setSavingAll(false) }
   }
 
   async function add() {
@@ -150,16 +198,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
     }
     const r = await fetch('/api/vouchers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     const j = await r.json()
-    if (j.voucher) {
-      setItems((xs) => [...xs, j.voucher])
-      if (queue.length) {
-        // next kid's voucher from the same upload — keep the form open, pre-filled
-        const [next, ...rest] = queue
-        setQueue(rest)
-        loadParsed(next, rest.length)
-      } else { resetForm() }
-      router.refresh()
-    }
+    if (j.voucher) { setItems((xs) => [...xs, j.voucher]); resetForm(); router.refresh() }
     else alert(j.error || 'Could not save voucher')
   }
   async function setStatus(id: string, status: Voucher['status']) {
@@ -209,6 +248,34 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
             </label>
           )}
           {parsedNote && <p className="text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg px-3 py-2">{parsedNote}</p>}
+
+          {multi && (
+            <div className="space-y-3">
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Field label="Family name (the mum)" value={multi.family_name} onChange={(v) => setMulti({ ...multi, family_name: v })} placeholder="e.g. Lenna-Maree Moxey" />
+                <div><label className="text-xs font-bold uppercase tracking-wide text-zinc-400 mb-1 block">Date redeemed</label><input type="date" className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" value={multi.redeemed_on} onChange={(e) => setMulti({ ...multi, redeemed_on: e.target.value })} /></div>
+              </div>
+              {multi.kids.map((k, i) => (
+                <div key={i} className="border border-zinc-200 rounded-xl p-3 grid sm:grid-cols-[1fr_1fr_auto] gap-3 items-end bg-zinc-50/60">
+                  <Field label={`Child ${i + 1}`} value={k.student_name} onChange={(v) => { const kids = [...multi.kids]; kids[i] = { ...k, student_name: v }; setMulti({ ...multi, kids }) }} placeholder="child's name" />
+                  <Field label="Their voucher code" value={k.voucher_ref} onChange={(v) => { const kids = [...multi.kids]; kids[i] = { ...k, voucher_ref: v }; setMulti({ ...multi, kids }) }} placeholder="e.g. UR8PLQKY" />
+                  <div className="flex items-center gap-1.5 pb-1.5">
+                    {k.photo_url && <a href={k.photo_url} target="_blank" rel="noreferrer" title="This child's voucher PDF" className="w-9 h-9 rounded-lg border border-zinc-200 flex items-center justify-center bg-red-50">📄</a>}
+                    {multi.kids.length > 1 && <button onClick={() => setMulti({ ...multi, kids: multi.kids.filter((_, x) => x !== i) })} title="Remove this child" className="p-1.5 text-zinc-300 hover:text-red-600"><Trash2 size={14} /></button>}
+                  </div>
+                </div>
+              ))}
+              {(() => { const t = termFor(multi.redeemed_on); return (
+                <p className="text-xs text-zinc-500">→ All {multi.kids.length} vouchers valid for <strong>{t?.label ?? 'this term'} only</strong>, ending <strong>{t ? fmt(t.end) : '—'}</strong>. Each child gets their own line in the tracker and their own next-term reminder.</p>
+              ) })()}
+              <div className="flex gap-2">
+                <button onClick={saveAll} disabled={savingAll} className="bg-[#D72027] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#A0151B] disabled:opacity-50">{savingAll ? 'Saving…' : `Save all ${multi.kids.length} vouchers`}</button>
+                <button onClick={resetForm} className="text-sm text-zinc-500 px-3 py-2">Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {!multi && (<>
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Family name" value={form.family_name} onChange={(v) => setForm({ ...form, family_name: v })} placeholder="e.g. Brennan" />
             <Field label="Child name" value={form.student_name} onChange={(v) => setForm({ ...form, student_name: v })} placeholder="e.g. Aidyn" />
@@ -250,6 +317,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
             <button onClick={add} className="bg-[#D72027] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#A0151B]">{editingId ? 'Save changes' : 'Save voucher'}</button>
             <button onClick={resetForm} className="text-sm text-zinc-500 px-3 py-2">Cancel</button>
           </div>
+          </>)}
         </div>
       )}
 
