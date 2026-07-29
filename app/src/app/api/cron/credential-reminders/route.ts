@@ -60,5 +60,31 @@ export async function GET(req: Request) {
     } catch { /* skip */ }
   }
 
-  return NextResponse.json({ ok: true, checked: docs?.length ?? 0, sent })
+  // ---- Play On voucher resubscribe digest — Fridays only ----------------
+  // Every active voucher family whose term is ending (or ended) needs a paid
+  // subscription set up for next term. Rhett gets the whole list in one email
+  // so nobody quietly falls off the books between terms.
+  let voucherDigest = 0
+  const bne = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Brisbane' }))
+  if (bne.getDay() === 5) {
+    const soon = addDays(today, 21)
+    const { data: vouchers } = await admin
+      .from('play_on_vouchers')
+      .select('family_name, student_name, voucher_ref, term_end, status')
+      .eq('status', 'active')
+      .not('term_end', 'is', null)
+      .lte('term_end', soon)
+      .order('term_end')
+    if (vouchers?.length) {
+      const rows = vouchers.map((v) => {
+        const overdue = String(v.term_end) < today
+        return `<tr><td style="padding:6px 10px;border-bottom:1px solid #eee"><strong>${v.family_name || '—'}</strong></td><td style="padding:6px 10px;border-bottom:1px solid #eee">${v.student_name || '—'}</td><td style="padding:6px 10px;border-bottom:1px solid #eee">${v.voucher_ref || '—'}</td><td style="padding:6px 10px;border-bottom:1px solid #eee;color:${overdue ? '#c00' : '#222'}">${overdue ? 'ENDED ' : 'ends '}${new Date(String(v.term_end) + 'T00:00:00Z').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', timeZone: 'UTC' })}</td></tr>`
+      }).join('')
+      const html = `<div style="font-family:system-ui,Arial,sans-serif;font-size:15px;color:#222;line-height:1.5"><p>Morning! 🎟️</p><p>These <strong>Play On voucher families</strong> need a <strong>paid subscription for next term</strong> — each voucher only covers one term, so anyone still on this list when the new term starts is attending unpaid:</p><table style="border-collapse:collapse;font-size:14px"><tr><td style="padding:6px 10px;font-weight:bold">Family</td><td style="padding:6px 10px;font-weight:bold">Child</td><td style="padding:6px 10px;font-weight:bold">Voucher</td><td style="padding:6px 10px;font-weight:bold">Term</td></tr>${rows}</table><p style="margin-top:14px"><a href="${base}/finance/vouchers" style="background:#D72027;color:#fff;font-weight:bold;padding:10px 18px;border-radius:8px;text-decoration:none">Open the voucher tracker</a></p><p>Once a family is subscribed, mark their voucher <strong>Converted ✓</strong> and they drop off this list.</p><p>— Jacky</p></div>`
+      const r = await sendEmail('admin@bigstarcircus.com.au', `🎟️ ${vouchers.length} voucher famil${vouchers.length === 1 ? 'y needs' : 'ies need'} next-term subscriptions`, html, 'voucher-resubscribe')
+      if (r.ok) voucherDigest = vouchers.length
+    }
+  }
+
+  return NextResponse.json({ ok: true, checked: docs?.length ?? 0, sent, voucherDigest })
 }

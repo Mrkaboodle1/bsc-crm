@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Check, Copy, Ticket, TrendingUp, AlertTriangle, ArrowUpRight, Pencil } from 'lucide-react'
+import { Plus, Trash2, Check, Copy, Ticket, TrendingUp, AlertTriangle, ArrowUpRight, Pencil, FileText } from 'lucide-react'
+import { termFor } from '@/lib/qld-terms'
 
 export type Voucher = {
   id: string
@@ -38,6 +39,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
   const [form, setForm] = useState({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term' as Voucher['use_type'], photo_url: '', amount: '200' })
   const [uploading, setUploading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [parsedNote, setParsedNote] = useState('')
 
   if (setupNeeded) return <SetupCard sql={setupSql} />
 
@@ -59,20 +61,53 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
   }
   function resetForm() {
     setForm({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term', photo_url: '', amount: '200' })
-    setEditingId(null); setAdding(false)
+    setEditingId(null); setAdding(false); setParsedNote('')
   }
   function startEdit(v: Voucher) {
     setForm({ family_name: v.family_name || '', student_name: v.student_name || '', voucher_ref: v.voucher_ref || '', redeemed_on: v.redeemed_on || '', use_type: v.use_type ?? 'term', photo_url: v.photo_url || '', amount: String(v.amount ?? 200) })
     setEditingId(v.id); setAdding(true)
   }
+  async function readPdf(file: File) {
+    setUploading(true)
+    try {
+      const fd = new FormData(); fd.append('file', file)
+      const r = await fetch('/api/vouchers/parse', { method: 'POST', body: fd })
+      const j = await r.json()
+      if (!r.ok) { alert(j.error || 'Could not read the PDF'); return }
+      const f = j.fields || {}
+      setForm((prev) => ({
+        ...prev,
+        voucher_ref: f.voucher_ref || prev.voucher_ref,
+        student_name: f.child_name || prev.student_name,
+        family_name: j.family_match?.primary_parent || f.parent_name || prev.family_name,
+        redeemed_on: new Date().toISOString().slice(0, 10),
+        amount: f.amount ? String(f.amount) : prev.amount,
+        photo_url: j.photo_url || prev.photo_url,
+      }))
+      const bits = [
+        f.voucher_ref ? `voucher ${f.voucher_ref}` : null,
+        f.child_name ? `child ${f.child_name}` : null,
+        f.child_dob ? `DOB ${f.child_dob}` : null,
+        f.parent_name ? `parent ${f.parent_name}` : null,
+        j.family_match ? `✓ matched to existing family "${j.family_match.family_name}"` : '— no existing family matched, check the name',
+      ].filter(Boolean).join(' · ')
+      setParsedNote((j.warning ? j.warning + ' · ' : '') + 'Read from PDF: ' + bits + '. Check it, then Save.')
+    } finally { setUploading(false) }
+  }
+
   async function add() {
     if (!form.family_name && !form.student_name) { alert('Add at least a family or child name.'); return }
     const amount = Number(form.amount) || 200
-    const weeks = 8
-    const weekly_value = Math.round(amount / weeks)
     const term_start = form.redeemed_on || null
-    // A $200 voucher at $25/wk covers 8 weeks of term (56 days).
-    const term_end = form.redeemed_on ? addDays(form.redeemed_on, 56) : null
+    // Rhett's rule: a voucher covers ONE term and dies at THAT term's end,
+    // no matter how late in the term it was handed over.
+    const term = form.redeemed_on ? termFor(form.redeemed_on) : null
+    const term_end = term?.end ?? null
+    const weeksLeft = form.redeemed_on && term_end
+      ? Math.max(1, Math.round((new Date(term_end).getTime() - new Date(form.redeemed_on).getTime()) / 604800000))
+      : 8
+    const weeks = weeksLeft
+    const weekly_value = Math.round(amount / weeks)
     const body = { ...form, voucher_ref: form.voucher_ref.trim(), photo_url: form.photo_url || null, redeemed_on: form.redeemed_on || null, term_start, term_end, amount, weekly_value, weeks, status: 'active' }
     if (editingId) {
       const r = await fetch('/api/vouchers', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, id: editingId, status: undefined }) })
@@ -120,6 +155,17 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       {!adding && <button onClick={() => setAdding(true)} className="inline-flex items-center gap-1.5 bg-[#D72027] text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-[#A0151B]"><Plus size={15} /> Log a voucher</button>}
       {adding && (
         <div className="bg-white rounded-xl border border-zinc-200 p-4 space-y-3 max-w-2xl">
+          {!editingId && (
+            <label className="flex items-center gap-3 border-2 border-dashed border-[#D72027]/40 bg-red-50/40 rounded-xl px-4 py-3 cursor-pointer hover:bg-red-50">
+              <FileText size={20} className="text-[#D72027] shrink-0" />
+              <span className="text-sm">
+                <span className="font-bold text-zinc-900">{uploading ? 'Reading the voucher…' : 'Upload the voucher PDF — I’ll read it for you'}</span>
+                <span className="block text-xs text-zinc-500">Voucher number, child, parent and dates fill in automatically. You just check and save.</span>
+              </span>
+              <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) readPdf(f); e.target.value = '' }} />
+            </label>
+          )}
+          {parsedNote && <p className="text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg px-3 py-2">{parsedNote}</p>}
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Family name" value={form.family_name} onChange={(v) => setForm({ ...form, family_name: v })} placeholder="e.g. Brennan" />
             <Field label="Child name" value={form.student_name} onChange={(v) => setForm({ ...form, student_name: v })} placeholder="e.g. Aidyn" />
@@ -154,7 +200,9 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
               )}
             </div>
           </div>
-          {form.redeemed_on && <p className="text-xs text-zinc-500">→ Covers <strong>8 weeks</strong> (${Math.round((Number(form.amount) || 200) / 8)}/wk), ending <strong>{fmt(addDays(form.redeemed_on, 56))}</strong>. An admin reminder to set up their next-term subscription is created automatically.</p>}
+          {form.redeemed_on && (() => { const t = termFor(form.redeemed_on); return (
+            <p className="text-xs text-zinc-500">→ Valid for <strong>{t?.label ?? 'this term'} only</strong>, ending <strong>{t ? fmt(t.end) : '—'}</strong> — no matter how late in the term the voucher was handed over. An admin reminder to set up their next-term subscription is created automatically.</p>
+          ) })()}
           <div className="flex gap-2">
             <button onClick={add} className="bg-[#D72027] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#A0151B]">{editingId ? 'Save changes' : 'Save voucher'}</button>
             <button onClick={resetForm} className="text-sm text-zinc-500 px-3 py-2">Cancel</button>
