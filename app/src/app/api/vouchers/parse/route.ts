@@ -50,11 +50,32 @@ export async function POST(req: Request) {
   const voucherRef = pick(/Voucher\s*number:?\s*([A-Z0-9]{6,12})/i)
   const issued = toISO(pick(/Date\s*of\s*issue:?\s*([\d/]+)/i))
   const expiry = toISO(pick(/Voucher\s*expiry\s*date:?\s*([\d/]+)/i))
-  // Parent block comes first ("Parent/Carer/Guardian ... Name: X"), child block second.
-  const names = [...text.matchAll(/Name:?\s*([^\n]+)/gi)].map((m) => m[1].trim().replace(/\s+/g, ' '))
-  const parentName = names[0] ?? null
-  const childName = names[1] ?? null
-  const childDob = toISO(pick(/Date\s*of\s*birth:?\s*([\d/]+)/i))
+
+  // Names are anchored to their SECTION HEADERS, never to document order —
+  // "Name:" under "Parent/Carer/Guardian…" is the parent, "Name:" under
+  // "Child/Young Person…" is the child. If a section can't be found, that
+  // field stays blank for the admin rather than guessing (a child's name in
+  // the family field is worse than an empty box).
+  const section = (header: RegExp): string | null => {
+    const m = header.exec(text)
+    return m ? text.slice(m.index, m.index + 400) : null
+  }
+  const nameIn = (block: string | null): string | null => {
+    if (!block) return null
+    const m = /Name:?\s*([A-Za-zÀ-ÿ'’\- ]{2,60})/.exec(block)
+    if (!m) return null
+    const v = m[1].trim().replace(/\s+/g, ' ')
+    // guard against grabbing the next label if the value was blank
+    return /^(email|date|age|child|young)/i.test(v) ? null : v
+  }
+  const stripTitle = (n: string | null) => n ? n.replace(/^(mr|mrs|ms|miss|mx|dr)\.?\s+/i, '') : null
+
+  const parentBlock = section(/Parent\/?Carer\/?Guardian[^\n]*/i)
+  const childBlock = section(/Child\/?Young\s*Person[^\n]*/i)
+  const parentName = stripTitle(nameIn(parentBlock))
+  const childName = nameIn(childBlock)
+  const childDob = toISO(childBlock ? (/Date\s*of\s*birth:?\s*([\d/]+)/i.exec(childBlock)?.[1] ?? null) : pick(/Date\s*of\s*birth:?\s*([\d/]+)/i))
+  const childAge = childBlock ? (/Age:?\s*(\d{1,2})/.exec(childBlock)?.[1] ?? null) : null
   const email = pick(/Email\s*(?:address)?:?\s*([^\s\n]+@[^\s\n]+)/i)
   const amountM = /\$\s?(\d{2,3})\b/.exec(text)
 
@@ -85,6 +106,7 @@ export async function POST(req: Request) {
       parent_name: parentName,
       child_name: childName,
       child_dob: childDob,
+      child_age: childAge,
       email,
       issued_on: issued,
       expiry_date: expiry,
@@ -92,6 +114,9 @@ export async function POST(req: Request) {
     },
     photo_url: url,
     family_match: familyMatch,
-    warning: !voucherRef ? 'Could not find a voucher number — check the PDF is a Play On voucher.' : null,
+    warning: [
+      !voucherRef ? 'Could not find a voucher number — check the PDF is a Play On voucher.' : null,
+      !parentName ? 'Parent name not found on the PDF — type the family name yourself.' : null,
+    ].filter(Boolean).join(' ') || null,
   })
 }

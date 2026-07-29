@@ -258,7 +258,14 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
                 {v.photo_url && (isPdf(v.photo_url)
                   ? <a href={v.photo_url} target="_blank" rel="noreferrer" title="View voucher PDF" className="w-9 h-9 rounded border border-zinc-200 shrink-0 flex items-center justify-center bg-red-50">📄</a>
                   : <a href={v.photo_url} target="_blank" rel="noreferrer" title="View voucher photo"><img src={v.photo_url} alt="" className="w-9 h-9 rounded object-cover border border-zinc-200 shrink-0" /></a>)}
-                <div className="min-w-0"><div className="font-semibold text-zinc-900 truncate">{v.family_name || '—'}</div><div className="text-xs text-zinc-500 truncate">{v.student_name}{v.use_type ? ` · ${USE_LABEL[v.use_type]}` : ''}</div></div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-zinc-900 truncate">{v.family_name || '—'}</div>
+                  <div className="text-xs text-zinc-500 truncate">
+                    {v.student_name}
+                    {v.voucher_ref && <span className="ml-1.5 font-mono text-[10px] font-bold bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200 px-1.5 py-0.5 rounded" title="This child's voucher">{v.voucher_ref}</span>}
+                    {v.use_type ? ` · ${USE_LABEL[v.use_type]}` : ''}
+                  </div>
+                </div>
               </div>
               <div className="text-zinc-600">{v.voucher_ref || '—'}<div className="text-[11px] text-zinc-400">${Number(v.amount).toFixed(0)}</div></div>
               <div className="text-zinc-600">{fmt(v.term_end)}{v.status === 'active' && d !== null && <div className={`text-[11px] ${soon ? 'text-amber-700 font-semibold' : 'text-zinc-400'}`}>{d < 0 ? 'overdue' : `${d} days left`}</div>}</div>
