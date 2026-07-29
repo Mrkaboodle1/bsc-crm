@@ -83,7 +83,9 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       form: {
         voucher_ref: (f.voucher_ref as string) || '',
         student_name: (f.child_name as string) || '',
-        family_name: j.family_match?.primary_parent || (f.parent_name as string) || '',
+        // The PDF's parent line is the government's own data — it beats
+        // whatever an old import left in the CRM family record.
+        family_name: (f.parent_name as string) || j.family_match?.primary_parent || '',
         redeemed_on: new Date().toISOString().slice(0, 10),
         amount: f.amount ? String(f.amount) : '200',
         photo_url: j.photo_url || '',
