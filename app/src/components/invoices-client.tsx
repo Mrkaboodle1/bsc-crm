@@ -271,6 +271,16 @@ export function InvoicesClient() {
                 <input type="file" accept=".csv,text/csv" className="hidden" onChange={importXero} disabled={busy === 'importcsv'} />
               </label>
               <button onClick={exportXero} className="text-sm font-bold px-3 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700" title="Export all invoices as a Xero CSV">⬇ Export</button>
+              <button
+                onClick={() => {
+                  const def = new Date().toISOString().slice(0, 7)
+                  const m = prompt('Which month for the accountant pack? (YYYY-MM)', def)
+                  if (m && /^\d{4}-\d{2}$/.test(m.trim())) window.open(`/api/finance/invoices/pdf?month=${m.trim()}`, '_blank')
+                  else if (m) alert('Type it like 2026-07')
+                }}
+                className="text-sm font-bold px-3 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700"
+                title="Every invoice for a month, compiled into one PDF for Lana"
+              >📄 Month PDF</button>
               <button onClick={() => (showForm ? resetForm() : setShowForm(true))} className="bg-[#D72027] hover:bg-[#A0151B] text-white text-sm font-bold rounded-xl px-4 py-2">
                 {showForm ? 'Close' : '+ New invoice'}
               </button>
@@ -425,6 +435,7 @@ export function InvoicesClient() {
               </div>
             </div>
             <div className="mt-3 pt-3 border-t border-zinc-50 flex items-center gap-2 flex-wrap">
+              <a href={`/api/finance/invoices/pdf?id=${inv.id}`} target="_blank" rel="noreferrer" className="text-xs font-bold px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700" title="Download this invoice as a PDF">⬇ PDF</a>
               {inv.status !== 'paid' && inv.status !== 'void' && (
                 <button onClick={() => startEdit(inv)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700">✎ Edit</button>
               )}
