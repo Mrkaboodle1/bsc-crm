@@ -425,11 +425,11 @@ export function InvoicesClient() {
               </div>
             </div>
             <div className="mt-3 pt-3 border-t border-zinc-50 flex items-center gap-2 flex-wrap">
+              {inv.status !== 'paid' && inv.status !== 'void' && (
+                <button onClick={() => startEdit(inv)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700">✎ Edit</button>
+              )}
               {inv.status === 'draft' && (
-                <>
-                  <button onClick={() => startEdit(inv)} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 text-zinc-700">✎ Edit</button>
-                  <button onClick={() => act(inv.id, 'approve')} disabled={busy === inv.id + 'approve'} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white disabled:opacity-50">Approve</button>
-                </>
+                <button onClick={() => act(inv.id, 'approve')} disabled={busy === inv.id + 'approve'} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white disabled:opacity-50">Approve</button>
               )}
               {inv.status !== 'paid' && inv.status !== 'void' && (
                 <button onClick={() => openEmail(inv.id, inv.contact_email || '', inv.number, inv.contact_name || '')} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white">

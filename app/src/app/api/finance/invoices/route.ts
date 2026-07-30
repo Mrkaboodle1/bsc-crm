@@ -71,11 +71,13 @@ export async function PATCH(req: Request) {
   if (!b.id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
   const admin = createAdminSupabase()
 
-  // Edit a draft: replace header fields + all lines.
+  // Edit an invoice: replace header fields + all lines. Anything that hasn't
+  // been PAID is fair game — once money has changed hands the record is locked
+  // (void it and reissue instead, so the books stay honest).
   if (b.action === 'update') {
     const { data: existing } = await admin.from('bs_invoices').select('status').eq('id', b.id).eq('tenant_id', g.tenantId).maybeSingle()
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    if (existing.status !== 'draft') return NextResponse.json({ error: 'Only draft invoices can be edited.' }, { status: 400 })
+    if (existing.status === 'paid') return NextResponse.json({ error: 'Paid invoices are locked — void it and create a new one instead.' }, { status: 400 })
     const { clean, subtotal, gst, total, mode } = computeInvoice(Array.isArray(b.lines) ? b.lines : [], b.amounts_are)
     if (!clean.length) return NextResponse.json({ error: 'Add at least one line' }, { status: 400 })
     await admin.from('bs_invoices').update({
