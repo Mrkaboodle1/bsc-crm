@@ -155,9 +155,18 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   const g = await guard(); if ('error' in g) return NextResponse.json({ error: g.error }, { status: g.status })
-  const id = new URL(req.url).searchParams.get('id')
-  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+  const url = new URL(req.url)
+  // ?id=single or ?ids=a,b,c — batch delete for cleaning out junk invoices.
+  // PAID invoices are never deletable this way (they're part of the books) —
+  // they are silently skipped and reported back.
+  const ids = (url.searchParams.get('ids') || url.searchParams.get('id') || '').split(',').map((s) => s.trim()).filter(Boolean)
+  if (!ids.length) return NextResponse.json({ error: 'Missing id(s)' }, { status: 400 })
   const admin = createAdminSupabase()
-  await admin.from('bs_invoices').delete().eq('id', id).eq('tenant_id', g.tenantId).eq('status', 'draft')
-  return NextResponse.json({ ok: true })
+  const { data: deletable } = await admin.from('bs_invoices').select('id').eq('tenant_id', g.tenantId).in('id', ids).neq('status', 'paid')
+  const okIds = (deletable ?? []).map((d) => d.id)
+  if (okIds.length) {
+    await admin.from('bs_invoice_lines').delete().eq('tenant_id', g.tenantId).in('invoice_id', okIds)
+    await admin.from('bs_invoices').delete().eq('tenant_id', g.tenantId).in('id', okIds)
+  }
+  return NextResponse.json({ ok: true, deleted: okIds.length, skippedPaid: ids.length - okIds.length })
 }

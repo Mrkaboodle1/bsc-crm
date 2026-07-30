@@ -49,6 +49,22 @@ export function InvoicesClient() {
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
+
+  async function bulkDelete() {
+    if (!selected.size) return
+    if (!confirm(`Delete ${selected.size} invoice${selected.size > 1 ? 's' : ''}? Paid invoices are protected and will be skipped. This cannot be undone.`)) return
+    setBulkBusy(true)
+    try {
+      const r = await fetch(`/api/finance/invoices?ids=${[...selected].join(',')}`, { method: 'DELETE' })
+      const j = await r.json()
+      if (!r.ok) { alert(j.error || 'Could not delete'); return }
+      if (j.skippedPaid) alert(`${j.deleted} deleted. ${j.skippedPaid} skipped because they're already paid.`)
+      setSelected(new Set())
+      load()
+    } finally { setBulkBusy(false) }
+  }
   const [err, setErr] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('all')
   const [sendModal, setSendModal] = useState<{ id: string; to: string; number: string; subject: string; message: string } | null>(null)
@@ -369,18 +385,39 @@ export function InvoicesClient() {
         </div>
       )}
 
+      {/* Bulk-select action bar */}
+      {selected.size > 0 && (
+        <div className="sticky top-2 z-10 bg-red-600 text-white rounded-xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
+          <span className="text-sm font-bold">{selected.size} selected</span>
+          <button onClick={bulkDelete} disabled={bulkBusy} className="text-xs font-bold bg-white text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 disabled:opacity-50">{bulkBusy ? 'Deleting…' : `🗑 Delete ${selected.size}`}</button>
+          <button onClick={() => setSelected(new Set(filtered.filter((i) => i.status !== 'paid').map((i) => i.id)))} className="text-xs font-semibold underline">select all on this tab</button>
+          <button onClick={() => setSelected(new Set())} className="text-xs font-semibold underline ml-auto">clear</button>
+        </div>
+      )}
+
       {/* Invoice list */}
       <div className="space-y-2">
         {filtered.map((inv) => (
-          <div key={inv.id} className="bg-white border border-zinc-200 rounded-2xl p-4">
+          <div key={inv.id} className={`bg-white border rounded-2xl p-4 ${selected.has(inv.id) ? 'border-red-400 ring-2 ring-red-100' : 'border-zinc-200'}`}>
             <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
+              <div className="flex items-start gap-2.5">
+                {inv.status !== 'paid' && (
+                  <input
+                    type="checkbox"
+                    checked={selected.has(inv.id)}
+                    onChange={(e) => { const s = new Set(selected); if (e.target.checked) s.add(inv.id); else s.delete(inv.id); setSelected(s) }}
+                    className="mt-1 w-4 h-4 accent-[#D72027] cursor-pointer"
+                    title="Select for batch actions"
+                  />
+                )}
+                <div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-zinc-900">{inv.number}</span>
                   <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS[inv.status].cls}`}>{STATUS[inv.status].label}</span>
                 </div>
                 <div className="text-sm text-zinc-600 mt-0.5">{inv.contact_name || 'No customer name'}{inv.contact_email ? ` · ${inv.contact_email}` : ''}</div>
                 <div className="text-xs text-zinc-400 mt-0.5">Issued {inv.issue_date}{inv.due_date ? ` · due ${inv.due_date}` : ''}{inv.reference ? ` · ref ${inv.reference}` : ''}</div>
+                </div>
               </div>
               <div className="text-right">
                 <div className="font-bold tabular-nums text-zinc-900">{money(inv.total)}</div>
