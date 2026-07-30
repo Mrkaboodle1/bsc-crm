@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   await c.admin.from('tasks').insert({
     tenant_id: c.tenantId,
     title: `${who}: Play On voucher runs out — set up next term's subscription`,
-    description: `Voucher ${data.voucher_ref || ''} ($${data.amount}) covers ${data.weeks} weeks${data.term_end ? `, ending ${data.term_end}` : ''}. Before the next term starts, create their paid subscription in Stripe — the child is already enrolled, so they stay on the roll automatically. Logged from the Play On Vouchers page.`,
+    description: `Voucher ${data.voucher_ref || ''} ($${data.amount}) covers ${data.weeks} weeks${data.term_end ? `, ending ${data.term_end}` : ''}. Before next term starts: if this family already HAD a subscription it was paused for the voucher and auto-resumes — CONFIRM the resume actually happened in Stripe. If they are a NEW family, CREATE their subscription. The child is already enrolled either way, so they stay on the roll. Logged from the Play On Vouchers page.`,
     due_at: dueDate,
     priority: 'high',
     status: 'open',

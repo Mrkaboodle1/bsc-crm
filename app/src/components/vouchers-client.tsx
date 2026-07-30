@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Check, Copy, Ticket, TrendingUp, AlertTriangle, ArrowUpRight, Pencil, FileText } from 'lucide-react'
-import { termFor } from '@/lib/qld-terms'
+import { voucherCoverage } from '@/lib/qld-terms'
 
 export type Voucher = {
   id: string
@@ -153,8 +153,8 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
     if (bad) { alert('Every child needs a name.'); return }
     setSavingAll(true)
     try {
-      const t = termFor(multi.redeemed_on)
-      const weeksLeft = t ? Math.max(1, Math.round((new Date(t.end).getTime() - new Date(multi.redeemed_on).getTime()) / 604800000)) : 8
+      const cov = voucherCoverage(multi.redeemed_on)
+      const weeksLeft = cov ? Math.max(1, Math.round((new Date(cov.end).getTime() - new Date(multi.redeemed_on).getTime()) / 604800000)) : 8
       const saved: Voucher[] = []
       for (const kid of multi.kids) {
         const amount = Number(kid.amount) || 200
@@ -162,7 +162,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
           family_name: multi.family_name.trim(), student_name: kid.student_name.trim(),
           voucher_ref: kid.voucher_ref.trim(), amount,
           weekly_value: Math.round(amount / weeksLeft), weeks: weeksLeft,
-          redeemed_on: multi.redeemed_on, term_start: multi.redeemed_on, term_end: t?.end ?? null,
+          redeemed_on: multi.redeemed_on, term_start: multi.redeemed_on, term_end: cov?.end ?? null,
           use_type: multi.use_type, photo_url: kid.photo_url || null, status: 'active',
         }
         const r = await fetch('/api/vouchers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -182,8 +182,8 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
     const term_start = form.redeemed_on || null
     // Rhett's rule: a voucher covers ONE term and dies at THAT term's end,
     // no matter how late in the term it was handed over.
-    const term = form.redeemed_on ? termFor(form.redeemed_on) : null
-    const term_end = term?.end ?? null
+    const cov = form.redeemed_on ? voucherCoverage(form.redeemed_on) : null
+    const term_end = cov?.end ?? null
     const weeksLeft = form.redeemed_on && term_end
       ? Math.max(1, Math.round((new Date(term_end).getTime() - new Date(form.redeemed_on).getTime()) / 604800000))
       : 8
@@ -265,8 +265,8 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
                   </div>
                 </div>
               ))}
-              {(() => { const t = termFor(multi.redeemed_on); return (
-                <p className="text-xs text-zinc-500">→ All {multi.kids.length} vouchers valid for <strong>{t?.label ?? 'this term'} only</strong>, ending <strong>{t ? fmt(t.end) : '—'}</strong>. Each child gets their own line in the tracker and their own next-term reminder.</p>
+              {(() => { const c = voucherCoverage(multi.redeemed_on); return (
+                <p className="text-xs text-zinc-500">→ All {multi.kids.length} vouchers valid for <strong>{c?.label ?? 'this term'} only</strong>, ending <strong>{c ? fmt(c.end) : '—'}</strong>. Each child gets their own line in the tracker and their own next-term reminder.</p>
               ) })()}
               <div className="flex gap-2">
                 <button onClick={saveAll} disabled={savingAll} className="bg-[#D72027] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#A0151B] disabled:opacity-50">{savingAll ? 'Saving…' : `Save all ${multi.kids.length} vouchers`}</button>
@@ -310,8 +310,8 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
               )}
             </div>
           </div>
-          {form.redeemed_on && (() => { const t = termFor(form.redeemed_on); return (
-            <p className="text-xs text-zinc-500">→ Valid for <strong>{t?.label ?? 'this term'} only</strong>, ending <strong>{t ? fmt(t.end) : '—'}</strong> — no matter how late in the term the voucher was handed over. An admin reminder to set up their next-term subscription is created automatically.</p>
+          {form.redeemed_on && (() => { const c = voucherCoverage(form.redeemed_on); return (
+            <p className="text-xs text-zinc-500">→ Valid for <strong>{c?.label ?? 'this term'} only</strong>, ending <strong>{c ? fmt(c.end) : '—'}</strong> — no matter how late in the term the voucher was handed over. An admin reminder to set up their next-term subscription is created automatically.</p>
           ) })()}
           <div className="flex gap-2">
             <button onClick={add} className="bg-[#D72027] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#A0151B]">{editingId ? 'Save changes' : 'Save voucher'}</button>
