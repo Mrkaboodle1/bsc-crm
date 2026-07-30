@@ -36,15 +36,15 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
   const router = useRouter()
   const [items, setItems] = useState<Voucher[]>(initial)
   const [adding, setAdding] = useState(false)
-  const [form, setForm] = useState({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term' as Voucher['use_type'], photo_url: '', amount: '200' })
+  const [form, setForm] = useState({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term' as Voucher['use_type'], photo_url: '', amount: '200', child_dob: '', family_id: '' })
   const [uploading, setUploading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [parsedNote, setParsedNote] = useState('')
   // Multi-kid mode: upload 2-3 voucher PDFs at once and the form shows the
   // whole family on one screen — mum at the top, one row per child with their
   // own voucher code, ONE save button.
-  type MultiKid = { student_name: string; voucher_ref: string; amount: string; photo_url: string }
-  const [multi, setMulti] = useState<{ family_name: string; redeemed_on: string; use_type: Voucher['use_type']; kids: MultiKid[] } | null>(null)
+  type MultiKid = { student_name: string; voucher_ref: string; amount: string; photo_url: string; child_dob: string }
+  const [multi, setMulti] = useState<{ family_name: string; family_id: string; redeemed_on: string; use_type: Voucher['use_type']; kids: MultiKid[] } | null>(null)
   const [savingAll, setSavingAll] = useState(false)
 
   if (setupNeeded) return <SetupCard sql={setupSql} />
@@ -66,16 +66,16 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
     } finally { setUploading(false) }
   }
   function resetForm() {
-    setForm({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term', photo_url: '', amount: '200' })
+    setForm({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term', photo_url: '', amount: '200', child_dob: '', family_id: '' })
     setEditingId(null); setAdding(false); setParsedNote(''); setMulti(null)
   }
   function startEdit(v: Voucher) {
-    setForm({ family_name: v.family_name || '', student_name: v.student_name || '', voucher_ref: v.voucher_ref || '', redeemed_on: v.redeemed_on || '', use_type: v.use_type ?? 'term', photo_url: v.photo_url || '', amount: String(v.amount ?? 200) })
+    setForm({ family_name: v.family_name || '', student_name: v.student_name || '', voucher_ref: v.voucher_ref || '', redeemed_on: v.redeemed_on || '', use_type: v.use_type ?? 'term', photo_url: v.photo_url || '', amount: String(v.amount ?? 200), child_dob: '', family_id: v.family_id || '' })
     setEditingId(v.id); setAdding(true)
   }
   type Parsed = { form: Partial<typeof form>; note: string }
 
-  function toParsed(j: { fields?: Record<string, unknown>; photo_url?: string; family_match?: { family_name: string; primary_parent: string }; warning?: string }): Parsed {
+  function toParsed(j: { fields?: Record<string, unknown>; photo_url?: string; family_match?: { id: string; family_name: string; primary_parent: string }; warning?: string }): Parsed {
     const f = (j.fields || {}) as Record<string, string | number | null>
     const bits = [
       f.voucher_ref ? `voucher ${f.voucher_ref}` : null,
@@ -94,6 +94,8 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
         redeemed_on: new Date().toISOString().slice(0, 10),
         amount: f.amount ? String(f.amount) : '200',
         photo_url: j.photo_url || '',
+        child_dob: (f.child_dob as string) || '',
+        family_id: j.family_match?.id || '',
       },
       note: (j.warning ? j.warning + ' · ' : '') + 'Read from PDF: ' + bits + '. Check it, then Save.',
     }
@@ -133,6 +135,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       const famName = parsed.map((p) => p.form.family_name).find(Boolean) || ''
       setMulti({
         family_name: famName,
+        family_id: parsed.map((p) => p.form.family_id).find(Boolean) || '',
         redeemed_on: new Date().toISOString().slice(0, 10),
         use_type: 'term',
         kids: parsed.map((p) => ({
@@ -140,6 +143,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
           voucher_ref: p.form.voucher_ref || '',
           amount: p.form.amount || '200',
           photo_url: p.form.photo_url || '',
+          child_dob: p.form.child_dob || '',
         })),
       })
       setParsedNote(`Read ${parsed.length} vouchers for the same family — check the names and codes below, then save them all in one go.`)
@@ -164,6 +168,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
           weekly_value: Math.round(amount / weeksLeft), weeks: weeksLeft,
           redeemed_on: multi.redeemed_on, term_start: multi.redeemed_on, term_end: cov?.end ?? null,
           use_type: multi.use_type, photo_url: kid.photo_url || null, status: 'active',
+          child_dob: kid.child_dob || null, family_id: multi.family_id || null,
         }
         const r = await fetch('/api/vouchers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         const j = await r.json()
@@ -189,7 +194,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       : 8
     const weeks = weeksLeft
     const weekly_value = Math.round(amount / weeks)
-    const body = { ...form, voucher_ref: form.voucher_ref.trim(), photo_url: form.photo_url || null, redeemed_on: form.redeemed_on || null, term_start, term_end, amount, weekly_value, weeks, status: 'active' }
+    const body = { ...form, voucher_ref: form.voucher_ref.trim(), photo_url: form.photo_url || null, redeemed_on: form.redeemed_on || null, term_start, term_end, amount, weekly_value, weeks, status: 'active', child_dob: form.child_dob || null, family_id: form.family_id || null }
     if (editingId) {
       const r = await fetch('/api/vouchers', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, id: editingId, status: undefined }) })
       const j = await r.json(); if (j.voucher) { setItems((xs) => xs.map((v) => v.id === editingId ? j.voucher : v)); resetForm(); router.refresh() }

@@ -36,6 +36,22 @@ export async function POST(req: Request) {
   const { data, error } = await c.admin.from('play_on_vouchers').insert({ ...pick(b), tenant_id: c.tenantId }).select('*').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
+  // The government voucher prints the child's date of birth — bank it on the
+  // student record so birthdays are known (Rhett wants birthday emails one
+  // day). Only fills a BLANK date_of_birth on a first-name match inside the
+  // matched family — never overwrites, never guesses across families.
+  if (b.child_dob && b.family_id && b.student_name && /^\d{4}-\d{2}-\d{2}$/.test(String(b.child_dob))) {
+    const first = String(b.student_name).trim().split(/\s+/)[0]
+    if (first) {
+      const { data: kids } = await c.admin.from('students')
+        .select('id, first_name, date_of_birth')
+        .eq('tenant_id', c.tenantId).eq('family_id', b.family_id).ilike('first_name', first)
+      if (kids?.length === 1 && !kids[0].date_of_birth) {
+        await c.admin.from('students').update({ date_of_birth: b.child_dob }).eq('id', kids[0].id)
+      }
+    }
+  }
+
   // Every logged voucher automatically books the follow-up: when the voucher's
   // covered weeks run out, admin must set up a paid subscription for next term.
   // The kids keep their enrolments, so they stay on the roll either way.
