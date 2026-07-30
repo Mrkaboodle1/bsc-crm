@@ -65,8 +65,37 @@ export default async function ContactsPage({
     .limit(500)
 
   if (q && q.trim()) {
-    const term = q.trim()
-    query = query.or(`family_name.ilike.%${term}%,primary_parent.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`)
+    // Search everything a human would type: parent/family name, email,
+    // address, phone in any format (0423 / +61423 / spaces), and KID names —
+    // matching kids pull their whole family into the results.
+    const term = q.trim().replace(/[(),]/g, ' ').trim()
+    const ors = [
+      `family_name.ilike.%${term}%`,
+      `primary_parent.ilike.%${term}%`,
+      `email.ilike.%${term}%`,
+      `address.ilike.%${term}%`,
+    ]
+    const digits = term.replace(/\D/g, '')
+    if (digits.length >= 5) {
+      const variants = new Set<string>([digits])
+      if (digits.startsWith('0')) variants.add('61' + digits.slice(1))
+      if (digits.startsWith('61')) variants.add('0' + digits.slice(2))
+      for (const v of variants) ors.push(`phone.ilike.%${v}%`)
+    }
+    // kid-name lookup runs on the admin client — row security hides students
+    // from this query otherwise, which is why name search used to come back empty
+    const { createAdminSupabase } = await import('@/lib/supabase-admin')
+    const adminForKids = createAdminSupabase()
+    const { data: kidHits } = await adminForKids
+      .from('students')
+      .select('family_id')
+      .eq('tenant_id', user.tenantId)
+      .or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%`)
+      .not('family_id', 'is', null)
+      .limit(50)
+    const famIds = [...new Set((kidHits ?? []).map((k) => k.family_id))]
+    if (famIds.length) ors.push(`id.in.(${famIds.join(',')})`)
+    query = query.or(ors.join(','))
   }
   if (stage && stage.trim()) query = query.eq('lifecycle_stage', stage)
   if (source && source.trim()) query = query.eq('source', source)
