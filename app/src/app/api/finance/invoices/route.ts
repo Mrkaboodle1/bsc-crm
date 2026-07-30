@@ -7,6 +7,7 @@ import { createAdminSupabase } from '@/lib/supabase-admin'
 import { rosterPdfBase64 } from '@/lib/roster-pdf'
 import { SIGNATURE_TEXT, emailHtml } from '@/lib/email-signature'
 import { computeInvoice } from '@/lib/invoice-calc'
+import { supplierBlock, bankBlock } from '@/lib/business-details'
 
 export const runtime = 'nodejs'
 
@@ -121,11 +122,15 @@ export async function PATCH(req: Request) {
 
     const gstNote = inv.amounts_are === 'none' ? '(No GST)' : inv.amounts_are === 'inclusive' ? '(GST inclusive)' : '(GST exclusive)'
     const pdfLines: string[] = []
+    // Legal identity block first — ABN + address make it a valid tax invoice.
+    pdfLines.push(...supplierBlock())
+    pdfLines.push(`Invoice to: ${inv.contact_name || '—'}`, '')
     if (inv.reference) pdfLines.push(`Reference: ${inv.reference}`, '')
     for (const l of lines ?? []) pdfLines.push(`- ${l.description || 'Item'}${l.account ? ` [${l.account}]` : ''}  (${l.qty} x ${money(Number(l.unit_price))})  ${money(Number(l.amount))}`)
     pdfLines.push('', `Subtotal: ${money(Number(inv.subtotal))}`, `GST: ${money(Number(inv.gst))} ${gstNote}`, `TOTAL DUE: ${money(Number(inv.total))}`)
-    if (inv.due_date) pdfLines.push('', `Due: ${inv.due_date}`)
+    if (inv.due_date) pdfLines.push('', inv.due_date === inv.issue_date ? 'Terms: Due on receipt' : `Due: ${inv.due_date}`)
     if (inv.notes) pdfLines.push('', String(inv.notes))
+    pdfLines.push(...bankBlock())
     const pdf = await rosterPdfBase64(`Tax Invoice ${inv.number}`, `${inv.contact_name || ''} · Issued ${inv.issue_date}`, pdfLines)
 
     const greeting = inv.contact_name ? `Hi ${String(inv.contact_name).split(' ')[0]},` : 'Hi there,'
