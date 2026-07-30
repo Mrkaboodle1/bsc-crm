@@ -23,15 +23,15 @@ export function renderNewsletterHtml(opts: {
   const { blocks, branding, monthLabel, baseUrl } = opts
   const hdr = opts.header ?? { show: true, title: branding.name, subtitle: `★ ${monthLabel} ★` }
   const body = blocks.map((b) => {
-    if (b.type === 'heading') return `<div style="font-weight:800;color:#A0151B;font-size:18px;margin:16px 0 8px;">${fmt(b.text)}</div>`
-    if (b.type === 'text') return `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#333;">${fmt(b.text)}</p>`
-    if (b.type === 'image') return b.url ? `<img src="${abs(b.url, baseUrl)}" alt="" style="width:100%;border-radius:10px;margin:0 0 14px;display:block;">` : ''
+    if (b.type === 'heading') return `<div style="font-weight:800;color:#A0151B;font-size:20px;margin:26px 0 10px;padding-left:12px;border-left:4px solid #D72027;">${fmt(b.text)}</div>`
+    if (b.type === 'text') return `<p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#27272a;">${fmt(b.text)}</p>`
+    if (b.type === 'image') return b.url ? `<img src="${abs(b.url, baseUrl)}" alt="" style="width:100%;border-radius:12px;margin:0 0 20px;display:block;">` : ''
     if (b.type === 'event') {
       const btn = b.btnText ? `<a href="${abs(b.btnUrl, baseUrl) || '#'}" style="display:inline-block;background:${branding.accent};color:#1d1340;font-weight:800;font-size:14px;text-decoration:none;padding:11px 26px;border-radius:26px;">${fmt(b.btnText)}</a>` : ''
-      return `<div style="background:#1d1340;border-radius:12px;padding:20px;text-align:center;margin:0 0 16px;">
-        <div style="font-weight:800;color:#fff;font-size:17px;">${fmt(b.title)}</div>
-        <div style="color:#c9b8ff;font-size:13px;margin:5px 0 10px;">${fmt(b.date)}</div>
-        <p style="color:#e7e0ff;font-size:13px;line-height:1.6;margin:0 0 ${btn ? '14px' : '0'};">${fmt(b.blurb)}</p>${btn}</div>`
+      return `<div style="background:#1d1340;border-radius:16px;padding:26px 22px;text-align:center;margin:4px 0 22px;">
+        <div style="font-weight:800;color:#fff;font-size:20px;">${fmt(b.title)}</div>
+        <div style="display:inline-block;background:rgba(255,255,255,.12);color:#ffe08a;font-size:13px;font-weight:700;padding:5px 14px;border-radius:20px;margin:8px 0 12px;">${fmt(b.date)}</div>
+        <p style="color:#e7e0ff;font-size:15px;line-height:1.65;margin:0 0 ${btn ? '16px' : '0'};">${fmt(b.blurb)}</p>${btn}</div>`
     }
     if (b.type === 'button') return `<div style="text-align:center;margin:0 0 16px;"><a href="${abs(b.url, baseUrl) || '#'}" style="display:inline-block;background:${branding.primary};color:#fff;font-weight:800;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:26px;">${fmt(b.text)}</a></div>`
     return `<hr style="border:0;border-top:1px solid #eee;margin:16px 0;">`
@@ -46,9 +46,10 @@ ${hdr.show ? `<tr><td style="background:linear-gradient(135deg,${branding.primar
   ${hdr.title ? `<div style="color:#fff;font-weight:800;font-size:20px;">${hdr.title}</div>` : ''}
   ${hdr.subtitle ? `<div style="color:#ffe08a;font-size:13px;margin-top:4px;">${hdr.subtitle}</div>` : ''}
 </td></tr>` : ''}
-<tr><td style="padding:22px 26px;">${body}
-  <div style="text-align:center;margin-top:18px;font-size:12px;color:#999;border-top:1px solid #eee;padding-top:14px;">
-    ${branding.name} · ${branding.phone} · <a href="https://${branding.website}" style="color:#D72027;">${branding.website}</a><br>
+<tr><td style="padding:26px 30px;">${body}
+  <div style="text-align:center;margin-top:26px;font-size:13px;color:#8a8a8a;border-top:1px solid #eee;padding-top:18px;line-height:1.7;">
+    You're getting this because you're part of the ${branding.name} family 🎪<br>
+    <strong style="color:#555;">${branding.name}</strong> · ${branding.phone} · <a href="https://${branding.website}" style="color:#D72027;">${branding.website}</a><br>
     ${opts.unsubscribeUrl ? `<a href="${opts.unsubscribeUrl}" style="color:#bbb;font-size:11px;">Unsubscribe</a>` : ''}
   </div>
 </td></tr></table></td></tr></table></body></html>`

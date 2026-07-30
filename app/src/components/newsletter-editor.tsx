@@ -39,6 +39,25 @@ function blank(type: Block['type']): Block {
   }
 }
 
+export function starterBlocks(monthLabel: string): Block[] {
+  return [
+    { id: nid(), type: 'text', text: `Hi BigStar families! 👋
+
+Here's what's happening at the circus this month.` },
+    { id: nid(), type: 'image', url: '' },
+    { id: nid(), type: 'heading', text: "📅 What's on in " + monthLabel },
+    { id: nid(), type: 'text', text: 'Write 2-3 lines about the month — new skills the kids are learning, term dates, anything parents should know.' },
+    { id: nid(), type: 'event', title: 'Kids Night Out — Glow Circus 🌟', date: 'Saturday 29 August · 5:30–8:30pm', blurb: 'Pizza, games and circus fun while you get a night off. $75 per child.', btnText: 'Book now', btnUrl: 'https://bigstarcircus.com.au/kids-night-out' },
+    { id: nid(), type: 'heading', text: '⭐ Star of the month' },
+    { id: nid(), type: 'text', text: 'Shout out a kid (or a few!) who smashed it this month.' },
+    { id: nid(), type: 'divider' },
+    { id: nid(), type: 'text', text: `See you in class!
+
+**The BigStar Circus Team** 🎪` },
+    { id: nid(), type: 'button', text: 'Book a free trial', url: 'https://bigstarcircus.com.au/free-trial' },
+  ]
+}
+
 export function migrateToBlocks(content: Record<string, unknown> | null): Block[] {
   if (content && Array.isArray(content.blocks)) return content.blocks as Block[]
   const g = (k: string) => (content?.[k] as string) || ''
@@ -90,7 +109,7 @@ export function NewsletterEditor({ blocks, onChange, branding, images, monthLabe
   const drop = (i: number) => { if (drag === null || drag === i) return; const a = [...blocks]; const [m] = a.splice(drag, 1); a.splice(i, 0, m!); onChange(a); setDrag(null) }
 
   return (
-    <div className="grid lg:grid-cols-[1fr_400px] gap-5">
+    <div className="grid lg:grid-cols-[1fr_430px] gap-5">
       {/* editing column */}
       <div className="space-y-3 min-w-0">
         {/* header banner */}
@@ -106,6 +125,14 @@ export function NewsletterEditor({ blocks, onChange, branding, images, monthLabe
 
         {/* add bar (top) */}
         <AddBar add={add} />
+
+        {/* one-tap monthly layout when starting from scratch */}
+        {blocks.length <= 1 && (
+          <button onClick={() => onChange(starterBlocks(monthLabel))} className="w-full bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white rounded-2xl p-4 text-left hover:opacity-95">
+            <div className="font-extrabold text-base">✨ Start with the monthly layout</div>
+            <div className="text-sm text-red-100 mt-0.5">Greeting → photo → What&apos;s on → event card → star of the month → sign-off. All ready — just change the words.</div>
+          </button>
+        )}
 
         {/* blocks */}
         {blocks.length === 0 && <div className="text-center text-sm text-zinc-400 py-12 border-2 border-dashed border-zinc-200 rounded-2xl">Tap a block above to start building. 🎪</div>}
@@ -209,18 +236,18 @@ function Preview({ blocks, branding, header }: { blocks: Block[]; branding: Bran
           {header.subtitle && <div style={{ color: '#ffe08a', fontSize: 12, marginTop: 3 }}>{header.subtitle}</div>}
         </div>
       )}
-      <div style={{ padding: 18, fontSize: 13, lineHeight: 1.6, color: '#333' }}>
+      <div style={{ padding: 20, fontSize: 14, lineHeight: 1.7, color: '#27272a' }}>
         {blocks.map((b) => {
-          if (b.type === 'heading') return <div key={b.id} style={{ fontWeight: 800, color: '#A0151B', fontSize: 15, margin: '14px 0 6px' }}><RichText text={b.text} /></div>
+          if (b.type === 'heading') return <div key={b.id} style={{ fontWeight: 800, color: '#A0151B', fontSize: 17, margin: '20px 0 8px', paddingLeft: 10, borderLeft: '4px solid #D72027' }}><RichText text={b.text} /></div>
           if (b.type === 'text') return <p key={b.id} style={{ margin: '0 0 12px', whiteSpace: 'pre-wrap' }}><RichText text={b.text} /></p>
           if (b.type === 'image') return b.url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img key={b.id} src={b.url} alt="" style={{ width: '100%', borderRadius: 10, margin: '0 0 12px' }} />
           ) : <div key={b.id} style={{ background: '#f4f4f5', borderRadius: 10, padding: 24, textAlign: 'center', color: '#bbb', margin: '0 0 12px', fontSize: 12 }}>pick an image →</div>
           if (b.type === 'event') return (
-            <div key={b.id} style={{ background: '#1d1340', color: '#fff', borderRadius: 12, padding: 16, textAlign: 'center', margin: '0 0 14px' }}>
+            <div key={b.id} style={{ background: '#1d1340', color: '#fff', borderRadius: 14, padding: 20, textAlign: 'center', margin: '4px 0 16px' }}>
               <div style={{ fontWeight: 800, fontSize: 15 }}>{b.title}</div>
-              <div style={{ color: '#c9b8ff', fontSize: 12, margin: '4px 0 8px' }}>{b.date}</div>
+              <div style={{ display: 'inline-block', background: 'rgba(255,255,255,.12)', color: '#ffe08a', fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 16, margin: '6px 0 9px' }}>{b.date}</div>
               <p style={{ fontSize: 12, whiteSpace: 'pre-wrap', margin: b.btnText ? '0 0 12px' : 0 }}><RichText text={b.blurb} /></p>
               {b.btnText && <span style={{ display: 'inline-block', background: branding.accent, color: '#1d1340', fontWeight: 800, fontSize: 13, padding: '9px 22px', borderRadius: 24 }}>{b.btnText}</span>}
             </div>
@@ -228,7 +255,7 @@ function Preview({ blocks, branding, header }: { blocks: Block[]; branding: Bran
           if (b.type === 'button') return <div key={b.id} style={{ textAlign: 'center', margin: '0 0 14px' }}><span style={{ display: 'inline-block', background: branding.primary, color: '#fff', fontWeight: 800, fontSize: 13, padding: '10px 24px', borderRadius: 24 }}>{b.text}</span></div>
           return <hr key={b.id} style={{ border: 0, borderTop: '1px solid #eee', margin: '14px 0' }} />
         })}
-        <div style={{ textAlign: 'center', marginTop: 10, fontSize: 11, color: '#999' }}>{branding.name} · {branding.phone} · {branding.website}</div>
+        <div style={{ textAlign: 'center', marginTop: 16, fontSize: 11, color: '#8a8a8a', borderTop: '1px solid #eee', paddingTop: 12, lineHeight: 1.6 }}>You&apos;re part of the {branding.name} family 🎪<br/>{branding.name} · {branding.phone} · {branding.website}</div>
       </div>
     </div>
   )
