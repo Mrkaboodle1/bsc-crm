@@ -7,7 +7,7 @@ import type { AttendanceRow } from '@/lib/coach-portal'
 
 const timeOf = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' }) : ''
 
-export function WorkshopDayBoard({ workshopId, initial }: { workshopId: string; initial: AttendanceRow[] }) {
+export function WorkshopDayBoard({ workshopId, workshopDate, initial }: { workshopId: string; workshopDate?: string; initial: AttendanceRow[] }) {
   const router = useRouter()
   const [rows, setRows] = useState<AttendanceRow[]>(initial)
   const [open, setOpen] = useState<string | null>(null)
@@ -45,9 +45,11 @@ export function WorkshopDayBoard({ workshopId, initial }: { workshopId: string; 
   }
   const setAbsent = (r: AttendanceRow) => act(r.id, { action: 'absent' }, (x) => ({ ...x, status: 'absent' }))
   const reset = (r: AttendanceRow) => act(r.id, { action: 'reset' }, (x) => ({ ...x, status: 'expected', signed_in_at: null, signed_out_at: null, signed_out_to: null }))
-  function saveField(id: string, field: 'notes' | 'incident' | 'child_name' | 'medical', value: string) {
+  async function saveField(id: string, field: 'notes' | 'incident' | 'child_name' | 'medical', value: string) {
     setRows((rs) => rs.map((r) => r.id === id ? { ...r, [field]: value } : r))
-    fetch('/api/workshops/attendance', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, [field]: value }) })
+    // never fail silently — a coach must KNOW if their note didn't stick
+    const res = await fetch('/api/workshops/attendance', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, [field]: value }) })
+    if (!res.ok) { const j = await res.json().catch(() => ({})); alert(j.error || 'Could not save — please try again'); router.refresh() }
   }
   function removeChild(r: AttendanceRow) {
     if (!confirm(`Remove ${r.child_name} from this day?`)) return
@@ -126,7 +128,11 @@ export function WorkshopDayBoard({ workshopId, initial }: { workshopId: string; 
                     <Editable label="Edit child's name" value={r.child_name} onSave={(v) => saveField(r.id, 'child_name', v)} />
                     <Editable label="Medical / allergy alert" value={r.medical || ''} onSave={(v) => saveField(r.id, 'medical', v)} />
                     <Editable label="Coach note" value={r.notes || ''} onSave={(v) => saveField(r.id, 'notes', v)} multiline />
-                    <Editable label="⚠️ Incident report" value={r.incident || ''} onSave={(v) => saveField(r.id, 'incident', v)} multiline icon />
+                    {r.incident && <div className="text-xs bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-amber-800"><b>⚠️ Old quick incident note:</b> {r.incident}</div>}
+                    <a href={`/incidents?new=1&child=${encodeURIComponent(r.child_name)}${workshopDate ? `&date=${workshopDate}` : ''}&workshop=${workshopId}`}
+                      className="flex items-center justify-center gap-2 bg-red-600 text-white font-extrabold text-sm py-2.5 rounded-xl hover:bg-red-700">
+                      🚑 Log incident report for {r.child_name.split(' ')[0]} — full form
+                    </a>
                   </div>
                 )}
               </li>

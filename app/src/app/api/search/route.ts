@@ -11,6 +11,50 @@ import { createAdminSupabase } from '@/lib/supabase-admin'
 
 export const runtime = 'nodejs'
 
+// Every page in the CRM, searchable by name or plain-English alias — typing
+// "incident" or "accident" must take you to Incident Reports, not to nothing.
+const PAGES: Array<[label: string, href: string, keywords: string]> = [
+  ['Incident Reports', '/incidents', 'incident accident injury report safety near miss first aid'],
+  ['Dashboard', '/dashboard', 'home'],
+  ['CEO Dashboard', '/ceo', 'targets 650 goals'],
+  ['BigStar Radar', '/expansion', 'suburbs venues satellite expansion'],
+  ['Contacts', '/contacts', 'families parents phone email'],
+  ['Families', '/families', 'family'],
+  ['Students', '/students', 'kids children'],
+  ['Companies', '/contacts/companies', 'business'],
+  ['Classes', '/classes', 'timetable'],
+  ['Roll Call', '/roll-call', 'roll attendance marking'],
+  ['Staff Roster', '/roster', 'shifts coaches roster'],
+  ['Calendar', '/calendar', 'dates'],
+  ['Holiday Workshops', '/workshops', 'school holidays workshop'],
+  ['Kids Night Out', '/kids-night-out', 'kno night'],
+  ['Coach Events', '/coach-portal', 'coach portal days'],
+  ['Star Rewards', '/star-rewards', 'stars rewards'],
+  ['Star Ledger', '/stars', 'star points'],
+  ['Reward Milestones', '/rewards/milestones', 'prizes'],
+  ['Leads', '/leads', 'pipeline enquiries'],
+  ['Website', '/sites', 'site pages'],
+  ['Forms', '/marketing/forms', 'free trial form voucher form'],
+  ['Invoices', '/finance/invoices', 'invoice bill money'],
+  ['Play On Vouchers', '/finance/vouchers', 'voucher fairplay play on'],
+  ['Big Star Books', '/finance/books', 'accounting bookkeeping xero'],
+  ['Where We Stand', '/finance/position', 'profit money position'],
+  ['Bank & Reconcile', '/finance/bank', 'bank transactions reconcile'],
+  ['Payroll & Super', '/finance/payroll', 'wages super payroll'],
+  ['Who Owes You', '/finance/owed', 'debtors owed money'],
+  ['Reception Till', '/pos', 'till pos sales'],
+  ['Memberships', '/memberships', 'subscriptions plans'],
+  ['Staff', '/coaches', 'team coaches employees'],
+  ['Coach Academy', '/coaching', 'training manual academy'],
+  ['Credentials', '/credentials', 'blue card first aid certificates'],
+  ['Compliance', '/compliance', 'policies risk'],
+  ['Waiver Forms', '/compliance/waivers', 'waiver'],
+  ['Signed Waivers', '/compliance/signed-waivers', 'signed waiver'],
+  ['Risk Assessments', '/compliance/risk-assessments', 'risk assessment'],
+  ['Newsletter', '/marketing/campaigns', 'newsletter email campaign'],
+  ['Settings', '/settings', 'setup config'],
+]
+
 function phoneVariants(q: string): string[] {
   const digits = q.replace(/\D/g, '')
   if (digits.length < 5) return []
@@ -53,15 +97,24 @@ export async function GET(req: Request) {
   const kidOr: string[] = [`first_name.ilike.${like}`, `last_name.ilike.${like}`]
   if (dob) kidOr.push(`date_of_birth.eq.${dob}`)
 
-  const [families, students, classes] = await Promise.all([
+  const [families, students, classes, incidents] = await Promise.all([
     admin.from('families').select('id, family_name, primary_parent, phone, email').eq('tenant_id', T).or(famOr.join(',')).limit(8),
     admin.from('students').select('id, first_name, last_name, date_of_birth, family_id, families(family_name, primary_parent)').eq('tenant_id', T).or(kidOr.join(',')).limit(8),
     admin.from('classes').select('id, name').eq('tenant_id', T).eq('status', 'active').ilike('name', `%${q}%`).limit(5),
+    admin.from('incident_reports').select('id, report_no, occurred_on, report_type, children').eq('tenant_id', T)
+      .or([`children.ilike.${like}`, `description.ilike.${like}`, `report_no.ilike.${like}`, `location.ilike.${like}`].join(',')).limit(5),
   ])
 
   type R = { type: string; label: string; sub: string; href: string }
   const results: R[] = []
   const seenFam = new Set<string>()
+
+  // CRM pages first — typing a section's name should always take you there
+  const ql = q.toLowerCase()
+  for (const [label, href, keywords] of PAGES) {
+    if (`${label} ${keywords}`.toLowerCase().includes(ql)) results.push({ type: 'Page', label, sub: 'Open this page', href })
+    if (results.length >= 4) break
+  }
 
   for (const f of families.data ?? []) {
     seenFam.add(f.id)
@@ -77,6 +130,7 @@ export async function GET(req: Request) {
     }
   }
   for (const c of classes.data ?? []) results.push({ type: 'Class', label: c.name, sub: 'Class — open roll', href: `/roll-call/${c.id}` })
+  for (const i of incidents.data ?? []) results.push({ type: 'Incident', label: `${i.report_no} — ${i.children || i.report_type}`, sub: `Incident report · ${i.occurred_on}`, href: '/incidents' })
 
-  return NextResponse.json({ results: results.slice(0, 15) })
+  return NextResponse.json({ results: results.slice(0, 18) })
 }

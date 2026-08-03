@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { BodyMap, extractBody, withBody } from '@/components/body-map'
 
 export type Incident = {
   id?: string; report_no?: string; workshop_id?: string | null
@@ -10,12 +11,13 @@ export type Incident = {
   media?: Array<{ type: string; url: string | null; name: string; path?: string }>
   eufy_evidence?: Array<Record<string, unknown>>
   status?: string; created_by?: string | null; created_at?: string
+  body_parts?: string[] // client-side only — serialised into injury_details on save
 }
 
 const TYPES = [['incident', 'Incident'], ['accident', 'Accident'], ['injury', 'Injury'], ['near_miss', 'Near miss']]
 const SEVS = [['minor', 'Minor'], ['moderate', 'Moderate'], ['serious', 'Serious']]
 const today = () => new Date().toISOString().slice(0, 10)
-const blank = (): Incident => ({ occurred_on: today(), report_type: 'incident', severity: 'minor', parent_notified: false, media: [] })
+const blank = (): Incident => ({ occurred_on: today(), report_type: 'incident', severity: 'minor', parent_notified: false, media: [], body_parts: [] })
 const fmtDate = (d?: string) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : ''
 
 // Web Speech API — talk instead of type. Not on every browser, so we feature-detect.
@@ -62,11 +64,36 @@ export function IncidentsClient({ initial }: { initial: Incident[] }) {
 
   const set = (k: keyof Incident, v: unknown) => setEditing((e) => e ? { ...e, [k]: v } as Incident : e)
 
+  // Editing an existing report: pull the body-map line out of injury_details
+  // so the picture lights up and the text box shows only the words.
+  const openReport = (r: Incident) => {
+    const { parts, rest } = extractBody(r.injury_details)
+    setEditing({ ...r, injury_details: rest, body_parts: parts })
+  }
+
+  // Coach portal / roll pages can deep-link a prefilled new report:
+  // /incidents?new=1&child=Rosie&date=2026-08-03&time=10:45&workshop=<id>&loc=Mini-tramp
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search)
+    if (!sp.get('new')) return
+    setEditing({
+      ...blank(),
+      children: sp.get('child') || null,
+      occurred_on: sp.get('date') || today(),
+      occurred_at: sp.get('time') || null,
+      workshop_id: sp.get('workshop') || null,
+      location: sp.get('loc') || null,
+    })
+    window.history.replaceState({}, '', '/incidents')
+  }, [])
+
   async function save() {
     if (!editing) return
     setSaving(true); setMsg('')
     const method = editing.id ? 'PATCH' : 'POST'
-    const res = await fetch('/api/incidents', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editing) })
+    const payload: Record<string, unknown> = { ...editing, injury_details: withBody(editing.body_parts || [], editing.injury_details || '') }
+    delete payload.body_parts
+    const res = await fetch('/api/incidents', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
     const d = await res.json()
     setSaving(false)
     if (!res.ok) { setMsg(d.error || 'Could not save'); return }
@@ -136,6 +163,10 @@ export function IncidentsClient({ initial }: { initial: Incident[] }) {
 
           <MicField label="What happened" value={editing.description || ''} onChange={(v) => set('description', v)} rows={5} placeholder="Describe exactly what happened…" />
           <MicField label="Action taken" value={editing.action_taken || ''} onChange={(v) => set('action_taken', v)} rows={3} />
+          <div>
+            <label className="text-[11px] font-extrabold uppercase tracking-wide text-zinc-500">Where on the body? — tap the picture</label>
+            <div className="mt-1"><BodyMap value={editing.body_parts || []} onChange={(v) => set('body_parts', v)} /></div>
+          </div>
           <MicField label="Injuries / first aid given" value={editing.injury_details || ''} onChange={(v) => set('injury_details', v)} rows={2} />
           <div><label className="text-[11px] font-extrabold uppercase tracking-wide text-zinc-500">Witnesses</label>
             <input value={editing.witnesses || ''} onChange={(e) => set('witnesses', e.target.value)} className="w-full border border-zinc-300 rounded-lg px-3 py-2 text-sm" /></div>
@@ -163,7 +194,9 @@ export function IncidentsClient({ initial }: { initial: Incident[] }) {
       ) : (
         <div className="space-y-3">
           {rows.length === 0 && <div className="bg-white rounded-2xl border border-zinc-200 p-8 text-center text-zinc-500">No reports yet. Tap “+ New report” to log one.</div>}
-          {rows.map((r) => (
+          {rows.map((r) => {
+            const bm = extractBody(r.injury_details)
+            return (
             <div key={r.id} className="bg-white rounded-2xl border border-zinc-200 p-4 print-card">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -174,18 +207,20 @@ export function IncidentsClient({ initial }: { initial: Incident[] }) {
                   </div>
                   <div className="text-sm text-zinc-800 mt-1"><b>Children:</b> {r.children || '-'} · <b>By:</b> {r.reporter_name || '-'}</div>
                   <p className="text-sm text-zinc-600 mt-1 whitespace-pre-wrap">{r.description}</p>
-                  {r.injury_details && <p className="text-sm text-red-700 mt-1"><b>Injury:</b> {r.injury_details}</p>}
+                  {bm.parts.length > 0 && <div className="flex flex-wrap gap-1 mt-1.5">{bm.parts.map((p) => <span key={p} className="text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 rounded-full px-2 py-0.5">📍 {p}</span>)}</div>}
+                  {bm.rest && <p className="text-sm text-red-700 mt-1"><b>Injury:</b> {bm.rest}</p>}
                   {(r.media || []).length > 0 && <div className="flex flex-wrap gap-2 mt-2 no-print">{(r.media || []).map((m, i) => <a key={i} href={m.url || '#'} target="_blank" className="text-xs bg-zinc-100 border border-zinc-200 rounded-md px-2 py-1">{m.type === 'video' ? '🎬' : '🖼️'} {m.name}</a>)}</div>}
                 </div>
                 <div className="flex flex-col gap-1.5 no-print shrink-0">
-                  <button onClick={() => setEditing(r)} className="text-xs font-bold bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-md">Edit</button>
+                  <button onClick={() => openReport(r)} className="text-xs font-bold bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-md">Edit</button>
                   <button onClick={() => window.print()} className="text-xs font-bold bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-md">Print / PDF</button>
                   <button onClick={() => emailReport(r)} className="text-xs font-bold bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-md">Email</button>
                   <button onClick={() => removeReport(r)} className="text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-md">Delete</button>
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

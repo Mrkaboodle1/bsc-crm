@@ -30,12 +30,12 @@ export default async function CoachPortalDayPage({ params }: { params: Promise<{
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 max-w-6xl">
         {/* Attendance board — main column */}
         <div className="lg:col-span-2">
-          <WorkshopDayBoard workshopId={day.id} initial={students} />
+          <WorkshopDayBoard workshopId={day.id} workshopDate={day.date} initial={students} />
         </div>
 
         {/* Side: running order + activity + staff */}
         <aside className="space-y-4">
-          <Link href="/incidents" className="flex items-center justify-center gap-2 bg-red-600 text-white font-bold text-sm px-4 py-3 rounded-xl hover:bg-red-700">🚑 Log an incident / accident</Link>
+          <Link href={`/incidents?new=1&date=${day.date}&workshop=${day.id}`} className="flex items-center justify-center gap-2 bg-red-600 text-white font-bold text-sm px-4 py-3 rounded-xl hover:bg-red-700">🚑 Log an incident / accident</Link>
           {staff.length > 0 && (
             <div className="bg-white rounded-2xl border border-zinc-200 p-4">
               <div className="text-[10px] font-extrabold uppercase tracking-wide text-zinc-500 mb-2">👥 Coaches today</div>

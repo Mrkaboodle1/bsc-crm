@@ -51,7 +51,7 @@ const DEPARTMENTS: Department[] = [
     { label: 'Inbox', href: '/inbox' }, { label: 'Conversations', href: '/conversations' }, { label: 'Message History', href: '/conversations/history' },
   ] },
   { key: 'admin', label: 'Admin', Icon: Settings, admin: true, items: [
-    { label: 'Settings', href: '/settings' }, { label: 'Setup Wizard', href: '/setup' }, { label: 'Compliance', href: '/compliance' }, { label: 'Waiver Forms', href: '/compliance/waivers' }, { label: 'Signed Waivers', href: '/compliance/signed-waivers' }, { label: 'Risk Assessments', href: '/compliance/risk-assessments' }, { label: 'Policies & T&Cs', href: '/compliance/policies' }, { label: 'Reporting', href: '/reporting' },
+    { label: 'Settings', href: '/settings' }, { label: 'Setup Wizard', href: '/setup' }, { label: 'Incident Reports', href: '/incidents' }, { label: 'Compliance', href: '/compliance' }, { label: 'Waiver Forms', href: '/compliance/waivers' }, { label: 'Signed Waivers', href: '/compliance/signed-waivers' }, { label: 'Risk Assessments', href: '/compliance/risk-assessments' }, { label: 'Policies & T&Cs', href: '/compliance/policies' }, { label: 'Reporting', href: '/reporting' },
   ] },
 ]
 

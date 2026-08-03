@@ -5,6 +5,7 @@
 // cycles status on tap: blank → present → late → absent → blank.
 
 import { useState, useTransition } from 'react'
+import { BodyMap, withBody } from '@/components/body-map'
 
 export type WeekStatus = 'present' | 'late' | 'absent' | 'makeup' | 'excused' | null
 
@@ -913,6 +914,10 @@ function IncidentModal({
   const [type, setType] = useState('incident')
   const [severity, setSeverity] = useState('minor')
   const [involved, setInvolved] = useState<Set<string>>(new Set(preselected.map((r) => r.studentId)))
+  const [when, setWhen] = useState(() => new Date().toISOString().slice(0, 10))
+  const [atTime, setAtTime] = useState('')
+  const [extraKids, setExtraKids] = useState('')
+  const [bodyParts, setBodyParts] = useState<string[]>([])
   const [description, setDescription] = useState('')
   const [action, setAction] = useState('')
   const [injury, setInjury] = useState('')
@@ -929,13 +934,15 @@ function IncidentModal({
   async function submit() {
     if (!description.trim()) { setError('Please describe what happened'); return }
     setBusy(true); setError(null)
-    const kids = roster.filter((r) => involved.has(r.studentId)).map((r) => `${r.firstName} ${r.lastName ?? ''}`.trim()).join(', ')
+    const rosterKids = roster.filter((r) => involved.has(r.studentId)).map((r) => `${r.firstName} ${r.lastName ?? ''}`.trim())
+    const kids = [...rosterKids, extraKids.trim()].filter(Boolean).join(', ')
     const res = await fetch('/api/incidents', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         report_type: type, severity, location: className,
+        occurred_on: when, occurred_at: atTime || null,
         children: kids || null, description, action_taken: action || null,
-        injury_details: injury || null, witnesses: witnesses || null,
+        injury_details: withBody(bodyParts, injury), witnesses: witnesses || null,
         parent_notified: parentNotified,
       }),
     })
@@ -967,7 +974,7 @@ function IncidentModal({
           <span className="text-2xl">🚨</span>
           <h3 className="text-xl font-extrabold text-zinc-900">Incident / accident report</h3>
         </div>
-        <div className="text-xs text-zinc-500 mb-4">Class: <strong>{className}</strong> · today. Saved for both admin &amp; coaches.</div>
+        <div className="text-xs text-zinc-500 mb-4">Class: <strong>{className}</strong>. Saved for both admin &amp; coaches.</div>
 
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div>
@@ -987,6 +994,14 @@ function IncidentModal({
               <option value="serious">Serious</option>
             </select>
           </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">Date of incident</label>
+            <input type="date" value={when} onChange={(e) => setWhen(e.target.value)} className={inp} />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">Time of incident</label>
+            <input type="time" value={atTime} onChange={(e) => setAtTime(e.target.value)} className={inp} />
+          </div>
         </div>
 
         <label className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">Children involved (tap to add)</label>
@@ -998,12 +1013,18 @@ function IncidentModal({
             </button>
           ))}
         </div>
+        <input value={extraKids} onChange={(e) => setExtraKids(e.target.value)} className={inp + ' mb-3'} placeholder="Other children not on this roll (visitors, school groups) — type their names" />
 
         <label className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">What happened? *</label>
         <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className={inp + ' resize-none mb-3'} placeholder="Describe the incident…" />
 
         <label className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">Action taken</label>
         <textarea rows={2} value={action} onChange={(e) => setAction(e.target.value)} className={inp + ' resize-none mb-3'} placeholder="First aid given, area made safe, etc." />
+
+        <div className="mb-3">
+          <label className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">Where on the body? — tap the picture</label>
+          <div className="mt-1"><BodyMap value={bodyParts} onChange={setBodyParts} /></div>
+        </div>
 
         <div className="grid grid-cols-2 gap-2 mb-3">
           <input value={injury} onChange={(e) => setInjury(e.target.value)} className={inp} placeholder="Injury details (if any)" />
