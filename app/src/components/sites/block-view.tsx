@@ -3,7 +3,8 @@
 //  - the editor's live preview pane
 // Keep it deterministic and side-effect-free — server component-safe.
 
-import type { Block, FormField } from '@/lib/sites/blocks'
+import type { Block } from '@/lib/sites/blocks'
+import { SiteForm } from './site-form'
 
 // ── Shared styling for the bespoke "pixel-exact" blocks ──
 const FRED = "'Fredoka', system-ui, sans-serif"
@@ -22,7 +23,9 @@ function Fonts() {
   return <style dangerouslySetInnerHTML={{ __html: "@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@300;400;600;700&display=swap');" }} />
 }
 
-export function BlockView({ block }: { block: Block }) {
+// `siteSlug` (optional) lets slug-aware blocks (navbar logo link) point at the
+// current site's home page. The public renderer passes it; editor previews don't.
+export function BlockView({ block, siteSlug }: { block: Block; siteSlug?: string }) {
   switch (block.type) {
     case 'heading': {
       const align = block.align ?? 'left'
@@ -112,13 +115,24 @@ export function BlockView({ block }: { block: Block }) {
         <section className="my-6">
           {block.title && <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 text-center mb-6">{block.title}</h2>}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {block.items.map((it, i) => (
-              <div key={i} className="bg-white rounded-2xl shadow-sm border border-zinc-200 p-5">
-                {it.icon && <div className="text-3xl mb-2">{it.icon}</div>}
-                <h3 className="text-lg font-extrabold text-zinc-900 mb-1">{it.title}</h3>
-                <p className="text-sm text-zinc-600 leading-relaxed">{it.body}</p>
-              </div>
-            ))}
+            {block.items.map((it, i) => {
+              const inner = (
+                <>
+                  {it.icon && <div className="text-3xl mb-2">{it.icon}</div>}
+                  <h3 className="text-lg font-extrabold text-zinc-900 mb-1">{it.title}</h3>
+                  <p className="text-sm text-zinc-600 leading-relaxed">{it.body}</p>
+                </>
+              )
+              const cardCls = 'bg-white rounded-2xl shadow-sm border border-zinc-200 p-5'
+              // Whole card is tappable when the editor gives it a link.
+              return it.href ? (
+                <a key={i} href={it.href} className={`${cardCls} block no-underline transition hover:shadow-md hover:border-[#D72027]/40 hover:-translate-y-0.5`}>
+                  {inner}
+                </a>
+              ) : (
+                <div key={i} className={cardCls}>{inner}</div>
+              )
+            })}
           </div>
         </section>
       )
@@ -138,22 +152,9 @@ export function BlockView({ block }: { block: Block }) {
       )
 
     case 'form':
-      return (
-        <section className="bg-white rounded-2xl shadow-md border border-zinc-200 p-6 my-6">
-          {block.title && <h2 className="text-xl font-extrabold text-zinc-900 mb-4">{block.title}</h2>}
-          <form method="post" action="#" className="space-y-3">
-            {block.fields.map((f, i) => (
-              <FieldView key={i} field={f} />
-            ))}
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white font-extrabold text-base px-6 py-3 rounded-xl shadow-md hover:shadow-lg"
-            >
-              {block.submit_label ?? 'Submit'}
-            </button>
-          </form>
-        </section>
-      )
+      // Client component — posts to /api/forms/submit so enquiries become
+      // CRM leads. Carries id="form" for the '#form' anchor CTAs.
+      return <SiteForm title={block.title} submitLabel={block.submit_label} fields={block.fields} />
 
     case 'embed':
       // Trusted because only tenant admins can edit pages, but we still
@@ -217,14 +218,26 @@ export function BlockView({ block }: { block: Block }) {
             <circle cx="100" cy="18" r="6" fill="#8B5CF6"/>
           </svg>
           <div style={{ maxWidth: 1140, margin: '40px auto 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 26, position: 'relative', zIndex: 5 }}>
-            {block.items.map((it, i) => (
-              <div key={i} style={{ background: '#fff', borderRadius: 20, boxShadow: '0 18px 40px rgba(0,0,0,.10)', padding: '34px 26px', textAlign: 'center' }}>
-                <div style={{ width: 72, height: 72, borderRadius: '50%', margin: '0 auto 18px', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 28, background: CARD_COLORS[it.color ?? 'pink'], boxShadow: '0 6px 14px rgba(0,0,0,.10)' }}>★</div>
-                <h3 style={{ fontFamily: FRED, fontSize: 21, marginBottom: 10, color: '#2b2b2b' }}>{it.title}</h3>
-                <p style={{ fontSize: 15, color: '#6b6b6b', lineHeight: 1.6 }}>{it.body}</p>
-              </div>
-            ))}
+            {block.items.map((it, i) => {
+              const cardStyle: React.CSSProperties = { background: '#fff', borderRadius: 20, boxShadow: '0 18px 40px rgba(0,0,0,.10)', padding: '34px 26px', textAlign: 'center' }
+              const inner = (
+                <>
+                  <div style={{ width: 72, height: 72, borderRadius: '50%', margin: '0 auto 18px', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 28, background: CARD_COLORS[it.color ?? 'pink'], boxShadow: '0 6px 14px rgba(0,0,0,.10)' }}>★</div>
+                  <h3 style={{ fontFamily: FRED, fontSize: 21, marginBottom: 10, color: '#2b2b2b' }}>{it.title}</h3>
+                  <p style={{ fontSize: 15, color: '#6b6b6b', lineHeight: 1.6 }}>{it.body}</p>
+                </>
+              )
+              // Whole card is tappable when it carries a link (e.g. Free Trial → /f/trial).
+              return it.href ? (
+                <a key={i} href={it.href} className="bsc-card-link" style={{ ...cardStyle, display: 'block', textDecoration: 'none', color: 'inherit' }}>
+                  {inner}
+                </a>
+              ) : (
+                <div key={i} style={cardStyle}>{inner}</div>
+              )
+            })}
           </div>
+          <style dangerouslySetInnerHTML={{ __html: '.bsc-card-link{transition:transform .15s ease,box-shadow .15s ease}.bsc-card-link:hover{transform:translateY(-4px);box-shadow:0 24px 50px rgba(0,0,0,.16)}' }} />
         </section>
       )
 
@@ -299,6 +312,12 @@ export function BlockView({ block }: { block: Block }) {
       )
 
     case 'navbar':
+      // No-JS navigation that works on touch AND desktop (this is a server
+      // component, so everything is HTML + CSS):
+      //  - Submenus: a <details><summary> toggle (tap to open) whose sibling
+      //    <ul> is ALSO shown on :hover for desktop mice. The submenu sits
+      //    outside <details> so hover-CSS can reveal it while it's closed.
+      //  - Small screens: a checkbox-driven hamburger collapses the menu.
       return (
         <nav style={{
           ...FULLBLEED,
@@ -306,22 +325,34 @@ export function BlockView({ block }: { block: Block }) {
           borderBottom: '1px solid rgba(0,0,0,0.06)', padding: '12px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
         }}>
           <Fonts />
-          <a href={block.menu[0]?.href || '/'} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+          <a href={siteSlug ? `/s/${siteSlug}` : (block.menu[0]?.href || '/')} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
             {block.logo && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={block.logo} alt="Big Star Circus" style={{ height: 44, width: 'auto' }} />
             )}
           </a>
-          <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap', fontFamily: FRED, fontSize: 14, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          {/* Hamburger state — must precede .bsc-nav-menu for the ~ selector. */}
+          <input type="checkbox" id="bsc-nav-toggle" className="bsc-nav-toggle" aria-label="Toggle menu" />
+          <ul className="bsc-nav-menu" style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap', fontFamily: FRED, fontSize: 14, fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
             {block.menu.map((m, i) => (
-              <li key={i} style={{ position: 'relative' }} className="bsc-nav-item">
-                <a href={m.href} style={{ color: '#2b2b2b', textDecoration: 'none', padding: '8px 4px' }}>{m.label}{m.children && ' ▾'}</a>
-                {m.children && m.children.length > 0 && (
-                  <ul className="bsc-nav-sub" style={{ position: 'absolute', top: '100%', left: 0, background: '#fff', boxShadow: '0 10px 30px rgba(0,0,0,0.10)', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 8, padding: '8px 0', margin: 0, listStyle: 'none', minWidth: 240, display: 'none' }}>
-                    {m.children.map((c, j) => (
-                      <li key={j}><a href={c.href} style={{ display: 'block', padding: '8px 16px', color: '#2b2b2b', textDecoration: 'none', fontSize: 13, textTransform: 'none', fontWeight: 500 }}>{c.label}</a></li>
-                    ))}
-                  </ul>
+              <li key={i} className="bsc-nav-item">
+                {m.children && m.children.length > 0 ? (
+                  <>
+                    <details className="bsc-nav-details">
+                      <summary>{m.label} ▾</summary>
+                    </details>
+                    <ul className="bsc-nav-sub">
+                      {/* The parent page stays reachable as the first entry. */}
+                      {m.href && m.href !== '#' && (
+                        <li><a href={m.href}>{m.label}</a></li>
+                      )}
+                      {m.children.map((c, j) => (
+                        <li key={j}><a href={c.href}>{c.label}</a></li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <a className="bsc-nav-top" href={m.href}>{m.label}</a>
                 )}
               </li>
             ))}
@@ -329,7 +360,32 @@ export function BlockView({ block }: { block: Block }) {
           {block.cta && (
             <a href={block.cta.href} style={{ background: '#FF5A1F', color: '#fff', padding: '10px 18px', borderRadius: 999, fontFamily: FRED, fontWeight: 700, textDecoration: 'none', fontSize: 14 }}>{block.cta.text}</a>
           )}
-          <style dangerouslySetInnerHTML={{ __html: '.bsc-nav-item:hover .bsc-nav-sub{display:block!important}' }} />
+          <label htmlFor="bsc-nav-toggle" className="bsc-nav-burger" aria-label="Open menu">☰</label>
+          <style dangerouslySetInnerHTML={{ __html: `
+.bsc-nav-toggle{display:none}
+.bsc-nav-burger{display:none;cursor:pointer;font-size:22px;line-height:1;padding:7px 11px;border:1px solid rgba(0,0,0,.15);border-radius:10px;color:#2b2b2b;user-select:none}
+.bsc-nav-item{position:relative}
+.bsc-nav-top,.bsc-nav-details>summary{color:#2b2b2b;text-decoration:none;padding:8px 4px;display:inline-block;cursor:pointer}
+.bsc-nav-top:hover,.bsc-nav-details>summary:hover{color:#D72027}
+.bsc-nav-details{display:inline-block}
+.bsc-nav-details>summary{list-style:none}
+.bsc-nav-details>summary::-webkit-details-marker{display:none}
+.bsc-nav-sub{display:none;list-style:none;margin:0;padding:8px 0;background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.10);min-width:240px}
+.bsc-nav-details[open]+.bsc-nav-sub{display:block}
+.bsc-nav-sub a{display:block;padding:8px 16px;color:#2b2b2b;text-decoration:none;font-size:13px;text-transform:none;font-weight:500}
+.bsc-nav-sub a:hover{background:#fbf3f4;color:#D72027}
+@media (min-width:861px){
+  .bsc-nav-sub{position:absolute;top:100%;left:0;z-index:60}
+  .bsc-nav-item:hover .bsc-nav-sub{display:block}
+}
+@media (max-width:860px){
+  .bsc-nav-burger{display:inline-flex;align-items:center}
+  .bsc-nav-menu{display:none}
+  .bsc-nav-toggle:checked~.bsc-nav-menu{display:flex;flex-direction:column;align-items:stretch;width:100%;order:10;gap:2px;padding-top:10px}
+  .bsc-nav-menu>li{width:100%}
+  .bsc-nav-sub{position:static;box-shadow:none;border:0;border-left:2px solid rgba(0,0,0,.08);border-radius:0;margin:0 0 4px 10px;min-width:0}
+}
+`.replace(/\n\s*/g, '') }} />
         </nav>
       )
 
@@ -370,7 +426,8 @@ export function BlockView({ block }: { block: Block }) {
               <div key={i}>
                 <h4 style={{ fontFamily: FRED, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14, color: '#fff' }}>{col.title}</h4>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {col.links.map((l, j) => (
+                  {/* Links with no destination yet are hidden rather than rendered dead. */}
+                  {col.links.filter((l) => l.href && l.href.trim() !== '').map((l, j) => (
                     <li key={j} style={{ margin: '6px 0' }}><a href={l.href} style={{ color: '#e8dff0', textDecoration: 'none', fontSize: 14 }}>{l.label}</a></li>
                   ))}
                 </ul>
@@ -399,42 +456,12 @@ export function BlockView({ block }: { block: Block }) {
   }
 }
 
-function FieldView({ field }: { field: FormField }) {
-  const label = (
-    <label className="block text-xs font-extrabold uppercase tracking-wider text-zinc-600 mb-1">
-      {field.label}{field.required && <span className="text-[#D72027] ml-0.5">*</span>}
-    </label>
-  )
-  const baseCls =
-    'w-full px-3 py-2 border-2 border-zinc-200 rounded-xl text-sm font-bold focus:border-[#D72027] focus:outline-none'
-  if (field.type === 'textarea') {
-    return (
-      <div>
-        {label}
-        <textarea name={field.name} rows={field.rows ?? 4} placeholder={field.placeholder} className={baseCls} required={field.required} />
-      </div>
-    )
-  }
-  return (
-    <div>
-      {label}
-      <input
-        type={field.type === 'phone' ? 'tel' : field.type}
-        name={field.name}
-        placeholder={field.placeholder}
-        className={baseCls}
-        required={field.required}
-      />
-    </div>
-  )
-}
-
 // Convenience: render an array of blocks
-export function PageBody({ blocks }: { blocks: Block[] }) {
+export function PageBody({ blocks, siteSlug }: { blocks: Block[]; siteSlug?: string }) {
   return (
     <div className="space-y-5">
       {blocks.map((b, i) => (
-        <BlockView key={i} block={b} />
+        <BlockView key={i} block={b} siteSlug={siteSlug} />
       ))}
     </div>
   )

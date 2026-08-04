@@ -14,13 +14,13 @@ export type Block =
   | { type: 'spacer';    size?: 'sm' | 'md' | 'lg' | 'xl' }
   | { type: 'divider' }
   | { type: 'hero';      title: string; subtitle?: string; image?: string; cta?: { text: string; href: string } }
-  | { type: 'features';  title?: string; items: { icon?: string; title: string; body: string }[] }
+  | { type: 'features';  title?: string; items: { icon?: string; title: string; body: string; href?: string }[] }
   | { type: 'cta';       title: string; body?: string; button: { text: string; href: string } }
   | { type: 'form';      title?: string; submit_label?: string; fields: FormField[] }
   | { type: 'embed';     html: string }       // raw HTML escape hatch — use sparingly
   // ── Bespoke "pixel-exact" blocks (match the bigstarcircus.com.au design) ──
   | { type: 'videohero'; title: string; subtitle?: string; note?: string; videoUrl?: string; posterUrl?: string; cta?: { text: string; href: string } }
-  | { type: 'infocards'; items: { color?: 'pink' | 'amber' | 'purple'; title: string; body: string }[] }
+  | { type: 'infocards'; items: { color?: 'pink' | 'amber' | 'purple'; title: string; body: string; href?: string }[] }
   | { type: 'gallery';   images: { url: string; alt?: string }[] }
   | { type: 'band';      title: string; body?: string; bgUrl?: string; theme?: 'curtain' | 'stage' | 'light'; cta?: { text: string; href: string } }
   | { type: 'columns';   title?: string; accent?: boolean; items: { title: string; body: string }[]; cta?: { text: string; href: string } }
@@ -74,10 +74,10 @@ export function makeBlock(type: Block['type']): Block {
     case 'heading':   return { type: 'heading', text: 'Your heading here', level: 2 }
     case 'paragraph': return { type: 'paragraph', text: 'Write something compelling about your circus classes here.' }
     case 'image':     return { type: 'image', url: '/bigstar-logo.png', alt: 'Big Star Circus' }
-    case 'button':    return { type: 'button', text: 'Book a free trial', href: '/contact', variant: 'primary' }
+    case 'button':    return { type: 'button', text: 'Book a free trial', href: '/f/trial', variant: 'primary' }
     case 'spacer':    return { type: 'spacer', size: 'md' }
     case 'divider':   return { type: 'divider' }
-    case 'hero':      return { type: 'hero', title: 'Big Star Circus', subtitle: 'Where kids fly. Literally.', cta: { text: 'Book your free trial', href: '/contact' } }
+    case 'hero':      return { type: 'hero', title: 'Big Star Circus', subtitle: 'Where kids fly. Literally.', cta: { text: 'Book your free trial', href: '/f/trial' } }
     case 'features':  return {
       type: 'features',
       title: 'Why Big Star?',
@@ -87,7 +87,7 @@ export function makeBlock(type: Block['type']): Block {
         { icon: '🏆', title: 'Showcases & comps',   body: 'Twice a year your kid steps under the lights.' },
       ],
     }
-    case 'cta':       return { type: 'cta', title: 'Ready to fly?', body: 'Your first class is on us.', button: { text: 'Book free trial', href: '/contact' } }
+    case 'cta':       return { type: 'cta', title: 'Ready to fly?', body: 'Your first class is on us.', button: { text: 'Book free trial', href: '/f/trial' } }
     case 'form':      return {
       type: 'form',
       title: 'Get in touch',
@@ -107,14 +107,14 @@ export function makeBlock(type: Block['type']): Block {
       note: '3 free trial classes — up to 3 in one week!',
       videoUrl: '',
       posterUrl: '/bigstar-logo.png',
-      cta: { text: 'Select a class to trial today!', href: '/contact' },
+      cta: { text: 'Select a class to trial today!', href: '/f/trial' },
     }
     case 'infocards': return {
       type: 'infocards',
       items: [
-        { color: 'pink',   title: 'Free Trial Class', body: 'Try three free trial classes within the same week — circus, aerial, acrobatics and drama.' },
-        { color: 'amber',  title: 'Timetable',        body: 'Classes run Monday to Saturday, plus unforgettable birthday parties on Sundays!' },
-        { color: 'purple', title: 'Prices',           body: 'Options starting at $27 per class, with discounts for siblings and multiple classes.' },
+        { color: 'pink',   title: 'Free Trial Class', body: 'Try three free trial classes within the same week — circus, aerial, acrobatics and drama.', href: '/f/trial' },
+        { color: 'amber',  title: 'Timetable',        body: 'Classes run Monday to Saturday, plus unforgettable birthday parties on Sundays!', href: '/s/bigstar/what-we-offer' },
+        { color: 'purple', title: 'Prices',           body: 'Options starting at $27 per class, with discounts for siblings and multiple classes.', href: '/s/bigstar/prices' },
       ],
     }
     case 'gallery': return {
@@ -132,7 +132,7 @@ export function makeBlock(type: Block['type']): Block {
       body: 'A professional circus artist with over 15 years of experience, performing in Australia and overseas.',
       theme: 'curtain',
       bgUrl: '',
-      cta: { text: 'Learn more about us', href: '/about' },
+      cta: { text: 'Learn more about us', href: '/s/bigstar/about' },
     }
     case 'columns': return {
       type: 'columns',
@@ -143,7 +143,7 @@ export function makeBlock(type: Block['type']): Block {
         { title: 'Aerial Classes for Kids & Adults', body: 'A thrilling way to build strength, flexibility, and confidence!' },
         { title: 'Circus Gymnastics', body: 'Master essential skills such as balance, tumbling, handstands, and cartwheels.' },
       ],
-      cta: { text: 'More about our classes', href: '/classes' },
+      cta: { text: 'More about our classes', href: '/s/bigstar/what-we-offer' },
     }
     case 'testimonials': return {
       type: 'testimonials',
@@ -161,11 +161,12 @@ export function makeBlock(type: Block['type']): Block {
         { label: 'Home',         href: '/s/bigstar' },
         { label: 'About Us',     href: '/s/bigstar/about' },
         { label: 'Free Trial',   href: '/s/bigstar/free-trial' },
-        { label: 'What We Offer', href: '#', children: [
+        { label: 'What We Offer', href: '/s/bigstar/what-we-offer', children: [
           { label: 'Birthday Party',           href: '/s/bigstar/birthday-party' },
           { label: 'Weekly Classes',           href: '/s/bigstar/weekly-classes' },
           { label: 'School Holidays',          href: '/s/bigstar/school-holidays' },
-          { label: 'Kids Night Out',           href: '/s/bigstar/kids-night-out' },
+          { label: 'Holiday Workshops',        href: '/book/workshops' },
+          { label: 'Kids Night Out',           href: '/book/kids-night-out' },
           { label: 'Talent Show',              href: '/s/bigstar/talent-show' },
           { label: 'Bubby & Me Toddler Circus', href: '/s/bigstar/bubby-me' },
           { label: 'Homeschool Classes',       href: '/s/bigstar/homeschool' },
@@ -186,8 +187,9 @@ export function makeBlock(type: Block['type']): Block {
         ] },
         { title: 'Policies', links: [
           { label: 'Terms of Use',         href: '/s/bigstar/terms-of-use' },
-          { label: 'Make-Up Class Policy', href: '/s/bigstar/makeup-policy' },
-          { label: 'Terms of Service',     href: '/s/bigstar/terms-of-service' },
+          // Blank hrefs = hidden by the footer renderer until the pages exist.
+          { label: 'Make-Up Class Policy', href: '' },
+          { label: 'Terms of Service',     href: '' },
         ] },
       ],
       address: 'Unit 1/14 Harper St, Molendinar QLD 4214',

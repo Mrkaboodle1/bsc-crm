@@ -51,9 +51,9 @@ export async function PublicRenderer({ siteSlug, pageSlug }: { siteSlug: string;
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-4xl mx-auto px-4 sm:px-6">
-        <PageBody blocks={blocks} />
+        <PageBody blocks={blocks} siteSlug={siteSlug} />
       </main>
-      <ChatWidget />
+      <ChatWidget siteSlug={siteSlug} />
     </div>
   )
 }

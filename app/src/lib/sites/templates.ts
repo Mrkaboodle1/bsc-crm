@@ -34,7 +34,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
           type: 'hero',
           title: 'Big Star Circus',
           subtitle: 'Where kids fly. Literally.',
-          cta: { text: 'Book a free trial', href: '/contact' },
+          cta: { text: 'Book a free trial', href: '/f/trial' },
         },
         makeBlock('features'),
         makeBlock('cta'),
@@ -84,7 +84,8 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     description: 'Term fees, casual rates, NDIS notes.',
     build: () => ({
       name: 'Pricing',
-      slug: 'pricing',
+      // 'prices' (not 'pricing') — the default navbar links to /s/bigstar/prices.
+      slug: 'prices',
       blocks: [
         { type: 'heading', text: 'Pricing', level: 1, align: 'center' },
         { type: 'paragraph', text: 'Simple weekly rates. No lock-in. NDIS plan-managed welcome.', align: 'center' },
@@ -109,7 +110,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
         { type: 'heading', text: 'You\'re in 🎉', level: 1, align: 'center' },
         { type: 'paragraph', text: 'We\'ll be in touch within one working day with the next step. Keep an eye on your inbox (and check spam if you don\'t see us).', align: 'center' },
         { type: 'spacer', size: 'md' },
-        { type: 'button', text: 'Back to home', href: '/', variant: 'secondary' },
+        { type: 'button', text: 'Back to home', href: '/s/bigstar', variant: 'secondary' },
       ],
     }),
   },

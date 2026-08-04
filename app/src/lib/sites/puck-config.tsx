@@ -59,6 +59,7 @@ export const puckConfig: Config = {
   // Categories control the left-hand palette grouping in Puck's editor.
   categories: {
     bigstar:  { title: '🎪 BigStar sections', components: ['VideoHero', 'InfoCards', 'Gallery', 'Band', 'Columns', 'Testimonials'] },
+    chrome:   { title: '🧭 Menu, banner & footer', components: ['NavBar', 'PageHero', 'PageFooter'] },
     text:     { title: '📝 Text',     components: ['Heading', 'Paragraph'] },
     media:    { title: '🖼 Media',    components: ['Image'] },
     cta:      { title: '🎯 CTA',      components: ['Button', 'CtaSection', 'Form'] },
@@ -111,7 +112,7 @@ export const puckConfig: Config = {
         href:    { type: 'text',   label: 'Link (where it goes)' },
         variant: { type: 'select', label: 'Style', options: [...BUTTON_VARIANTS] },
       },
-      defaultProps: { text: 'Book a free trial', href: '/contact', variant: 'primary' },
+      defaultProps: { text: 'Book a free trial', href: '/f/trial', variant: 'primary' },
       render: render('button'),
     },
     CtaSection: {
@@ -131,7 +132,7 @@ export const puckConfig: Config = {
       defaultProps: {
         title: 'Ready to fly?',
         body: 'Your first class is on us.',
-        button: { text: 'Book free trial', href: '/contact' },
+        button: { text: 'Book free trial', href: '/f/trial' },
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render: (props: any) => <BlockView block={{ type: 'cta', ...props } as Block} />,
@@ -191,7 +192,7 @@ export const puckConfig: Config = {
         title: 'Big Star Circus',
         subtitle: 'Where kids fly. Literally.',
         image: '',
-        cta: { text: 'Book your free trial', href: '/contact' },
+        cta: { text: 'Book your free trial', href: '/f/trial' },
       },
       render: render('hero'),
     },
@@ -206,9 +207,10 @@ export const puckConfig: Config = {
             icon:  { type: 'text', label: 'Emoji icon' },
             title: { type: 'text', label: 'Title' },
             body:  { type: 'text', label: 'Body text' },
+            href:  { type: 'text', label: 'Link (optional — makes the card tappable)' },
           },
           getItemSummary: (item: { title?: string }) => item.title ?? 'Feature',
-          defaultItemProps: { icon: '✦', title: 'New feature', body: 'Describe it.' },
+          defaultItemProps: { icon: '✦', title: 'New feature', body: 'Describe it.', href: '' },
         },
       },
       defaultProps: {
@@ -265,7 +267,7 @@ export const puckConfig: Config = {
         subtitle: 'We aim at inspiring our students to dream more, learn more, do more, and become more in their respective journeys of life.',
         note: '3 free trial classes — up to 3 in one week!',
         videoUrl: '', posterUrl: '/bigstar-logo.png',
-        cta: { text: 'Select a class to trial today!', href: '/contact' },
+        cta: { text: 'Select a class to trial today!', href: '/f/trial' },
       },
       render: render('videohero'),
     },
@@ -280,15 +282,16 @@ export const puckConfig: Config = {
             ] },
             title: { type: 'text', label: 'Title' },
             body:  { type: 'textarea', label: 'Text' },
+            href:  { type: 'text', label: 'Link (optional — makes the card tappable)' },
           },
           getItemSummary: (item: { title?: string }) => item.title ?? 'Card',
-          defaultItemProps: { color: 'pink', title: 'New card', body: 'Describe it.' },
+          defaultItemProps: { color: 'pink', title: 'New card', body: 'Describe it.', href: '' },
         },
       },
       defaultProps: { items: [
-        { color: 'pink',   title: 'Free Trial Class', body: 'Try three free trial classes within the same week.' },
-        { color: 'amber',  title: 'Timetable',        body: 'Classes run Monday to Saturday, parties on Sundays!' },
-        { color: 'purple', title: 'Prices',           body: 'From $27 per class, with sibling discounts.' },
+        { color: 'pink',   title: 'Free Trial Class', body: 'Try three free trial classes within the same week.', href: '/f/trial' },
+        { color: 'amber',  title: 'Timetable',        body: 'Classes run Monday to Saturday, parties on Sundays!', href: '/s/bigstar/what-we-offer' },
+        { color: 'purple', title: 'Prices',           body: 'From $27 per class, with sibling discounts.', href: '/s/bigstar/prices' },
       ] },
       render: render('infocards'),
     },
@@ -328,7 +331,7 @@ export const puckConfig: Config = {
         title: 'Rhett Morrow — Head Coach',
         body: 'A professional circus artist with over 15 years of experience, performing in Australia and overseas.',
         theme: 'curtain', bgUrl: '',
-        cta: { text: 'Learn more about us', href: '/about' },
+        cta: { text: 'Learn more about us', href: '/s/bigstar/about' },
       },
       render: render('band'),
     },
@@ -360,7 +363,7 @@ export const puckConfig: Config = {
           { title: 'Aerial Classes for Kids & Adults', body: 'A thrilling way to build strength, flexibility and confidence.' },
           { title: 'Circus Gymnastics', body: 'Master balance, tumbling, handstands and cartwheels.' },
         ],
-        cta: { text: 'More about our classes', href: '/classes' },
+        cta: { text: 'More about our classes', href: '/s/bigstar/what-we-offer' },
       },
       render: render('columns'),
     },
@@ -387,6 +390,132 @@ export const puckConfig: Config = {
         ],
       },
       render: render('testimonials'),
+    },
+
+    // ── Site chrome: menu bar, page banner, footer ──────────
+    // These existed in puck-adapter.ts but were never registered here, so
+    // opening a page in the builder silently DROPPED them on save. Now they
+    // round-trip and are editable.
+    NavBar: {
+      label: '🧭 Top menu bar',
+      fields: {
+        logo: makeMediaField('Logo image'),
+        menu: {
+          type: 'array', label: 'Menu items',
+          arrayFields: {
+            label: { type: 'text', label: 'Label' },
+            href:  { type: 'text', label: 'Link' },
+            children: {
+              type: 'array', label: 'Dropdown items (optional)',
+              arrayFields: {
+                label: { type: 'text', label: 'Label' },
+                href:  { type: 'text', label: 'Link' },
+              },
+              getItemSummary: (item: { label?: string }) => item.label ?? 'Item',
+              defaultItemProps: { label: 'New item', href: '/s/bigstar' },
+            },
+          },
+          getItemSummary: (item: { label?: string }) => item.label ?? 'Menu item',
+          defaultItemProps: { label: 'New item', href: '/s/bigstar', children: [] },
+        },
+        cta: { type: 'object', label: 'Button (optional)', objectFields: {
+          text: { type: 'text', label: 'Button text' },
+          href: { type: 'text', label: 'Link' },
+        } },
+      },
+      defaultProps: {
+        logo: '/bigstar-logo.png',
+        menu: [
+          { label: 'Home',         href: '/s/bigstar', children: [] },
+          { label: 'About Us',     href: '/s/bigstar/about', children: [] },
+          { label: 'Free Trial',   href: '/s/bigstar/free-trial', children: [] },
+          { label: 'What We Offer', href: '/s/bigstar/what-we-offer', children: [
+            { label: 'Birthday Party',           href: '/s/bigstar/birthday-party' },
+            { label: 'Weekly Classes',           href: '/s/bigstar/weekly-classes' },
+            { label: 'School Holidays',          href: '/s/bigstar/school-holidays' },
+            { label: 'Holiday Workshops',        href: '/book/workshops' },
+            { label: 'Kids Night Out',           href: '/book/kids-night-out' },
+            { label: 'Talent Show',              href: '/s/bigstar/talent-show' },
+            { label: 'Bubby & Me Toddler Circus', href: '/s/bigstar/bubby-me' },
+            { label: 'Homeschool Classes',       href: '/s/bigstar/homeschool' },
+          ] },
+          { label: 'Prices',     href: '/s/bigstar/prices', children: [] },
+          { label: 'Contact Us', href: '/s/bigstar/contact', children: [] },
+        ],
+      },
+      render: render('navbar'),
+    },
+    PageHero: {
+      label: '🏷 Page banner',
+      fields: {
+        title:    { type: 'text', label: 'Heading' },
+        subtitle: { type: 'textarea', label: 'Sub-text (optional)' },
+        bgUrl:    makeMediaField('Background image (optional)'),
+      },
+      defaultProps: { title: 'About Us', subtitle: 'Learn more about who we are.', bgUrl: '' },
+      render: render('pagehero'),
+    },
+    PageFooter: {
+      label: '🦶 Footer',
+      fields: {
+        logo:    makeMediaField('Logo image'),
+        tagline: { type: 'text', label: 'Tagline' },
+        columns: {
+          type: 'array', label: 'Link columns',
+          arrayFields: {
+            title: { type: 'text', label: 'Column title' },
+            links: {
+              type: 'array', label: 'Links',
+              arrayFields: {
+                label: { type: 'text', label: 'Label' },
+                href:  { type: 'text', label: 'Link (blank = hidden)' },
+              },
+              getItemSummary: (item: { label?: string }) => item.label ?? 'Link',
+              defaultItemProps: { label: 'New link', href: '' },
+            },
+          },
+          getItemSummary: (item: { title?: string }) => item.title ?? 'Column',
+          defaultItemProps: { title: 'New column', links: [] },
+        },
+        address: { type: 'text', label: 'Address' },
+        phone:   { type: 'text', label: 'Phone' },
+        socials: {
+          type: 'array', label: 'Social links',
+          arrayFields: {
+            kind: { type: 'select', label: 'Network', options: [
+              { label: 'Facebook', value: 'facebook' }, { label: 'Instagram', value: 'instagram' },
+              { label: 'YouTube', value: 'youtube' }, { label: 'TikTok', value: 'tiktok' },
+            ] },
+            href: { type: 'text', label: 'Profile link' },
+          },
+          getItemSummary: (item: { kind?: string }) => item.kind ?? 'Social',
+          defaultItemProps: { kind: 'facebook', href: 'https://www.facebook.com/bigstarcircus' },
+        },
+        copyright: { type: 'text', label: 'Copyright line' },
+      },
+      defaultProps: {
+        logo: '/bigstar-logo.png',
+        tagline: 'Inspiring young performers across the Gold Coast.',
+        columns: [
+          { title: 'Explore', links: [
+            { label: 'About Us',    href: '/s/bigstar/about' },
+            { label: 'Prices',      href: '/s/bigstar/prices' },
+            { label: 'Contact Us',  href: '/s/bigstar/contact' },
+          ] },
+          { title: 'Policies', links: [
+            { label: 'Terms of Use', href: '/s/bigstar/terms-of-use' },
+          ] },
+        ],
+        address: 'Unit 1/14 Harper St, Molendinar QLD 4214',
+        phone: '',
+        socials: [
+          { kind: 'facebook',  href: 'https://www.facebook.com/bigstarcircus' },
+          { kind: 'instagram', href: 'https://www.instagram.com/bigstarcircus' },
+          { kind: 'youtube',   href: 'https://www.youtube.com/@bigstarcircus' },
+        ],
+        copyright: '© Big Star Circus. All rights reserved.',
+      },
+      render: render('footer'),
     },
   },
 }

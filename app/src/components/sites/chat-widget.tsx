@@ -7,7 +7,10 @@
 
 import { useState } from 'react'
 
-export function ChatWidget() {
+// `siteSlug` comes from the public renderer so the widget works for any
+// site, not just 'bigstar'. Without it, links fall back to the generic
+// /f/trial funnel form and the API's own default slug.
+export function ChatWidget({ siteSlug }: { siteSlug?: string }) {
   const [open, setOpen] = useState(false)
   const [sent, setSent] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -21,7 +24,7 @@ export function ChatWidget() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          siteSlug: 'bigstar',
+          siteSlug: siteSlug ?? 'bigstar',
           name: fd.get('name'),
           email: fd.get('email'),
           phone: fd.get('phone'),
@@ -74,7 +77,7 @@ export function ChatWidget() {
                   <a href="tel:0489188179" style={{ background: '#f3f4f6', color: '#1a0f24', padding: '10px 8px', borderRadius: 10, textDecoration: 'none', fontSize: 12, fontWeight: 600, textAlign: 'center' }}>📞 Call us</a>
                   <a href="mailto:admin@bigstarcircus.com.au" style={{ background: '#f3f4f6', color: '#1a0f24', padding: '10px 8px', borderRadius: 10, textDecoration: 'none', fontSize: 12, fontWeight: 600, textAlign: 'center' }}>✉ Email us</a>
                 </div>
-                <a href="/s/bigstar/free-trial" style={{ display: 'block', background: '#D72027', color: '#fff', padding: '10px 14px', borderRadius: 10, textDecoration: 'none', fontSize: 13, fontWeight: 700, textAlign: 'center', marginBottom: 16 }}>🎟 Book a free trial</a>
+                <a href={siteSlug ? `/s/${siteSlug}/free-trial` : '/f/trial'} style={{ display: 'block', background: '#D72027', color: '#fff', padding: '10px 14px', borderRadius: 10, textDecoration: 'none', fontSize: 13, fontWeight: 700, textAlign: 'center', marginBottom: 16 }}>🎟 Book a free trial</a>
 
                 <form onSubmit={submit} style={{ display: 'grid', gap: 8 }}>
                   <div style={{ fontSize: 12, color: '#6b6b6b', marginBottom: 2 }}>Or leave us a message:</div>
