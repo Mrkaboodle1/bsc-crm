@@ -28,6 +28,8 @@ create policy vouchers_staff on play_on_vouchers for all to authenticated
   using (tenant_id = (select tenant_id from public.users where id = auth.uid()))
   with check (tenant_id = (select tenant_id from public.users where id = auth.uid()));`
 
+const DAY: Record<string, string> = { '0': 'Sun', '1': 'Mon', '2': 'Tue', '3': 'Wed', '4': 'Thu', '5': 'Fri', '6': 'Sat' }
+
 export default async function VouchersPage() {
   const user = await verifySession()
   const admin = createAdminSupabase()
@@ -37,9 +39,19 @@ export default async function VouchersPage() {
   if (error) setupNeeded = true
   else vouchers = await attachVoucherClasses(admin, user.tenantId, (data ?? []) as Voucher[])
 
+  // Active classes for the "which class are they attending?" picker — labelled
+  // with day + time so a mum's "Friday aerial" is easy to spot.
+  const { data: cls } = await admin.from('classes').select('id, name, day_of_week, start_time')
+    .eq('tenant_id', user.tenantId).eq('status', 'active').order('name')
+  const classOptions = (cls ?? []).map((k) => {
+    const day = k.day_of_week != null ? (DAY[String(k.day_of_week)] ?? String(k.day_of_week)) : null
+    const time = k.start_time ? String(k.start_time).slice(0, 5) : null
+    return { id: k.id as string, label: [k.name, [day, time].filter(Boolean).join(' ')].filter(Boolean).join(' — ') }
+  })
+
   return (
     <DashboardShell user={user} currentPath="/finance/vouchers" pageTitle="Play On Vouchers" pageSubtitle="Track every $200 government voucher — and convert them to paying members.">
-      <VouchersClient initial={vouchers} setupNeeded={setupNeeded} setupSql={SETUP_SQL} />
+      <VouchersClient initial={vouchers} setupNeeded={setupNeeded} setupSql={SETUP_SQL} classOptions={classOptions} />
     </DashboardShell>
   )
 }

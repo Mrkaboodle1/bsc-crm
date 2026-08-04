@@ -33,18 +33,20 @@ const STATUS_CHIP: Record<string, string> = { active: 'bg-emerald-100 text-emera
 
 const isPdf = (url: string) => /\.pdf($|\?)/i.test(url)
 
-export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Voucher[]; setupNeeded: boolean; setupSql: string }) {
+export type ClassOption = { id: string; label: string }
+
+export function VouchersClient({ initial, setupNeeded, setupSql, classOptions = [] }: { initial: Voucher[]; setupNeeded: boolean; setupSql: string; classOptions?: ClassOption[] }) {
   const router = useRouter()
   const [items, setItems] = useState<Voucher[]>(initial)
   const [adding, setAdding] = useState(false)
-  const [form, setForm] = useState({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term' as Voucher['use_type'], photo_url: '', amount: '200', child_dob: '', family_id: '' })
+  const [form, setForm] = useState({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term' as Voucher['use_type'], photo_url: '', amount: '200', child_dob: '', family_id: '', class_id: '' })
   const [uploading, setUploading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [parsedNote, setParsedNote] = useState('')
   // Multi-kid mode: upload 2-3 voucher PDFs at once and the form shows the
   // whole family on one screen — mum at the top, one row per child with their
   // own voucher code, ONE save button.
-  type MultiKid = { student_name: string; voucher_ref: string; amount: string; photo_url: string; child_dob: string }
+  type MultiKid = { student_name: string; voucher_ref: string; amount: string; photo_url: string; child_dob: string; class_id: string }
   const [multi, setMulti] = useState<{ family_name: string; family_id: string; redeemed_on: string; use_type: Voucher['use_type']; kids: MultiKid[] } | null>(null)
   const [savingAll, setSavingAll] = useState(false)
 
@@ -67,11 +69,11 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
     } finally { setUploading(false) }
   }
   function resetForm() {
-    setForm({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term', photo_url: '', amount: '200', child_dob: '', family_id: '' })
+    setForm({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term', photo_url: '', amount: '200', child_dob: '', family_id: '', class_id: '' })
     setEditingId(null); setAdding(false); setParsedNote(''); setMulti(null)
   }
   function startEdit(v: Voucher) {
-    setForm({ family_name: v.family_name || '', student_name: v.student_name || '', voucher_ref: v.voucher_ref || '', redeemed_on: v.redeemed_on || '', use_type: v.use_type ?? 'term', photo_url: v.photo_url || '', amount: String(v.amount ?? 200), child_dob: '', family_id: v.family_id || '' })
+    setForm({ family_name: v.family_name || '', student_name: v.student_name || '', voucher_ref: v.voucher_ref || '', redeemed_on: v.redeemed_on || '', use_type: v.use_type ?? 'term', photo_url: v.photo_url || '', amount: String(v.amount ?? 200), child_dob: '', family_id: v.family_id || '', class_id: '' })
     setEditingId(v.id); setAdding(true)
   }
   type Parsed = { form: Partial<typeof form>; note: string }
@@ -145,6 +147,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
           amount: p.form.amount || '200',
           photo_url: p.form.photo_url || '',
           child_dob: p.form.child_dob || '',
+          class_id: '',
         })),
       })
       setParsedNote(`Read ${parsed.length} vouchers for the same family — check the names and codes below, then save them all in one go.`)
@@ -161,6 +164,7 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       const cov = voucherCoverage(multi.redeemed_on)
       const weeksLeft = cov ? Math.max(1, Math.round((new Date(cov.end).getTime() - new Date(multi.redeemed_on).getTime()) / 604800000)) : 8
       const saved: Voucher[] = []
+      const enrolWarnings: string[] = []
       for (const kid of multi.kids) {
         const amount = Number(kid.amount) || 200
         const body = {
@@ -170,12 +174,15 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
           redeemed_on: multi.redeemed_on, term_start: multi.redeemed_on, term_end: cov?.end ?? null,
           use_type: multi.use_type, photo_url: kid.photo_url || null, status: 'active',
           child_dob: kid.child_dob || null, family_id: multi.family_id || null,
+          class_id: kid.class_id || null,
         }
         const r = await fetch('/api/vouchers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         const j = await r.json()
-        if (j.voucher) saved.push(j.voucher)
+        if (j.voucher) saved.push(j.enrolled ? { ...j.voucher, classes: [j.enrolled] } : j.voucher)
         else { alert(`${kid.student_name}: ${j.error || 'could not save'} — the ones before were saved.`); break }
+        if (j.enrol_warning) enrolWarnings.push(j.enrol_warning)
       }
+      if (enrolWarnings.length) alert(enrolWarnings.join('\n'))
       if (saved.length) { setItems((xs) => [...xs, ...saved]); router.refresh() }
       if (saved.length === multi.kids.length) resetForm()
       else if (saved.length) setMulti({ ...multi, kids: multi.kids.slice(saved.length) })
@@ -195,16 +202,25 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       : 8
     const weeks = weeksLeft
     const weekly_value = Math.round(amount / weeks)
-    const body = { ...form, voucher_ref: form.voucher_ref.trim(), photo_url: form.photo_url || null, redeemed_on: form.redeemed_on || null, term_start, term_end, amount, weekly_value, weeks, status: 'active', child_dob: form.child_dob || null, family_id: form.family_id || null }
+    const body = { ...form, voucher_ref: form.voucher_ref.trim(), photo_url: form.photo_url || null, redeemed_on: form.redeemed_on || null, term_start, term_end, amount, weekly_value, weeks, status: 'active', child_dob: form.child_dob || null, family_id: form.family_id || null, class_id: form.class_id || null }
     if (editingId) {
       const r = await fetch('/api/vouchers', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, id: editingId, status: undefined }) })
-      const j = await r.json(); if (j.voucher) { setItems((xs) => xs.map((v) => v.id === editingId ? j.voucher : v)); resetForm(); router.refresh() }
+      const j = await r.json()
+      if (j.voucher) {
+        setItems((xs) => xs.map((v) => v.id === editingId ? (j.enrolled ? { ...j.voucher, classes: [...new Set([...(v.classes ?? []), j.enrolled])] } : { ...j.voucher, classes: v.classes }) : v))
+        if (j.enrol_warning) alert(j.enrol_warning)
+        resetForm(); router.refresh()
+      }
       else alert(j.error || 'Could not save changes')
       return
     }
     const r = await fetch('/api/vouchers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     const j = await r.json()
-    if (j.voucher) { setItems((xs) => [...xs, j.voucher]); resetForm(); router.refresh() }
+    if (j.voucher) {
+      setItems((xs) => [...xs, j.enrolled ? { ...j.voucher, classes: [j.enrolled] } : j.voucher])
+      if (j.enrol_warning) alert(j.enrol_warning)
+      resetForm(); router.refresh()
+    }
     else alert(j.error || 'Could not save voucher')
   }
   async function setStatus(id: string, status: Voucher['status']) {
@@ -262,9 +278,10 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
                 <div><label className="text-xs font-bold uppercase tracking-wide text-zinc-400 mb-1 block">Date redeemed</label><input type="date" className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm" value={multi.redeemed_on} onChange={(e) => setMulti({ ...multi, redeemed_on: e.target.value })} /></div>
               </div>
               {multi.kids.map((k, i) => (
-                <div key={i} className="border border-zinc-200 rounded-xl p-3 grid sm:grid-cols-[1fr_1fr_auto] gap-3 items-end bg-zinc-50/60">
+                <div key={i} className="border border-zinc-200 rounded-xl p-3 grid sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end bg-zinc-50/60">
                   <Field label={`Child ${i + 1}`} value={k.student_name} onChange={(v) => { const kids = [...multi.kids]; kids[i] = { ...k, student_name: v }; setMulti({ ...multi, kids }) }} placeholder="child's name" />
                   <Field label="Their voucher code" value={k.voucher_ref} onChange={(v) => { const kids = [...multi.kids]; kids[i] = { ...k, voucher_ref: v }; setMulti({ ...multi, kids }) }} placeholder="e.g. UR8PLQKY" />
+                  <ClassSelect label="Class they're attending" value={k.class_id} options={classOptions} onChange={(v) => { const kids = [...multi.kids]; kids[i] = { ...k, class_id: v }; setMulti({ ...multi, kids }) }} />
                   <div className="flex items-center gap-1.5 pb-1.5">
                     {k.photo_url && <a href={k.photo_url} target="_blank" rel="noreferrer" title="This child's voucher PDF" className="w-9 h-9 rounded-lg border border-zinc-200 flex items-center justify-center bg-red-50">📄</a>}
                     {multi.kids.length > 1 && <button onClick={() => setMulti({ ...multi, kids: multi.kids.filter((_, x) => x !== i) })} title="Remove this child" className="p-1.5 text-zinc-300 hover:text-red-600"><Trash2 size={14} /></button>}
@@ -296,6 +313,10 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
                 <option value="both">📚🎪 Both</option>
                 <option value="unused">⏳ Not used yet</option>
               </select>
+            </div>
+            <div className="sm:col-span-2">
+              <ClassSelect label="Which class are they attending?" value={form.class_id} options={classOptions} onChange={(v) => setForm({ ...form, class_id: v })} />
+              <p className="text-[11px] text-zinc-400 mt-1">Pick a class and the child is added to that class&apos;s roll call the moment you save{editingId ? ' your changes' : ''}.</p>
             </div>
             <div>
               <label className="text-xs font-bold uppercase tracking-wide text-zinc-400 mb-1 block">Photo or PDF of voucher</label>
@@ -396,6 +417,18 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
 
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return <div><label className="text-xs font-bold uppercase tracking-wide text-zinc-400 mb-1 block">{label}</label><input className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm focus:outline-none focus:border-zinc-900" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} /></div>
+}
+
+function ClassSelect({ label, value, options, onChange }: { label: string; value: string; options: ClassOption[]; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label className="text-xs font-bold uppercase tracking-wide text-zinc-400 mb-1 block">🎪 {label}</label>
+      <select className="w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white" value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">— pick a class (adds them to the roll) —</option>
+        {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+      </select>
+    </div>
+  )
 }
 
 function SetupCard({ sql }: { sql: string }) {
