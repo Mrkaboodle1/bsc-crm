@@ -113,7 +113,7 @@ export function makeBlock(type: Block['type']): Block {
       type: 'infocards',
       items: [
         { color: 'pink',   title: 'Free Trial Class', body: 'Try three free trial classes within the same week — circus, aerial, acrobatics and drama.', href: '/f/trial' },
-        { color: 'amber',  title: 'Timetable',        body: 'Classes run Monday to Saturday, plus unforgettable birthday parties on Sundays!', href: '/s/bigstar/what-we-offer' },
+        { color: 'amber',  title: 'Timetable',        body: 'Classes run Monday to Saturday, plus unforgettable birthday parties on Sundays!', href: '/s/bigstar/weekly-classes' },
         { color: 'purple', title: 'Prices',           body: 'Options starting at $27 per class, with discounts for siblings and multiple classes.', href: '/s/bigstar/prices' },
       ],
     }
@@ -143,7 +143,7 @@ export function makeBlock(type: Block['type']): Block {
         { title: 'Aerial Classes for Kids & Adults', body: 'A thrilling way to build strength, flexibility, and confidence!' },
         { title: 'Circus Gymnastics', body: 'Master essential skills such as balance, tumbling, handstands, and cartwheels.' },
       ],
-      cta: { text: 'More about our classes', href: '/s/bigstar/what-we-offer' },
+      cta: { text: 'More about our classes', href: '/s/bigstar/weekly-classes' },
     }
     case 'testimonials': return {
       type: 'testimonials',
@@ -161,7 +161,7 @@ export function makeBlock(type: Block['type']): Block {
         { label: 'Home',         href: '/s/bigstar' },
         { label: 'About Us',     href: '/s/bigstar/about' },
         { label: 'Free Trial',   href: '/s/bigstar/free-trial' },
-        { label: 'What We Offer', href: '/s/bigstar/what-we-offer', children: [
+        { label: 'What We Offer', href: '/s/bigstar/weekly-classes', children: [
           { label: 'Birthday Party',           href: '/s/bigstar/birthday-party' },
           { label: 'Weekly Classes',           href: '/s/bigstar/weekly-classes' },
           { label: 'School Holidays',          href: '/s/bigstar/school-holidays' },

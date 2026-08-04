@@ -290,7 +290,7 @@ export const puckConfig: Config = {
       },
       defaultProps: { items: [
         { color: 'pink',   title: 'Free Trial Class', body: 'Try three free trial classes within the same week.', href: '/f/trial' },
-        { color: 'amber',  title: 'Timetable',        body: 'Classes run Monday to Saturday, parties on Sundays!', href: '/s/bigstar/what-we-offer' },
+        { color: 'amber',  title: 'Timetable',        body: 'Classes run Monday to Saturday, parties on Sundays!', href: '/s/bigstar/weekly-classes' },
         { color: 'purple', title: 'Prices',           body: 'From $27 per class, with sibling discounts.', href: '/s/bigstar/prices' },
       ] },
       render: render('infocards'),
@@ -363,7 +363,7 @@ export const puckConfig: Config = {
           { title: 'Aerial Classes for Kids & Adults', body: 'A thrilling way to build strength, flexibility and confidence.' },
           { title: 'Circus Gymnastics', body: 'Master balance, tumbling, handstands and cartwheels.' },
         ],
-        cta: { text: 'More about our classes', href: '/s/bigstar/what-we-offer' },
+        cta: { text: 'More about our classes', href: '/s/bigstar/weekly-classes' },
       },
       render: render('columns'),
     },
@@ -429,7 +429,7 @@ export const puckConfig: Config = {
           { label: 'Home',         href: '/s/bigstar', children: [] },
           { label: 'About Us',     href: '/s/bigstar/about', children: [] },
           { label: 'Free Trial',   href: '/s/bigstar/free-trial', children: [] },
-          { label: 'What We Offer', href: '/s/bigstar/what-we-offer', children: [
+          { label: 'What We Offer', href: '/s/bigstar/weekly-classes', children: [
             { label: 'Birthday Party',           href: '/s/bigstar/birthday-party' },
             { label: 'Weekly Classes',           href: '/s/bigstar/weekly-classes' },
             { label: 'School Holidays',          href: '/s/bigstar/school-holidays' },
