@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { createAdminSupabase } from '@/lib/supabase-admin'
+import { attachVoucherClasses } from '@/lib/voucher-classes'
 
 export const runtime = 'nodejs'
 
@@ -27,7 +28,8 @@ export async function GET() {
   const c = await ctx(); if ('error' in c) return NextResponse.json({ error: c.error }, { status: c.status })
   const { data, error } = await c.admin.from('play_on_vouchers').select('*').eq('tenant_id', c.tenantId).order('term_end', { ascending: true })
   if (error) return NextResponse.json({ error: error.message, vouchers: [] }, { status: 200 })
-  return NextResponse.json({ vouchers: data ?? [] })
+  const rows = await attachVoucherClasses(c.admin, c.tenantId, data ?? [])
+  return NextResponse.json({ vouchers: rows })
 }
 
 export async function POST(req: Request) {

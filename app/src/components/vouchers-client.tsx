@@ -21,6 +21,7 @@ export type Voucher = {
   notes: string | null
   use_type: 'term' | 'workshop' | 'both' | 'unused' | null
   photo_url: string | null
+  classes?: string[] // the kid's live class enrolments, matched server-side
 }
 
 const USE_LABEL: Record<string, string> = { term: '📚 Term classes', workshop: '🎪 Holiday workshop', both: '📚🎪 Both', unused: '⏳ Not used yet' }
@@ -329,6 +330,9 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
       {/* list — grouped one family at a time: mum's name once, then a line
           per child with THEIR voucher code, so multi-kid families read the
           way Rhett thinks about them. */}
+      <div className="mb-3 text-[12px] text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+        ✅ <b>Safety net is on:</b> every voucher you log automatically creates a <b>high-priority task due the day it ends</b> — “set up next term&apos;s subscription” — and the family shows in the <b>Friday reminder email</b> as the end date gets close. No voucher family can quietly slip away.
+      </div>
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
         <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr_auto] gap-2 px-4 py-2.5 bg-zinc-50 text-[11px] font-bold uppercase tracking-wide text-zinc-400">
           <span>Family → their kids</span><span>Voucher</span><span>Term ends</span><span>Status</span><span></span>
@@ -360,6 +364,14 @@ export function VouchersClient({ initial, setupNeeded, setupSql }: { initial: Vo
                         <span className="font-semibold text-zinc-800">{v.student_name || '—'}</span>
                         {v.voucher_ref && <span className="ml-1.5 font-mono text-[10px] font-bold bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200 px-1.5 py-0.5 rounded" title="This child's voucher code">{v.voucher_ref}</span>}
                         {v.use_type && <span className="block text-[11px] text-zinc-400">{USE_LABEL[v.use_type]}</span>}
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {(v.classes ?? []).map((c) => (
+                            <span key={c} className="text-[10px] font-bold bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-200 px-1.5 py-0.5 rounded" title="Enrolled — this child is on this class roll">🎪 {c}</span>
+                          ))}
+                          {v.status === 'active' && (v.classes ?? []).length === 0 && (
+                            <span className="text-[10px] font-bold bg-red-50 text-red-600 ring-1 ring-inset ring-red-200 px-1.5 py-0.5 rounded" title="No class enrolment found for this child — add them to a class so they appear on a roll">⚠️ Not on a class roll yet</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="text-zinc-600">{v.voucher_ref || '—'}<div className="text-[11px] text-zinc-400">${Number(v.amount).toFixed(0)}</div></div>

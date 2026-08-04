@@ -2,6 +2,7 @@ import { verifySession } from '@/lib/dal'
 import { createAdminSupabase } from '@/lib/supabase-admin'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { VouchersClient, type Voucher } from '@/components/vouchers-client'
+import { attachVoucherClasses } from '@/lib/voucher-classes'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +35,7 @@ export default async function VouchersPage() {
   let setupNeeded = false
   const { data, error } = await admin.from('play_on_vouchers').select('*').eq('tenant_id', user.tenantId).order('term_end')
   if (error) setupNeeded = true
-  else vouchers = (data ?? []) as Voucher[]
+  else vouchers = await attachVoucherClasses(admin, user.tenantId, (data ?? []) as Voucher[])
 
   return (
     <DashboardShell user={user} currentPath="/finance/vouchers" pageTitle="Play On Vouchers" pageSubtitle="Track every $200 government voucher — and convert them to paying members.">
