@@ -71,18 +71,23 @@ function parseAuDate(q: string): string | null {
 }
 
 export async function GET(req: Request) {
+  try {
   const supabase = await createServerSupabase()
   const { data: auth } = await supabase.auth.getUser()
-  if (!auth?.user) return NextResponse.json({ results: [] })
-  const { data: p } = await supabase.from('users').select('tenant_id').eq('id', auth.user.id).maybeSingle()
-  if (!p?.tenant_id) return NextResponse.json({ results: [] })
+  // Tell the client WHY there are no results — a silent [] here used to render
+  // as "No matches", which reads like broken search when it's really a stale login.
+  if (!auth?.user) return NextResponse.json({ results: [], authExpired: true })
+  const admin = createAdminSupabase()
+  // Admin client for the profile row on purpose: the user id comes from the verified
+  // session, and coach-role RLS must never be able to silently blank the whole search.
+  const { data: p } = await admin.from('users').select('tenant_id').eq('id', auth.user.id).maybeSingle()
+  if (!p?.tenant_id) return NextResponse.json({ results: [], authExpired: true })
 
   const raw = new URL(req.url).searchParams.get('q')?.trim() || ''
   if (raw.length < 2) return NextResponse.json({ results: [] })
   // commas and parens would break PostgREST's or() syntax
   const q = raw.replace(/[(),]/g, ' ').trim()
   const like = `*${q}*`
-  const admin = createAdminSupabase()
   const T = p.tenant_id
 
   const famOr: string[] = [
@@ -133,4 +138,9 @@ export async function GET(req: Request) {
   for (const i of incidents.data ?? []) results.push({ type: 'Incident', label: `${i.report_no} — ${i.children || i.report_type}`, sub: `Incident report · ${i.occurred_on}`, href: '/incidents' })
 
   return NextResponse.json({ results: results.slice(0, 18) })
+  } catch (e) {
+    // never let the search die silently — the client shows a "hit a snag" note
+    console.error('search failed:', e)
+    return NextResponse.json({ results: [], error: 'search-failed' })
+  }
 }
