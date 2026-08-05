@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { SignaturePad } from '@/components/public/signature-pad'
 
 type PublicWorkshop = {
   id: string; date: string; title: string; start_time: string; end_time: string
@@ -32,7 +33,7 @@ export function WorkshopBooking({ workshops, paymentUrl, kind = 'workshop', waiv
 }
 
 function BookModal({ w, kind, paymentUrl, waiver, onClose }: { w: PublicWorkshop; kind: Kind; paymentUrl?: string; waiver?: Waiver; onClose: () => void }) {
-  const [f, setF] = useState({ parent_name: '', email: '', phone: '', emergency: '', child_names: '', allergies: '', pizza: '', agree: false, signature: '', media: 'yes' })
+  const [f, setF] = useState({ parent_name: '', email: '', phone: '', emergency: '', child_names: '', allergies: '', pizza: '', agree: false, signature: '', drawnSignature: '', media: 'yes' })
   const [state, setState] = useState<'idle' | 'sending' | 'done'>('idle')
   const [result, setResult] = useState<{ status: string; message: string } | null>(null)
   const [showWaiver, setShowWaiver] = useState(false)
@@ -40,8 +41,19 @@ function BookModal({ w, kind, paymentUrl, waiver, onClose }: { w: PublicWorkshop
   const emoji = kind === 'kno' ? '🌙' : '🏕️'
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!f.parent_name || (!f.email && !f.phone) || !f.agree || !f.signature.trim() || !f.child_names.trim() || (kind === 'workshop' && !f.emergency.trim())) return
+    if (!f.parent_name || (!f.email && !f.phone) || !f.agree || !f.signature.trim() || !f.drawnSignature || !f.child_names.trim() || (kind === 'workshop' && !f.emergency.trim())) return
     setState('sending')
+    // File the signed waiver (with the drawn signature) into the CRM.
+    fetch('/api/public-waiver', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventType: kind === 'kno' ? 'kids-night-out' : 'holiday-workshop',
+        parentName: f.signature.trim() || f.parent_name, email: f.email, phone: f.phone,
+        children: f.child_names, medical: f.allergies, emergency: f.emergency,
+        consentPhoto: f.media, termsAgreed: f.agree, signature: f.drawnSignature,
+        answers: { workshopId: w.id, date: w.date, title: w.title, pizza: f.pizza },
+      }),
+    }).catch(() => {})
     const extras = [f.allergies ? `Allergies: ${f.allergies}` : '', f.pizza ? `Pizza: ${f.pizza}` : ''].filter(Boolean).join(' · ')
     const child_names = extras ? `${f.child_names} (${extras})` : f.child_names
     const notes = [f.emergency ? `Emergency: ${f.emergency}` : '', `Waiver agreed · signed: ${f.signature.trim()} · photos: ${f.media === 'yes' ? 'YES' : 'NO'}`].filter(Boolean).join(' · ')
@@ -107,8 +119,9 @@ function BookModal({ w, kind, paymentUrl, waiver, onClose }: { w: PublicWorkshop
                 </div>
               </div>
               <input className={inp} placeholder="Type your full name to sign *" value={f.signature} onChange={(e) => setF({ ...f, signature: e.target.value })} />
+              <SignaturePad value={f.drawnSignature} onChange={(d) => setF({ ...f, drawnSignature: d })} label="Now sign here" />
             </div>
-            <button disabled={state === 'sending' || !f.agree || !f.signature.trim() || !f.child_names.trim() || (kind === 'workshop' && !f.emergency.trim())} className="w-full bg-[#D72027] text-white font-bold text-sm px-4 py-3 rounded-xl disabled:opacity-50">{state === 'sending' ? 'Booking…' : 'Book my spot'}</button>
+            <button disabled={state === 'sending' || !f.agree || !f.signature.trim() || !f.drawnSignature || !f.child_names.trim() || (kind === 'workshop' && !f.emergency.trim())} className="w-full bg-[#D72027] text-white font-bold text-sm px-4 py-3 rounded-xl disabled:opacity-50">{state === 'sending' ? 'Booking…' : 'Book my spot'}</button>
             <p className="text-[11px] text-zinc-400 text-center">{Number(w.member_price) === 0 ? 'FREE for members. ' : 'Members get priority + their member price. '}You'll pay after booking. Questions? 0489 188 179.</p>
           </form>
         )}
