@@ -62,7 +62,7 @@ export const puckConfig: Config = {
     chrome:   { title: '🧭 Menu, banner & footer', components: ['NavBar', 'PageHero', 'PageFooter'] },
     text:     { title: '📝 Text',     components: ['Heading', 'Paragraph'] },
     media:    { title: '🖼 Media',    components: ['Image'] },
-    cta:      { title: '🎯 CTA',      components: ['Button', 'CtaSection', 'Form'] },
+    cta:      { title: '🎯 CTA',      components: ['Button', 'CtaSection', 'Form', 'PlanCards'] },
     layout:   { title: '📐 Layout',   components: ['Hero', 'Features', 'Spacer', 'Divider'] },
     advanced: { title: '🛠 Advanced', components: ['Embed'] },
   },
@@ -334,6 +334,38 @@ export const puckConfig: Config = {
         cta: { text: 'Learn more about us', href: '/s/bigstar/about' },
       },
       render: render('band'),
+    },
+    PlanCards: {
+      label: '💳 Price cards',
+      fields: {
+        title: { type: 'text', label: 'Section title' },
+        note:  { type: 'textarea', label: 'Note under the title' },
+        items: {
+          type: 'array', label: 'Plans',
+          arrayFields: {
+            eyebrow: { type: 'text', label: 'Plan name (small red text)' },
+            price:   { type: 'text', label: 'Price (e.g. $30)' },
+            per:     { type: 'text', label: 'Per (e.g. per week)' },
+            sub:     { type: 'text', label: 'Under the price (e.g. $30 per class)' },
+            points:  { type: 'array', label: 'Tick points', arrayFields: { point: { type: 'text', label: 'Point' } } },
+            btnText: { type: 'text', label: 'Button text' },
+            href:    { type: 'text', label: 'Button link (paste the Stripe payment link here)' },
+          },
+          getItemSummary: (item: { eyebrow?: string }) => item.eyebrow ?? 'Plan',
+          defaultItemProps: { eyebrow: 'New plan', price: '$30', per: 'per week', sub: '', points: [], btnText: 'Book now', href: '/f/trial' },
+        },
+      },
+      defaultProps: {
+        title: 'Choose Your Plan',
+        note: 'The more they train, the cheaper each class gets. Per-term billing — payments pause over the school holidays.',
+        items: [
+          { eyebrow: '1 Class Per Week', price: '$30', per: 'per week', sub: '$30 per class', points: ['1 hour class per week', 'Extra sibling $22 per class', 'Per-term billing', 'No contracts — cancel anytime'], btnText: 'Book 1 class per week', href: '/f/trial' },
+          { eyebrow: '2 Classes Per Week', price: '$54', per: 'per week', sub: 'Just $27 per class', points: ['Any 2 classes per week', 'Extra sibling $44', 'Per-term billing', 'No contracts — cancel anytime'], btnText: 'Book 2 classes per week', href: '/f/trial' },
+          { eyebrow: '3 Classes Per Week', price: '$66', per: 'per week', sub: 'Just $22 per class — best value', points: ['Any 3 classes per week', 'Extra sibling $66', 'Per-term billing', 'No contracts — cancel anytime'], btnText: 'Book 3 classes per week', href: '/f/trial' },
+          { eyebrow: 'Bubby & Me Toddler Circus', price: '$20', per: 'per week', sub: '45-minute class', points: ['Parent & toddler together', 'Ages 1–4', 'Per-term billing', 'No contracts — cancel anytime'], btnText: 'Book Bubby & Me', href: '/f/trial' },
+        ],
+      },
+      render: render('plans'),
     },
     Columns: {
       label: '🪧 Text columns',

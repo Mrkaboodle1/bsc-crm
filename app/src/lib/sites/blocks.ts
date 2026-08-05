@@ -24,6 +24,9 @@ export type Block =
   | { type: 'gallery';   images: { url: string; alt?: string }[] }
   | { type: 'band';      title: string; body?: string; bgUrl?: string; theme?: 'curtain' | 'stage' | 'light'; cta?: { text: string; href: string } }
   | { type: 'columns';   title?: string; accent?: boolean; items: { title: string; body: string }[]; cta?: { text: string; href: string } }
+  // Price cards — the "Choose Your Plan" row. Each card's button href is where
+  // a Stripe payment link goes once Rhett creates them.
+  | { type: 'plans';     title?: string; note?: string; items: { eyebrow?: string; price: string; per?: string; sub?: string; points: string[]; btnText?: string; href?: string }[] }
   | { type: 'testimonials'; title?: string; bgUrl?: string; items: { quote: string; name: string }[] }
   | { type: 'navbar';    logo?: string; menu: { label: string; href: string; children?: { label: string; href: string }[] }[]; cta?: { text: string; href: string } }
   | { type: 'footer';    logo?: string; tagline?: string; columns: { title: string; links: { label: string; href: string }[] }[]; address?: string; phone?: string; socials?: { kind: 'facebook' | 'instagram' | 'youtube' | 'tiktok'; href: string }[]; copyright?: string }
@@ -60,6 +63,7 @@ export const BLOCK_LABEL: Record<Block['type'], { icon: string; label: string; g
   gallery:      { icon: '🖼', label: 'Photo gallery', group: 'media' },
   band:         { icon: '🎭', label: 'Feature band',  group: 'layout' },
   columns:      { icon: '🪧', label: 'Text columns',  group: 'layout' },
+  plans:        { icon: '💳', label: 'Price cards',   group: 'cta' },
   testimonials: { icon: '⭐', label: 'Testimonials',  group: 'layout' },
   navbar:       { icon: '🧭', label: 'Top menu bar',  group: 'layout' },
   footer:       { icon: '🦶', label: 'Footer',        group: 'layout' },
@@ -133,6 +137,17 @@ export function makeBlock(type: Block['type']): Block {
       theme: 'curtain',
       bgUrl: '',
       cta: { text: 'Learn more about us', href: '/s/bigstar/about' },
+    }
+    case 'plans': return {
+      type: 'plans',
+      title: 'Choose Your Plan',
+      note: 'The more they train, the cheaper each class gets. Per-term billing — payments pause over the school holidays.',
+      items: [
+        { eyebrow: '1 Class Per Week', price: '$30', per: 'per week', sub: '$30 per class', points: ['1 hour class per week', 'Extra sibling $22 per class', 'Per-term billing', 'No contracts — cancel anytime'], btnText: 'Book 1 class per week', href: '/f/trial' },
+        { eyebrow: '2 Classes Per Week', price: '$54', per: 'per week', sub: 'Just $27 per class', points: ['Any 2 classes per week', 'Extra sibling $44', 'Per-term billing', 'No contracts — cancel anytime'], btnText: 'Book 2 classes per week', href: '/f/trial' },
+        { eyebrow: '3 Classes Per Week', price: '$66', per: 'per week', sub: 'Just $22 per class — best value', points: ['Any 3 classes per week', 'Extra sibling $66', 'Per-term billing', 'No contracts — cancel anytime'], btnText: 'Book 3 classes per week', href: '/f/trial' },
+        { eyebrow: 'Bubby & Me Toddler Circus', price: '$20', per: 'per week', sub: '45-minute class', points: ['Parent & toddler together', 'Ages 1–4', 'Per-term billing', 'No contracts — cancel anytime'], btnText: 'Book Bubby & Me', href: '/f/trial' },
+      ],
     }
     case 'columns': return {
       type: 'columns',

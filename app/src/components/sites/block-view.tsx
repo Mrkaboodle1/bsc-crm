@@ -110,6 +110,49 @@ export function BlockView({ block, siteSlug }: { block: Block; siteSlug?: string
         </section>
       )
 
+    case 'plans':
+      return (
+        <section className="my-8">
+          {block.title && <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 text-center mb-2">{block.title}</h2>}
+          {block.note && <p className="text-center text-sm text-zinc-500 max-w-2xl mx-auto mb-7">{block.note}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {block.items.map((p, i) => (
+              <div key={i} className="flex flex-col bg-white rounded-2xl border-2 border-[#D72027]/25 shadow-sm hover:shadow-lg hover:border-[#D72027] transition overflow-hidden">
+                <div className="px-5 pt-5 text-center">
+                  {p.eyebrow && <div className="text-[11px] font-black uppercase tracking-wider text-[#D72027] leading-snug min-h-[2.4em] flex items-center justify-center">{p.eyebrow}</div>}
+                  <div className="mt-2 flex items-baseline justify-center gap-1.5">
+                    <span className="text-4xl font-black text-[#14213d]">{p.price}</span>
+                    {p.per && <span className="text-sm font-bold text-zinc-400">{p.per}</span>}
+                  </div>
+                  {p.sub && <div className="text-xs font-bold text-zinc-500 mt-1">{p.sub}</div>}
+                </div>
+                <ul className="px-5 py-4 space-y-2 flex-1">
+                  {(p.points ?? []).map((pt, j) => {
+                    // The page builder stores points as {point: '...'} objects;
+                    // pages saved from code use plain strings. Accept both.
+                    const text = typeof pt === 'string' ? pt : (pt as { point?: string })?.point ?? ''
+                    if (!text) return null
+                    return (
+                      <li key={j} className="flex gap-2 text-[13px] text-zinc-700 leading-snug">
+                        <span className="text-[#D72027] font-black shrink-0">✔</span><span>{text}</span>
+                      </li>
+                    )
+                  })}
+                </ul>
+                {p.href && (
+                  <div className="px-5 pb-5">
+                    <a href={p.href} className="block text-center bg-gradient-to-b from-[#D72027] to-[#A0151B] text-white font-black text-sm px-4 py-3.5 rounded-xl no-underline hover:from-[#A0151B] hover:to-[#7d1015] shadow">
+                      {p.btnText || 'Book now'}
+                    </a>
+                    <div className="text-center text-[10px] text-zinc-400 mt-2">🔒 Secure payment · No contracts — cancel anytime</div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )
+
     case 'features':
       return (
         <section className="my-6">

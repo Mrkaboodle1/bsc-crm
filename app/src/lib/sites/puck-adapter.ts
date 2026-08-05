@@ -25,6 +25,7 @@ const BLOCK_TO_PUCK: Record<Block['type'], string> = {
   gallery:      'Gallery',
   band:         'Band',
   columns:      'Columns',
+  plans:        'PlanCards',
   testimonials: 'Testimonials',
   navbar:       'NavBar',
   footer:       'PageFooter',
