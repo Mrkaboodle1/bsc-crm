@@ -117,14 +117,22 @@ export function RadarClient({ suburbs, counts }: { suburbs: Suburb[]; counts: Co
                       <span className={`text-[10px] font-bold ${TONE[b.tone]}`}>{b.label}</span>
                       <span className="text-[10px] text-zinc-400">· confidence {s.confidence}</span>
                     </div>
+                    {/* A zero here almost always means "nobody has looked yet",
+                        not "there is nothing there" — say so, or the card reads
+                        like a suburb with no competition when it's just unresearched. */}
                     <div className="grid grid-cols-4 gap-1 mt-3 text-center">
                       {([['Venues', c.venues], ['Rivals', c.competitors], ['Groups', c.community], ['Leads', c.leads]] as const).map(([l, n]) => (
-                        <div key={l} className="bg-zinc-50 rounded-lg py-1.5">
-                          <div className="text-sm font-black text-zinc-800 tabular-nums">{n}</div>
-                          <div className="text-[9px] font-bold uppercase tracking-wide text-zinc-400">{l}</div>
+                        <div key={l} className={`rounded-lg py-1.5 ${n ? 'bg-zinc-50' : 'bg-amber-50/70'}`}>
+                          <div className={`text-sm font-black tabular-nums ${n ? 'text-zinc-800' : 'text-amber-600/70'}`}>{n || '–'}</div>
+                          <div className={`text-[9px] font-bold uppercase tracking-wide ${n ? 'text-zinc-400' : 'text-amber-600/70'}`}>{l}</div>
                         </div>
                       ))}
                     </div>
+                    {c.venues + c.competitors + c.community + c.leads === 0 && (
+                      <div className="mt-2 text-[10px] font-bold text-amber-700 bg-amber-50 rounded px-2 py-1">
+                        🔍 Not researched yet — a dash means unknown, not &ldquo;none here&rdquo;
+                      </div>
+                    )}
                     {missing.length > 0 && <div className="mt-2 text-[10px] text-amber-700">⚠ still needed: {missing.slice(0, 2).join(', ')}{missing.length > 2 ? `, +${missing.length - 2}` : ''}</div>}
                   </a>
                 )
