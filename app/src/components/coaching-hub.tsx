@@ -71,11 +71,60 @@ function Academy() {
   )
 }
 
+// The trainee lesson-plan worksheet — a print-and-write form every trainee
+// fills in before the class they're helping with. Lives in public storage so
+// any admin can grab it from any machine without hunting through Downloads.
+const LESSON_PLAN_URL = 'https://dbpbfcxhbaeyoyoyllfp.supabase.co/storage/v1/object/public/marketing/coach-academy/BigStar-Trainee-Coach-Lesson-Plan.pdf'
+
+export function TraineeLessonPlan() {
+  const SECTIONS = [
+    'Team meeting — quick chat before class', 'Class control & coach authority', 'Participant needs & safety',
+    'Time management', 'Plan ahead', 'Warm-up game', 'Stretches & body preparation',
+    'Tumbling', 'Circus / manipulation', 'Aerial', 'Finish the class', 'Coach reflection + supervisor feedback',
+  ]
+  return (
+    <div className="bg-white rounded-xl border-2 border-[#D72027]/25 p-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <h3 className="font-extrabold text-zinc-900 mb-1">📋 Trainee Coach Lesson Plan</h3>
+          <p className="text-sm text-zinc-500 mb-1">
+            The worksheet every trainee fills in <b>before</b> the class they&apos;re helping with — 5 pages, 12 sections,
+            finishing with their own reflection and the supervising coach&apos;s feedback.
+          </p>
+          <p className="text-xs text-zinc-400">Print it, hand it over, and collect it signed. Keep completed sheets with the trainee&apos;s logbook.</p>
+        </div>
+        <div className="flex gap-2 shrink-0 no-print">
+          <a href={LESSON_PLAN_URL} target="_blank" rel="noreferrer"
+            className="inline-flex items-center gap-1.5 bg-[#D72027] hover:bg-[#A0151B] text-white font-bold text-sm px-4 py-2.5 rounded-lg no-underline">
+            <Printer size={15} /> Open &amp; print
+          </a>
+          <a href={LESSON_PLAN_URL} download="BigStar-Trainee-Coach-Lesson-Plan.pdf"
+            className="inline-flex items-center gap-1.5 bg-white border border-zinc-300 text-zinc-700 font-bold text-sm px-4 py-2.5 rounded-lg no-underline hover:bg-zinc-50">
+            ⬇ Download
+          </a>
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1 mt-3 pt-3 border-t border-zinc-100">
+        {SECTIONS.map((s, i) => (
+          <div key={s} className="flex gap-1.5 text-[12px] text-zinc-600">
+            <span className="font-black text-[#D72027] shrink-0">{i + 1}.</span><span>{s}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-zinc-400 mt-3">
+        Print-and-write worksheet — trainees fill it in by hand. Want a version they can type into on a tablet? Ask Jacky and I&apos;ll build it.
+      </p>
+    </div>
+  )
+}
+
 function Pathway() {
   return (
     <div className="space-y-4">
       <Banner>The trainee journey — Trainee Trainer → Junior → Assistant → Trainer. Each trainee keeps a logbook of hours.</Banner>
       <a href="/coaching/logbook" className="inline-flex items-center gap-2 bg-zinc-900 text-white font-semibold text-sm px-4 py-2 rounded-lg"><NotebookPen size={15} /> Open trainee logbooks</a>
+
+      <TraineeLessonPlan />
 
       <div className="bg-white rounded-xl border-2 border-emerald-200 p-5">
         <h3 className="font-extrabold text-zinc-900 mb-1">🚀 Onboarding — before a coach&apos;s first pay</h3>
