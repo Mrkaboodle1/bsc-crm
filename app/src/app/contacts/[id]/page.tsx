@@ -112,6 +112,33 @@ export default async function ContactDetailPage({
   const subs = (family.subscriptions ?? []) as Array<{ id: string; plan: string | null; weekly_amount: number | null; status: string; current_period_end: string | null; next_charge_date: string | null }>
   const activeSubs = subs.filter((s) => s.status === 'active')
 
+  // Play On vouchers for this family — matched by the family link OR any
+  // kid's name, so a voucher logged before linking existed still shows here.
+  const voucherOr: string[] = [`family_id.eq.${family.id}`]
+  for (const k of students) {
+    const fn = (k.first_name ?? '').replace(/[(),]/g, ' ').trim()
+    if (fn) voucherOr.push(`student_name.ilike.*${fn}*`)
+  }
+  const { data: voucherRows } = await supabase
+    .from('play_on_vouchers')
+    .select('id, voucher_ref, student_name, amount, weekly_value, weeks, redeemed_on, term_end, status, use_type, family_id')
+    .or(voucherOr.join(','))
+    .order('term_end', { ascending: false })
+    .limit(20)
+  // name matches can catch another family's same-named kid — keep a name-only
+  // match just when the voucher has no family link at all
+  const vouchers = (voucherRows ?? []).filter((v) => v.family_id === family.id || v.family_id == null)
+
+  // How each child pays — the same per-child pay:s: tags the roll call uses.
+  const famTags: string[] = (family.tags ?? []) as string[]
+  const PAY_LABEL: Record<string, string> = { subscription: 'Subscription (DD)', voucher: 'Play On voucher', ndis: 'NDIS', eftpos: 'EFTPOS', cash: 'Cash', bank: 'Bank transfer', trial: 'Free trial', none: 'Not paying' }
+  const perKidPay = students.map((k) => {
+    const t = famTags.find((x) => x.startsWith(`pay:s:${k.id}:`))
+    return { name: k.first_name, method: t ? PAY_LABEL[t.split(':')[3] ?? ''] ?? null : null }
+  }).filter((x) => x.method)
+  const familyPayTag = famTags.find((x) => x.startsWith('pay:') && !x.startsWith('pay:s:'))
+  const familyPay = familyPayTag ? PAY_LABEL[familyPayTag.slice(4)] ?? null : null
+
   // Conversation: emails + drafts + internal notes — chronological newest first
   const emailFilter = family.email
     ? `matched_family_id.eq.${family.id},from_email.eq.${family.email}`
@@ -260,6 +287,43 @@ export default async function ContactDetailPage({
                 Open in Stripe →
               </a>
             )}
+
+            {/* How each child pays — mirrors the roll call's per-child setting */}
+            {(familyPay || perKidPay.length > 0) && (
+              <div className="mt-3 border-t border-zinc-100 pt-3 space-y-1">
+                {familyPay && (
+                  <div className="text-xs"><span className="text-zinc-500">Family default:</span> <span className="font-bold text-zinc-800">{familyPay}</span></div>
+                )}
+                {perKidPay.map((p, i) => (
+                  <div key={i} className="text-xs"><span className="text-zinc-500">{p.name}:</span> <span className="font-bold text-zinc-800">{p.method}</span></div>
+                ))}
+              </div>
+            )}
+
+            {/* Play On vouchers on this family's file */}
+            <div className="mt-3 border-t border-zinc-100 pt-3">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-zinc-500 mb-1.5">🎟 Play On vouchers</div>
+              {vouchers.length === 0 ? (
+                <p className="text-xs text-zinc-400">None logged for this family.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {vouchers.map((v) => (
+                    <li key={v.id} className={`rounded-lg border px-2.5 py-2 text-xs ${v.status === 'active' ? 'border-violet-200 bg-violet-50/60' : 'border-zinc-200 bg-zinc-50'}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-extrabold text-zinc-800">{v.student_name || '—'}</span>
+                        <span className={`px-1.5 py-0.5 rounded font-extrabold uppercase text-[9px] tracking-wider ${v.status === 'active' ? 'bg-violet-200 text-violet-900' : v.status === 'converted' ? 'bg-emerald-100 text-emerald-800' : 'bg-zinc-200 text-zinc-600'}`}>{v.status}</span>
+                      </div>
+                      <div className="text-zinc-500 mt-0.5">
+                        <span className="font-mono font-bold text-zinc-700">{v.voucher_ref || 'no ref'}</span>
+                        {' · '}${Number(v.amount ?? 0).toFixed(0)} at ${Number(v.weekly_value ?? 0).toFixed(0)}/wk
+                        {v.term_end && <> · runs out <b>{v.term_end}</b></>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <a href="/finance/vouchers" className="mt-2 inline-block text-xs font-bold text-[#D72027] hover:underline">All vouchers →</a>
+            </div>
           </div>
 
           {/* Kids — editable */}
