@@ -24,14 +24,21 @@ export default async function WaitlistPage({ params }: { params: Promise<{ subur
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#14213d] via-[#1d2b52] to-[#14213d] text-white">
+      {/* big-top bunting stripe */}
+      <div className="h-2 bg-[repeating-linear-gradient(90deg,#D72027_0,#D72027_24px,#FFC107_24px,#FFC107_48px)]" />
       <div className="max-w-lg mx-auto px-4 py-8">
-        {/* header */}
+        {/* header — logo front and centre */}
         <div className="text-center mb-6">
-          <div className="text-[11px] font-black uppercase tracking-[0.2em] text-[#FFC107]">BigStar Circus presents</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/bigstar-logo.png" alt="BigStar Circus" className="h-20 sm:h-24 mx-auto mb-3 drop-shadow-[0_4px_12px_rgba(255,193,7,0.35)]" />
+          <div className="text-[11px] font-black uppercase tracking-[0.28em] text-[#FFC107]">⭐ The Gold Coast&rsquo;s circus school ⭐</div>
           <h1 className="text-3xl sm:text-4xl font-black mt-2 leading-tight">
             Circus is coming to<br /><span className="text-[#FFC107]">{info.label}</span> 🎪
           </h1>
           <p className="text-sm text-blue-100 mt-3 font-bold">{info.line}</p>
+          <div className="mt-3 inline-block bg-gradient-to-r from-[#D72027] to-[#A0151B] text-white text-[11px] font-black uppercase tracking-wider px-4 py-1.5 rounded-full shadow-lg ring-2 ring-[#FFC107]/60">
+            🎁 Founding-family perks · first 30 only
+          </div>
         </div>
 
         {/* video slot — drop the real file at /public/waitlist-promo.mp4 and it plays */}
