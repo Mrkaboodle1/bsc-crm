@@ -5,6 +5,7 @@
 
 import type { Block } from '@/lib/sites/blocks'
 import { SiteForm } from './site-form'
+import { PlanSignupButton } from './plan-signup'
 
 // ── Shared styling for the bespoke "pixel-exact" blocks ──
 const FRED = "'Fredoka', system-ui, sans-serif"
@@ -141,10 +142,19 @@ export function BlockView({ block, siteSlug }: { block: Block; siteSlug?: string
                 </ul>
                 {p.href && (
                   <div className="px-5 pb-5">
-                    <a href={p.href} className="block text-center bg-gradient-to-b from-[#D72027] to-[#A0151B] text-white font-black text-sm px-4 py-3.5 rounded-xl no-underline hover:from-[#A0151B] hover:to-[#7d1015] shadow">
-                      {p.btnText || 'Book now'}
-                    </a>
-                    <div className="text-center text-[10px] text-zinc-400 mt-2">🔒 Secure payment · No contracts — cancel anytime</div>
+                    {/* Stripe payment links open the 3-step signup popup first
+                        (plan → classes → waiver+signature) then hand off to
+                        Stripe. Any other link stays a plain button. */}
+                    {p.href.includes('buy.stripe.com') ? (
+                      <PlanSignupButton plan={p} allPlans={block.items.filter((x) => x.href?.includes('buy.stripe.com'))} />
+                    ) : (
+                      <>
+                        <a href={p.href} className="block text-center bg-gradient-to-b from-[#D72027] to-[#A0151B] text-white font-black text-sm px-4 py-3.5 rounded-xl no-underline hover:from-[#A0151B] hover:to-[#7d1015] shadow">
+                          {p.btnText || 'Book now'}
+                        </a>
+                        <div className="text-center text-[10px] text-zinc-400 mt-2">🔒 Secure payment · No contracts — cancel anytime</div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

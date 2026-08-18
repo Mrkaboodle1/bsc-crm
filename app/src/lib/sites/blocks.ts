@@ -26,7 +26,7 @@ export type Block =
   | { type: 'columns';   title?: string; accent?: boolean; items: { title: string; body: string }[]; cta?: { text: string; href: string } }
   // Price cards — the "Choose Your Plan" row. Each card's button href is where
   // a Stripe payment link goes once Rhett creates them.
-  | { type: 'plans';     title?: string; note?: string; items: { eyebrow?: string; price: string; per?: string; sub?: string; points: string[]; btnText?: string; href?: string }[] }
+  | { type: 'plans';     title?: string; note?: string; items: { eyebrow?: string; price: string; per?: string; sub?: string; points: string[]; btnText?: string; href?: string; classesPerWeek?: number; kids?: number }[] }
   | { type: 'testimonials'; title?: string; bgUrl?: string; items: { quote: string; name: string }[] }
   | { type: 'navbar';    logo?: string; menu: { label: string; href: string; children?: { label: string; href: string }[] }[]; cta?: { text: string; href: string } }
   | { type: 'footer';    logo?: string; tagline?: string; columns: { title: string; links: { label: string; href: string }[] }[]; address?: string; phone?: string; socials?: { kind: 'facebook' | 'instagram' | 'youtube' | 'tiktok'; href: string }[]; copyright?: string }
