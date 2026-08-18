@@ -38,6 +38,7 @@ export type ClassOption = { id: string; label: string }
 export function VouchersClient({ initial, setupNeeded, setupSql, classOptions = [] }: { initial: Voucher[]; setupNeeded: boolean; setupSql: string; classOptions?: ClassOption[] }) {
   const router = useRouter()
   const [items, setItems] = useState<Voucher[]>(initial)
+  const [search, setSearch] = useState('')
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState({ family_name: '', student_name: '', voucher_ref: '', redeemed_on: '', use_type: 'term' as Voucher['use_type'], photo_url: '', amount: '200', child_dob: '', family_id: '', class_id: '' })
   const [uploading, setUploading] = useState(false)
@@ -354,14 +355,32 @@ export function VouchersClient({ initial, setupNeeded, setupSql, classOptions = 
       <div className="mb-3 text-[12px] text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
         ✅ <b>Safety net is on:</b> every voucher you log automatically creates a <b>high-priority task due the day it ends</b> — “set up next term&apos;s subscription” — and the family shows in the <b>Friday reminder email</b> as the end date gets close. No voucher family can quietly slip away.
       </div>
+      {/* search — mum's name, kid's name or the voucher code itself */}
+      <div className="mb-3 relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">🔍</span>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by mum, kid or voucher number…"
+          className="w-full pl-9 pr-9 py-2.5 border-2 border-zinc-200 rounded-xl text-sm focus:border-[#D72027] focus:outline-none bg-white"
+        />
+        {search && (
+          <button type="button" onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-500 text-xs font-bold">✕</button>
+        )}
+      </div>
       <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
         <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr_auto] gap-2 px-4 py-2.5 bg-zinc-50 text-[11px] font-bold uppercase tracking-wide text-zinc-400">
           <span>Family → their kids</span><span>Voucher</span><span>Term ends</span><span>Status</span><span></span>
         </div>
         {items.length === 0 && <div className="px-4 py-10 text-center text-sm text-zinc-400">No vouchers logged yet. Tap “Log a voucher” after you redeem one on the Play On portal.</div>}
         {(() => {
+          const q = search.trim().toLowerCase()
+          const shown = q
+            ? items.filter((v) => [v.family_name, v.student_name, v.voucher_ref, v.notes].some((x) => (x ?? '').toLowerCase().includes(q)))
+            : items
+          if (q && shown.length === 0) return <div className="px-4 py-10 text-center text-sm text-zinc-400">Nothing matches “{search}” — check the spelling, or the voucher may not be logged yet.</div>
           const groups: { key: string; label: string; rows: Voucher[] }[] = []
-          for (const v of items) {
+          for (const v of shown) {
             const key = (v.family_name || '—').trim().toLowerCase()
             let grp = groups.find((x) => x.key === key)
             if (!grp) { grp = { key, label: v.family_name || '—', rows: [] }; groups.push(grp) }

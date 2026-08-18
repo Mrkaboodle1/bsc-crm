@@ -358,6 +358,10 @@ export async function setFamilyPayment(input: {
   classId: string
   familyId: string
   method: PayMethod | null
+  // When set, the method applies to THIS CHILD only (tag pay:s:<studentId>:<method>).
+  // Siblings can genuinely pay differently — Mia on DD, Narvah on a voucher —
+  // so a per-family method is only ever the fallback.
+  studentId?: string
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const user = await verifySession()
   if (user.role === 'coach') return { ok: false, error: 'Only admin can change payment records' }
@@ -371,8 +375,14 @@ export async function setFamilyPayment(input: {
     .maybeSingle()
   if (readErr || !fam) return { ok: false, error: readErr?.message ?? 'Family not found' }
 
-  const tags: string[] = (fam.tags ?? []).filter((t: string) => !t.startsWith('pay:'))
-  if (input.method) tags.push(`pay:${input.method}`)
+  let tags: string[]
+  if (input.studentId) {
+    tags = (fam.tags ?? []).filter((t: string) => !t.startsWith(`pay:s:${input.studentId}:`))
+    if (input.method) tags.push(`pay:s:${input.studentId}:${input.method}`)
+  } else {
+    tags = (fam.tags ?? []).filter((t: string) => !(t.startsWith('pay:') && !t.startsWith('pay:s:')))
+    if (input.method) tags.push(`pay:${input.method}`)
+  }
 
   const { error } = await admin
     .from('families')

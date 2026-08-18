@@ -55,7 +55,7 @@ export type CreateFn = (input: { firstName: string; lastName?: string; dob?: str
 export type MoveFn = (input: { enrolmentIds: string[]; toClassId: string; fromClassId: string }) => Promise<{ ok: true } | { ok: false; error: string }>
 export type SaveNoteFn = (input: { classId: string; studentId: string; enrolmentId: string; date: string; note: string }) => Promise<{ ok: true } | { ok: false; error: string }>
 export type AwardFn = (input: { classId: string; studentId: string; stars: number; reason: string; notes: string | null }) => Promise<{ ok: true; newTotal: number; newTier: number } | { ok: false; error: string }>
-export type SetPaymentFn = (input: { classId: string; familyId: string; method: 'subscription' | 'voucher' | 'ndis' | 'eftpos' | 'cash' | 'bank' | 'trial' | 'none' | null }) => Promise<{ ok: true } | { ok: false; error: string }>
+export type SetPaymentFn = (input: { classId: string; familyId: string; method: 'subscription' | 'voucher' | 'ndis' | 'eftpos' | 'cash' | 'bank' | 'trial' | 'none' | null; studentId?: string }) => Promise<{ ok: true } | { ok: false; error: string }>
 export type SetBlockedFn = (input: { classId: string; enrolmentId: string; blocked: boolean }) => Promise<{ ok: true } | { ok: false; error: string }>
 
 // Admin's Pay dropdown — value stored as a pay:<method> tag on the family.
@@ -155,17 +155,18 @@ export function AttendanceTable({
   const [moveTo, setMoveTo] = useState('')
   const selectedRows = roster.filter((r) => selected.has(r.enrolmentId))
 
-  // Admin records how a family pays, straight from the roll. Optimistic update,
-  // rolled back if the save fails. Applies to every row in the same family.
+  // Admin records how THIS CHILD pays, straight from the roll. Per-student on
+  // purpose — siblings can pay differently (one DD, one voucher). Optimistic
+  // update on the single row, rolled back if the save fails.
   async function handleSetPay(row: RosterRow, value: string) {
     if (!onSetPayment || !row.familyId) return
     const method = (value || null) as Parameters<SetPaymentFn>[0]['method']
     const opt = PAY_OPTIONS.find((o) => o.value === value)
     const prevRows = roster
-    setRoster((rs) => rs.map((r) => r.familyId === row.familyId
+    setRoster((rs) => rs.map((r) => r.studentId === row.studentId
       ? { ...r, explicitPay: method, payStyle: opt ? opt.style : r.payStyle }
       : r))
-    const res = await onSetPayment({ classId, familyId: row.familyId, method })
+    const res = await onSetPayment({ classId, familyId: row.familyId, method, studentId: row.studentId })
     if (!res.ok) {
       setRoster(prevRows)
       alert(`Couldn't save payment method: ${res.error}`)
@@ -449,7 +450,7 @@ export function AttendanceTable({
                             value={row.explicitPay ?? ''}
                             onChange={(e) => handleSetPay(row, e.target.value)}
                             className="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-1 rounded-lg bg-zinc-100 text-zinc-700 border border-zinc-200 cursor-pointer hover:border-[#D72027] focus:outline-none focus:border-[#D72027]"
-                            title="How this family pays — admin only. 'Auto' means worked out from Stripe, vouchers and the roll."
+                            title="How THIS child pays — admin only, siblings can differ. 'Auto' means worked out from Stripe, vouchers and the roll."
                           >
                             <option value="">Auto: {row.payStyle}</option>
                             {PAY_OPTIONS.map((o) => (

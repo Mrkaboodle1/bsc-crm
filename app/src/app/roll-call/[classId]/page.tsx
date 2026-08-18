@@ -121,7 +121,13 @@ export default async function RollCallClassPage({
     for (const s of subs ?? []) if (s.family_id) activeSubFamilies.add(s.family_id)
     for (const v of vouchers ?? []) {
       if (v.family_id) voucherFamilies.add(v.family_id)
-      if (v.student_name) voucherStudentNames.add(v.student_name.trim().toLowerCase())
+      // Government paperwork writes "Arabella M Holmes"; our roll says
+      // "Arabella Holmes" — match on first + last word so initials don't hide
+      // a voucher.
+      if (v.student_name) {
+        const parts = v.student_name.trim().toLowerCase().split(/\s+/)
+        voucherStudentNames.add(parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1]}` : parts[0]!)
+      }
     }
   }
 
@@ -129,16 +135,23 @@ export default async function RollCallClassPage({
     const fam = Array.isArray(e.student.family) ? e.student.family[0] : e.student.family
     const commitment = (e.notes ?? '').replace(/^Commitment:\s*/, '').trim()
     const commitLower = commitment.toLowerCase()
-    const studentFullName = `${e.student.first_name} ${e.student.last_name ?? ''}`.trim().toLowerCase()
+    const fullParts = `${e.student.first_name} ${e.student.last_name ?? ''}`.trim().toLowerCase().split(/\s+/)
+    const studentFullName = fullParts.length > 1 ? `${fullParts[0]} ${fullParts[fullParts.length - 1]}` : fullParts[0]!
 
-    // An admin-recorded method always wins: stored as a pay:<method> family tag.
-    const explicitPay = (fam?.tags ?? []).find((t: string) => t.startsWith('pay:'))?.slice(4) ?? null
+    // Payment is PER CHILD. Siblings genuinely pay differently (one on DD,
+    // one on a Play On voucher), so the order of evidence is:
+    //   1. admin set THIS child's method   (tag pay:s:<studentId>:<method>)
+    //   2. an active voucher in THIS child's name
+    //   3. admin set a whole-family method (tag pay:<method>)
+    //   4. live Stripe subscription → family-level voucher → roll-sheet text
+    const famTags: string[] = fam?.tags ?? []
+    const studentPay = famTags.find((t) => t.startsWith(`pay:s:${e.student.id}:`))?.split(':')[3] ?? null
+    const familyPay = famTags.find((t) => t.startsWith('pay:') && !t.startsWith('pay:s:'))?.slice(4) ?? null
+    const hasOwnVoucher = voucherStudentNames.has(studentFullName)
+    const explicitPay = studentPay ?? (hasOwnVoucher ? 'voucher' : null) ?? familyPay
 
-    // Evidence, strongest first: recorded method → live Stripe sub → active
-    // voucher → roll-sheet text → Stripe/lifecycle presence. The old version
-    // checked Stripe FIRST, which hid every voucher family behind "DD".
     const hasActiveSub = fam ? activeSubFamilies.has(fam.id) : false
-    const hasVoucher = (fam ? voucherFamilies.has(fam.id) : false) || voucherStudentNames.has(studentFullName)
+    const hasVoucher = (fam ? voucherFamilies.has(fam.id) : false) || hasOwnVoucher
 
     let paymentStatus: RosterRow['paymentStatus'] = 'unknown'
     let payStyle: RosterRow['payStyle'] = '—'
