@@ -28,8 +28,8 @@ export type RosterRow = {
   parentPhone: string | null
   weeklyFee: number
   paymentStatus: 'subscribed' | 'play_on' | 'ndis' | 'casual' | 'free_trial' | 'not_paying' | 'unknown'
-  commitment: string
-  payStyle: 'DD' | 'Cash' | 'Voucher' | 'NDIS' | '—'
+  payStyle: 'DD' | 'Cash' | 'Voucher' | 'NDIS' | 'EFTPOS' | 'Bank' | 'Trial' | '—'
+  explicitPay: string | null
   startDate: string
   weeks: Array<{ date: string; status: WeekStatus; attendanceId: string | null }>
   totalAttended: number
@@ -54,6 +54,19 @@ export type CreateFn = (input: { firstName: string; lastName?: string; dob?: str
 export type MoveFn = (input: { enrolmentIds: string[]; toClassId: string; fromClassId: string }) => Promise<{ ok: true } | { ok: false; error: string }>
 export type SaveNoteFn = (input: { classId: string; studentId: string; enrolmentId: string; date: string; note: string }) => Promise<{ ok: true } | { ok: false; error: string }>
 export type AwardFn = (input: { classId: string; studentId: string; stars: number; reason: string; notes: string | null }) => Promise<{ ok: true; newTotal: number; newTier: number } | { ok: false; error: string }>
+export type SetPaymentFn = (input: { classId: string; familyId: string; method: 'subscription' | 'voucher' | 'ndis' | 'eftpos' | 'cash' | 'bank' | 'trial' | 'none' | null }) => Promise<{ ok: true } | { ok: false; error: string }>
+
+// Admin's Pay dropdown — value stored as a pay:<method> tag on the family.
+const PAY_OPTIONS: Array<{ value: string; label: string; style: RosterRow['payStyle'] }> = [
+  { value: 'subscription', label: 'Subscription (DD)', style: 'DD' },
+  { value: 'voucher',      label: 'Play On voucher',   style: 'Voucher' },
+  { value: 'ndis',         label: 'NDIS',              style: 'NDIS' },
+  { value: 'eftpos',       label: 'EFTPOS',            style: 'EFTPOS' },
+  { value: 'cash',         label: 'Cash',              style: 'Cash' },
+  { value: 'bank',         label: 'Bank transfer',     style: 'Bank' },
+  { value: 'trial',        label: 'Free trial',        style: 'Trial' },
+  { value: 'none',         label: 'Not paying',        style: '—' },
+]
 
 const STATUS_CYCLE: WeekStatus[] = [null, 'present', 'late', 'absent']
 
@@ -64,26 +77,6 @@ const STATUS_STYLE: Record<string, { bg: string; text: string; emoji: string; la
   absent:  { bg: 'bg-red-500',                          text: 'text-white',      emoji: '✕',  label: 'Absent' },
   makeup:  { bg: 'bg-blue-500',                         text: 'text-white',      emoji: '🔁', label: 'Makeup' },
   excused: { bg: 'bg-zinc-400',                         text: 'text-white',      emoji: '🛌', label: 'Excused' },
-}
-
-const COMMITMENT_PALETTE: Record<string, string> = {
-  casual:     'bg-orange-200 text-orange-900',
-  ft:         'bg-emerald-200 text-emerald-900',
-  'ft - sub': 'bg-pink-200 text-pink-900',
-  'ft-sub':   'bg-pink-200 text-pink-900',
-  sub:        'bg-pink-200 text-pink-900',
-  ndis:       'bg-purple-200 text-purple-900',
-  'play on':  'bg-violet-200 text-violet-900',
-  playon:     'bg-violet-200 text-violet-900',
-  'free trial':'bg-amber-200 text-amber-900',
-}
-
-function commitmentClass(commit: string): string {
-  const key = commit.toLowerCase().trim()
-  for (const [pattern, cls] of Object.entries(COMMITMENT_PALETTE)) {
-    if (key.includes(pattern)) return cls
-  }
-  return 'bg-zinc-100 text-zinc-600'
 }
 
 function shortDate(iso: string): string {
@@ -121,6 +114,8 @@ export function AttendanceTable({
   onAward,
   className,
   classes = [],
+  isAdmin = false,
+  onSetPayment,
 }: {
   classId: string
   roster: RosterRow[]
@@ -137,6 +132,8 @@ export function AttendanceTable({
   onAward?: AwardFn
   className?: string
   classes?: Array<{ id: string; name: string; dayLabel: string }>
+  isAdmin?: boolean
+  onSetPayment?: SetPaymentFn
 }) {
   const [roster, setRoster] = useState(initialRoster)
   const [detailRow, setDetailRow] = useState<RosterRow | null>(null)
@@ -153,6 +150,23 @@ export function AttendanceTable({
   const [bulkBusy, setBulkBusy] = useState(false)
   const [moveTo, setMoveTo] = useState('')
   const selectedRows = roster.filter((r) => selected.has(r.enrolmentId))
+
+  // Admin records how a family pays, straight from the roll. Optimistic update,
+  // rolled back if the save fails. Applies to every row in the same family.
+  async function handleSetPay(row: RosterRow, value: string) {
+    if (!onSetPayment || !row.familyId) return
+    const method = (value || null) as Parameters<SetPaymentFn>[0]['method']
+    const opt = PAY_OPTIONS.find((o) => o.value === value)
+    const prevRows = roster
+    setRoster((rs) => rs.map((r) => r.familyId === row.familyId
+      ? { ...r, explicitPay: method, payStyle: opt ? opt.style : r.payStyle }
+      : r))
+    const res = await onSetPayment({ classId, familyId: row.familyId, method })
+    if (!res.ok) {
+      setRoster(prevRows)
+      alert(`Couldn't save payment method: ${res.error}`)
+    }
+  }
 
   function toggleOne(enrolmentId: string) {
     setSelected((s) => {
@@ -315,7 +329,6 @@ export function AttendanceTable({
                     )}
                   </th>
                   <th className="text-left font-extrabold uppercase tracking-wider text-zinc-700 px-2 py-2">Started</th>
-                  <th className="text-left font-extrabold uppercase tracking-wider text-zinc-700 px-2 py-2">Commitment</th>
                   <th className="sticky left-12 z-10 bg-amber-100 text-left font-extrabold uppercase tracking-wider text-zinc-700 px-3 py-2 border-r-2 border-amber-200">Student (Age)</th>
                   {weekDates.map((d, i) => {
                     const isToday = d === today
@@ -334,14 +347,13 @@ export function AttendanceTable({
                     )
                   })}
                   <th className="text-center font-extrabold uppercase tracking-wider text-zinc-700 px-2 py-2 bg-amber-200">✓</th>
-                  <th className="text-center font-extrabold uppercase tracking-wider text-zinc-700 px-2 py-2">Pay</th>
+                  {isAdmin && <th className="text-center font-extrabold uppercase tracking-wider text-zinc-700 px-2 py-2">Pay</th>}
                   <th className="text-left font-extrabold uppercase tracking-wider text-zinc-700 px-2 py-2 min-w-[160px]">CareGiver</th>
                   <th className="px-2 py-2"></th>
                 </tr>
               </thead>
               <tbody>
                 {roster.map((row) => {
-                  const commitCls = commitmentClass(row.commitment)
                   return (
                     <tr key={row.enrolmentId} className={`border-t border-zinc-100 ${selected.has(row.enrolmentId) ? 'bg-red-50' : 'hover:bg-amber-50/30'}`}>
                       <td className={`sticky left-0 px-2 py-2 text-zinc-500 font-bold text-center border-r-2 border-amber-100 ${selected.has(row.enrolmentId) ? 'bg-red-50' : 'bg-white'}`}>
@@ -357,15 +369,6 @@ export function AttendanceTable({
                         )}
                       </td>
                       <td className="px-2 py-2 text-zinc-500 whitespace-nowrap">{row.startDate ? row.startDate.slice(2).replace(/-/g, '.') : ''}</td>
-                      <td className="px-2 py-2">
-                        {row.commitment ? (
-                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider whitespace-nowrap ${commitCls}`}>
-                            {row.commitment.slice(0, 14)}
-                          </span>
-                        ) : (
-                          <span className="text-zinc-300">—</span>
-                        )}
-                      </td>
                       <td className="sticky left-12 bg-white px-3 py-2 border-r-2 border-amber-100 min-w-[180px]">
                         <div className="flex items-center gap-2">
                           {row.medical && (
@@ -416,11 +419,21 @@ export function AttendanceTable({
                       <td className="px-2 py-2 text-center font-extrabold text-zinc-800 bg-amber-50">
                         {row.totalAttended}/{row.weeks.length}
                       </td>
-                      <td className="px-2 py-2 text-center">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-zinc-100 text-zinc-700">
-                          {row.payStyle}
-                        </span>
-                      </td>
+                      {isAdmin && (
+                        <td className="px-2 py-2 text-center">
+                          <select
+                            value={row.explicitPay ?? ''}
+                            onChange={(e) => handleSetPay(row, e.target.value)}
+                            className="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-1 rounded-lg bg-zinc-100 text-zinc-700 border border-zinc-200 cursor-pointer hover:border-[#D72027] focus:outline-none focus:border-[#D72027]"
+                            title="How this family pays — admin only. 'Auto' means worked out from Stripe, vouchers and the roll."
+                          >
+                            <option value="">Auto: {row.payStyle}</option>
+                            {PAY_OPTIONS.map((o) => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                          </select>
+                        </td>
+                      )}
                       <td className="px-2 py-2">
                         <div className="text-zinc-800 font-bold leading-tight truncate max-w-[180px]">
                           {row.primaryParent ?? row.familyName ?? '—'}
@@ -465,6 +478,7 @@ export function AttendanceTable({
           row={detailRow}
           classId={classId}
           todayDate={todayDate}
+          isAdmin={isAdmin}
           onRemove={onRemove}
           onSaveNote={onSaveNote}
           onNoteSaved={(note) => {
@@ -566,6 +580,7 @@ function DetailModal({
   row,
   classId,
   todayDate,
+  isAdmin = false,
   onRemove,
   onSaveNote,
   onNoteSaved,
@@ -575,6 +590,7 @@ function DetailModal({
   row: RosterRow
   classId: string
   todayDate: string
+  isAdmin?: boolean
   onRemove: RemoveFn
   onSaveNote: SaveNoteFn
   onNoteSaved: (note: string | null) => void
@@ -626,19 +642,17 @@ function DetailModal({
           <Row label="Phone" value={row.parentPhone ?? '—'} />
           <Row label="Started" value={row.startDate ?? '—'} />
         </dl>
-        <div className="mt-4 border-t border-zinc-200 pt-3">
-          <div className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500 mb-2">Payment</div>
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold ${ps.cls}`}>
-            <span>{ps.icon}</span>
-            <span>{ps.label}</span>
-            {row.weeklyFee > 0 && <span className="opacity-70">· ${row.weeklyFee}/wk</span>}
-          </div>
-          {row.commitment && (
-            <div className="text-xs text-zinc-500 mt-2">
-              Roll says: <span className="font-bold text-zinc-700">{row.commitment}</span>
+        {/* Payment — ADMIN ONLY. Coaches never see money on the roll. */}
+        {isAdmin && (
+          <div className="mt-4 border-t border-zinc-200 pt-3">
+            <div className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500 mb-2">Payment</div>
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold ${ps.cls}`}>
+              <span>{ps.icon}</span>
+              <span>{ps.label}</span>
+              {row.weeklyFee > 0 && <span className="opacity-70">· ${row.weeklyFee}/wk</span>}
             </div>
-          )}
-        </div>
+          </div>
+        )}
         {row.medical && (
           <div className="mt-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl px-4 py-3 text-sm">
             <div className="text-[10px] uppercase tracking-wider font-extrabold text-red-700 mb-1">⚕ Medical note</div>

@@ -347,3 +347,40 @@ export async function moveToClass(input: { enrolmentIds: string[]; toClassId: st
   revalidatePath(`/roll-call/${input.toClassId}`)
   return { ok: true }
 }
+
+// ── Admin-only: record how a family pays ─────────────────────────────────────
+// Stored as a `pay:<method>` tag on the family, so no schema change is needed.
+// Coaches can never call this — the roll they see carries no payment data at all.
+
+export type PayMethod = 'subscription' | 'voucher' | 'ndis' | 'eftpos' | 'cash' | 'bank' | 'trial' | 'none'
+
+export async function setFamilyPayment(input: {
+  classId: string
+  familyId: string
+  method: PayMethod | null
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await verifySession()
+  if (user.role === 'coach') return { ok: false, error: 'Only admin can change payment records' }
+
+  const admin = await createServerSupabaseAdmin()
+  const { data: fam, error: readErr } = await admin
+    .from('families')
+    .select('tags')
+    .eq('id', input.familyId)
+    .eq('tenant_id', user.tenantId)
+    .maybeSingle()
+  if (readErr || !fam) return { ok: false, error: readErr?.message ?? 'Family not found' }
+
+  const tags: string[] = (fam.tags ?? []).filter((t: string) => !t.startsWith('pay:'))
+  if (input.method) tags.push(`pay:${input.method}`)
+
+  const { error } = await admin
+    .from('families')
+    .update({ tags })
+    .eq('id', input.familyId)
+    .eq('tenant_id', user.tenantId)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath(`/roll-call/${input.classId}`)
+  return { ok: true }
+}

@@ -4,7 +4,7 @@ import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { AttendanceTable, type RosterRow } from './attendance-table'
 import { LessonPlansClient } from '@/components/lesson-plans-client'
-import { markAttendance, removeFromClass, searchStudents, addToClass, createAndEnrol, moveToClass, saveCoachNote, awardStar } from './actions'
+import { markAttendance, removeFromClass, searchStudents, addToClass, createAndEnrol, moveToClass, saveCoachNote, awardStar, setFamilyPayment } from './actions'
 import { TERM_DATES, type Term, currentTerm, getTerm, termWeekDates, termsForYear, brisbaneToday } from '@/lib/term-dates'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -60,7 +60,7 @@ export default async function RollCallClassPage({
       student:students!enrolments_student_id_fkey (
         id, first_name, last_name, date_of_birth, medical_notes, total_stars, star_tier,
         family:families!students_family_id_fkey (
-          id, family_name, primary_parent, email, phone, lifecycle_stage, weekly_fee_total, stripe_customer_id
+          id, family_name, primary_parent, email, phone, lifecycle_stage, weekly_fee_total, stripe_customer_id, tags
         )
       )
     `)
@@ -78,7 +78,7 @@ export default async function RollCallClassPage({
         medical_notes: string | null
         total_stars: number
         star_tier: number
-        family: { id: string; family_name: string; primary_parent: string | null; email: string | null; phone: string | null; lifecycle_stage: string | null; weekly_fee_total: number | null; stripe_customer_id: string | null } | null
+        family: { id: string; family_name: string; primary_parent: string | null; email: string | null; phone: string | null; lifecycle_stage: string | null; weekly_fee_total: number | null; stripe_customer_id: string | null; tags: string[] | null } | null
       }
     }>>()
 
@@ -97,26 +97,70 @@ export default async function RollCallClassPage({
     if (a.date === todayIso && a.coach_notes) noteByStudentToday.set(a.student_id, a.coach_notes)
   }
 
+  // Payment truth for this roster (admin view only):
+  //  - subscriptions table = the live Stripe sync → who genuinely pays by DD
+  //  - play_on_vouchers   = active vouchers, matched by family or student name
+  // Coaches never see any of this — their roster is stripped below.
+  const isAdmin = user.role !== 'coach'
+  const famIds = Array.from(new Set((enrolments ?? []).map((e) => {
+    const f = Array.isArray(e.student.family) ? e.student.family[0] : e.student.family
+    return f?.id
+  }).filter(Boolean))) as string[]
+
+  const activeSubFamilies = new Set<string>()
+  const voucherFamilies = new Set<string>()
+  const voucherStudentNames = new Set<string>()
+  if (isAdmin && famIds.length > 0) {
+    const [{ data: subs }, { data: vouchers }] = await Promise.all([
+      supabase.from('subscriptions').select('family_id, status').in('family_id', famIds).eq('status', 'active'),
+      supabase.from('play_on_vouchers').select('family_id, student_name, status').eq('status', 'active'),
+    ])
+    for (const s of subs ?? []) if (s.family_id) activeSubFamilies.add(s.family_id)
+    for (const v of vouchers ?? []) {
+      if (v.family_id) voucherFamilies.add(v.family_id)
+      if (v.student_name) voucherStudentNames.add(v.student_name.trim().toLowerCase())
+    }
+  }
+
   const roster: RosterRow[] = (enrolments ?? []).map((e, idx) => {
     const fam = Array.isArray(e.student.family) ? e.student.family[0] : e.student.family
     const commitment = (e.notes ?? '').replace(/^Commitment:\s*/, '').trim()
     const commitLower = commitment.toLowerCase()
-    let paymentStatus: RosterRow['paymentStatus'] = 'unknown'
-    if (/play\s*on|playon|\bpo\b/i.test(commitLower)) paymentStatus = 'play_on'
-    else if (/\bndis\b/i.test(commitLower)) paymentStatus = 'ndis'
-    else if (/\bcasual\b/i.test(commitLower)) paymentStatus = 'casual'
-    else if (/^(ft|free trial)$/i.test(commitLower)) paymentStatus = 'free_trial'
-    else if (/\bsub(scription)?\b/i.test(commitLower)) paymentStatus = 'subscribed'
-    else if (fam?.lifecycle_stage === 'active' || (fam?.weekly_fee_total ?? 0) > 0) paymentStatus = 'subscribed'
-    else if (fam?.lifecycle_stage === 'past' || fam?.lifecycle_stage === 'lost') paymentStatus = 'not_paying'
+    const studentFullName = `${e.student.first_name} ${e.student.last_name ?? ''}`.trim().toLowerCase()
 
-    // Pay style: derive from Stripe presence + commitment
+    // An admin-recorded method always wins: stored as a pay:<method> family tag.
+    const explicitPay = (fam?.tags ?? []).find((t: string) => t.startsWith('pay:'))?.slice(4) ?? null
+
+    // Evidence, strongest first: recorded method → live Stripe sub → active
+    // voucher → roll-sheet text → Stripe/lifecycle presence. The old version
+    // checked Stripe FIRST, which hid every voucher family behind "DD".
+    const hasActiveSub = fam ? activeSubFamilies.has(fam.id) : false
+    const hasVoucher = (fam ? voucherFamilies.has(fam.id) : false) || voucherStudentNames.has(studentFullName)
+
+    let paymentStatus: RosterRow['paymentStatus'] = 'unknown'
     let payStyle: RosterRow['payStyle'] = '—'
-    if (fam?.stripe_customer_id) payStyle = 'DD'
-    else if (paymentStatus === 'play_on') payStyle = 'Voucher'
-    else if (paymentStatus === 'ndis') payStyle = 'NDIS'
-    else if (paymentStatus === 'casual') payStyle = 'Cash'
-    else if (paymentStatus === 'subscribed') payStyle = 'DD'
+    if (explicitPay) {
+      const map: Record<string, [RosterRow['paymentStatus'], RosterRow['payStyle']]> = {
+        subscription: ['subscribed', 'DD'], voucher: ['play_on', 'Voucher'], ndis: ['ndis', 'NDIS'],
+        eftpos: ['casual', 'EFTPOS'], cash: ['casual', 'Cash'], bank: ['subscribed', 'Bank'],
+        trial: ['free_trial', 'Trial'], none: ['not_paying', '—'],
+      }
+      ;[paymentStatus, payStyle] = map[explicitPay] ?? ['unknown', '—']
+    } else if (hasActiveSub) {
+      paymentStatus = 'subscribed'; payStyle = 'DD'
+    } else if (hasVoucher || /play\s*on|playon|\bpo\b/i.test(commitLower)) {
+      paymentStatus = 'play_on'; payStyle = 'Voucher'
+    } else if (/\bndis\b/i.test(commitLower)) {
+      paymentStatus = 'ndis'; payStyle = 'NDIS'
+    } else if (/\bcasual\b/i.test(commitLower)) {
+      paymentStatus = 'casual'; payStyle = 'Cash'
+    } else if (/^(ft|free trial)$/i.test(commitLower)) {
+      paymentStatus = 'free_trial'; payStyle = 'Trial'
+    } else if (/\bsub(scription)?\b/i.test(commitLower) || fam?.stripe_customer_id || fam?.lifecycle_stage === 'active' || (fam?.weekly_fee_total ?? 0) > 0) {
+      paymentStatus = 'subscribed'; payStyle = 'DD'
+    } else if (fam?.lifecycle_stage === 'past' || fam?.lifecycle_stage === 'lost') {
+      paymentStatus = 'not_paying'
+    }
 
     // Build the week-by-week attendance map for this row
     const weeks: RosterRow['weeks'] = weekDates.map((date) => {
@@ -143,10 +187,12 @@ export default async function RollCallClassPage({
       primaryParent: fam?.primary_parent ?? null,
       parentEmail: fam?.email ?? null,
       parentPhone: fam?.phone ?? null,
-      weeklyFee: fam?.weekly_fee_total ?? 0,
-      paymentStatus,
-      commitment,
-      payStyle,
+      // Coaches see NO payment information at all — not hidden by CSS, simply
+      // never sent to the browser. Admin gets the full picture.
+      weeklyFee: isAdmin ? (fam?.weekly_fee_total ?? 0) : 0,
+      paymentStatus: isAdmin ? paymentStatus : 'unknown',
+      payStyle: isAdmin ? payStyle : '—',
+      explicitPay: isAdmin ? explicitPay : null,
       startDate: e.start_date,
       weeks,
       totalAttended,
@@ -242,6 +288,8 @@ export default async function RollCallClassPage({
         onAward={awardStar}
         className={cls.name}
         classes={classOptions}
+        isAdmin={isAdmin}
+        onSetPayment={setFamilyPayment}
       />
 
       {/* Lesson plans & progress — right here under the roll (great for private lessons) */}
