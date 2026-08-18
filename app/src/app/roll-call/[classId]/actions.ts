@@ -384,3 +384,30 @@ export async function setFamilyPayment(input: {
   revalidatePath(`/roll-call/${input.classId}`)
   return { ok: true }
 }
+
+// ── Admin-only: block a student on the roll ──────────────────────────────────
+// A family gives notice, pays out their two weeks, and admin blocks the
+// enrolment. The row stays visible on every roll but goes grey with a ⛔ —
+// coaches can see they're finishing up but can no longer mark them.
+// Stored as enrolment status 'paused' (allowed by the existing CHECK
+// constraint) so no schema change is needed. Unblocking restores 'active'.
+
+export async function setEnrolmentBlocked(input: {
+  classId: string
+  enrolmentId: string
+  blocked: boolean
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await verifySession()
+  if (user.role === 'coach') return { ok: false, error: 'Only admin can block or unblock a student' }
+
+  const admin = await createServerSupabaseAdmin()
+  const { error } = await admin
+    .from('enrolments')
+    .update({ status: input.blocked ? 'paused' : 'active', updated_at: new Date().toISOString() })
+    .eq('id', input.enrolmentId)
+    .eq('tenant_id', user.tenantId)
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath(`/roll-call/${input.classId}`)
+  return { ok: true }
+}

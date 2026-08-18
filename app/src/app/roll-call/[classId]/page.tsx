@@ -4,7 +4,7 @@ import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { AttendanceTable, type RosterRow } from './attendance-table'
 import { LessonPlansClient } from '@/components/lesson-plans-client'
-import { markAttendance, removeFromClass, searchStudents, addToClass, createAndEnrol, moveToClass, saveCoachNote, awardStar, setFamilyPayment } from './actions'
+import { markAttendance, removeFromClass, searchStudents, addToClass, createAndEnrol, moveToClass, saveCoachNote, awardStar, setFamilyPayment, setEnrolmentBlocked } from './actions'
 import { TERM_DATES, type Term, currentTerm, getTerm, termWeekDates, termsForYear, brisbaneToday } from '@/lib/term-dates'
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -56,7 +56,7 @@ export default async function RollCallClassPage({
   const { data: enrolments } = await supabase
     .from('enrolments')
     .select(`
-      id, notes, start_date,
+      id, notes, start_date, status,
       student:students!enrolments_student_id_fkey (
         id, first_name, last_name, date_of_birth, medical_notes, total_stars, star_tier,
         family:families!students_family_id_fkey (
@@ -65,11 +65,14 @@ export default async function RollCallClassPage({
       )
     `)
     .eq('class_id', classId)
-    .eq('status', 'active')
+    // 'paused' = blocked by admin (family finishing up) — still shown on the
+    // roll, greyed out, unmarkable by coaches. 'cancelled' stays hidden.
+    .in('status', ['active', 'paused'])
     .returns<Array<{
       id: string
       notes: string | null
       start_date: string
+      status: string
       student: {
         id: string
         first_name: string
@@ -194,11 +197,12 @@ export default async function RollCallClassPage({
       payStyle: isAdmin ? payStyle : '—',
       explicitPay: isAdmin ? explicitPay : null,
       startDate: e.start_date,
+      blocked: e.status === 'paused',
       weeks,
       totalAttended,
       todayNote: noteByStudentToday.get(e.student.id) ?? null,
     }
-  }).sort((a, b) => a.firstName.localeCompare(b.firstName))
+  }).sort((a, b) => (Number(a.blocked) - Number(b.blocked)) || a.firstName.localeCompare(b.firstName))
 
   // All other active classes — for the "move selected kids to another roll" dropdown
   const { data: allClasses } = await supabase
@@ -290,6 +294,7 @@ export default async function RollCallClassPage({
         classes={classOptions}
         isAdmin={isAdmin}
         onSetPayment={setFamilyPayment}
+        onSetBlocked={setEnrolmentBlocked}
       />
 
       {/* Lesson plans & progress — right here under the roll (great for private lessons) */}

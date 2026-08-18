@@ -121,7 +121,30 @@ export async function GET(req: Request) {
     if (results.length >= 4) break
   }
 
-  for (const f of families.data ?? []) {
+  // Collapse duplicate family records (the same household imported or created
+  // twice) so search shows ONE result per real family. Winner = the record
+  // that owns students, then the one with the most contact details. The
+  // duplicate rows themselves get merged over time — this stops them from
+  // confusing search in the meantime.
+  const famRows = families.data ?? []
+  const famKids = new Map<string, number>()
+  if (famRows.length > 1) {
+    const { data: ks } = await admin.from('students').select('family_id').in('family_id', famRows.map((f) => f.id))
+    for (const k of ks ?? []) famKids.set(k.family_id, (famKids.get(k.family_id) ?? 0) + 1)
+  }
+  const famKey = (f: (typeof famRows)[number]) =>
+    (f.email || '').toLowerCase().trim() ||
+    (f.phone || '').replace(/\D/g, '').slice(-9) ||
+    `${(f.family_name || '').toLowerCase().trim()}|${(f.primary_parent || '').toLowerCase().trim()}`
+  const famScore = (f: (typeof famRows)[number]) =>
+    (famKids.get(f.id) ?? 0) * 10 + (f.phone ? 1 : 0) + (f.email ? 1 : 0)
+  const bestFam = new Map<string, (typeof famRows)[number]>()
+  for (const f of famRows) {
+    const k = famKey(f)
+    const cur = bestFam.get(k)
+    if (!cur || famScore(f) > famScore(cur)) bestFam.set(k, f)
+  }
+  for (const f of bestFam.values()) {
     seenFam.add(f.id)
     results.push({ type: 'Contact', label: f.primary_parent || f.family_name || '—', sub: [f.family_name ? `${f.family_name} family` : null, f.phone, f.email].filter(Boolean).join(' · '), href: `/contacts/${f.id}` })
   }

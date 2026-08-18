@@ -30,6 +30,7 @@ export type RosterRow = {
   paymentStatus: 'subscribed' | 'play_on' | 'ndis' | 'casual' | 'free_trial' | 'not_paying' | 'unknown'
   payStyle: 'DD' | 'Cash' | 'Voucher' | 'NDIS' | 'EFTPOS' | 'Bank' | 'Trial' | '—'
   explicitPay: string | null
+  blocked: boolean
   startDate: string
   weeks: Array<{ date: string; status: WeekStatus; attendanceId: string | null }>
   totalAttended: number
@@ -55,6 +56,7 @@ export type MoveFn = (input: { enrolmentIds: string[]; toClassId: string; fromCl
 export type SaveNoteFn = (input: { classId: string; studentId: string; enrolmentId: string; date: string; note: string }) => Promise<{ ok: true } | { ok: false; error: string }>
 export type AwardFn = (input: { classId: string; studentId: string; stars: number; reason: string; notes: string | null }) => Promise<{ ok: true; newTotal: number; newTier: number } | { ok: false; error: string }>
 export type SetPaymentFn = (input: { classId: string; familyId: string; method: 'subscription' | 'voucher' | 'ndis' | 'eftpos' | 'cash' | 'bank' | 'trial' | 'none' | null }) => Promise<{ ok: true } | { ok: false; error: string }>
+export type SetBlockedFn = (input: { classId: string; enrolmentId: string; blocked: boolean }) => Promise<{ ok: true } | { ok: false; error: string }>
 
 // Admin's Pay dropdown — value stored as a pay:<method> tag on the family.
 const PAY_OPTIONS: Array<{ value: string; label: string; style: RosterRow['payStyle'] }> = [
@@ -116,6 +118,7 @@ export function AttendanceTable({
   classes = [],
   isAdmin = false,
   onSetPayment,
+  onSetBlocked,
 }: {
   classId: string
   roster: RosterRow[]
@@ -134,6 +137,7 @@ export function AttendanceTable({
   classes?: Array<{ id: string; name: string; dayLabel: string }>
   isAdmin?: boolean
   onSetPayment?: SetPaymentFn
+  onSetBlocked?: SetBlockedFn
 }) {
   const [roster, setRoster] = useState(initialRoster)
   const [detailRow, setDetailRow] = useState<RosterRow | null>(null)
@@ -212,7 +216,22 @@ export function AttendanceTable({
     exitSelect()
   }
 
+  // Admin blocks / unblocks a finishing family. Optimistic, rolled back on failure.
+  async function handleSetBlocked(row: RosterRow, blocked: boolean) {
+    if (!onSetBlocked) return
+    const prev = roster
+    setRoster((rs) => rs.map((r) => r.enrolmentId === row.enrolmentId ? { ...r, blocked } : r))
+    setDetailRow((d) => d && d.enrolmentId === row.enrolmentId ? { ...d, blocked } : d)
+    const res = await onSetBlocked({ classId, enrolmentId: row.enrolmentId, blocked })
+    if (!res.ok) {
+      setRoster(prev)
+      alert(`Couldn't ${blocked ? 'block' : 'unblock'}: ${res.error}`)
+    }
+  }
+
   function cycleCell(row: RosterRow, weekIdx: number) {
+    // Blocked students can only be marked by admin — coaches see ⛔ and can't tap.
+    if (row.blocked && !isAdmin) return
     const current = row.weeks[weekIdx]!.status
     const next = STATUS_CYCLE[(STATUS_CYCLE.findIndex((s) => s === current) + 1) % STATUS_CYCLE.length]
     const date = row.weeks[weekIdx]!.date
@@ -355,7 +374,7 @@ export function AttendanceTable({
               <tbody>
                 {roster.map((row) => {
                   return (
-                    <tr key={row.enrolmentId} className={`border-t border-zinc-100 ${selected.has(row.enrolmentId) ? 'bg-red-50' : 'hover:bg-amber-50/30'}`}>
+                    <tr key={row.enrolmentId} className={`border-t border-zinc-100 ${row.blocked ? 'opacity-50 bg-zinc-50' : ''} ${selected.has(row.enrolmentId) ? 'bg-red-50' : row.blocked ? '' : 'hover:bg-amber-50/30'}`}>
                       <td className={`sticky left-0 px-2 py-2 text-zinc-500 font-bold text-center border-r-2 border-amber-100 ${selected.has(row.enrolmentId) ? 'bg-red-50' : 'bg-white'}`}>
                         {selectMode ? (
                           <input
@@ -378,6 +397,9 @@ export function AttendanceTable({
                             <div className="font-extrabold text-zinc-900">
                               {row.firstName} {row.lastName ?? ''}
                               {row.age !== null && <span className="ml-1 text-zinc-500 font-normal">({row.age})</span>}
+                              {row.blocked && (
+                                <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-extrabold px-1.5 py-0.5 rounded align-middle bg-zinc-200 text-zinc-600" title="Blocked by admin — not returning. Coaches can't mark this student.">⛔ Finishing</span>
+                              )}
                               {row.birthdayInTerm && (
                                 <span className={`ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded align-middle ${row.birthdayInTerm.soon ? 'bg-pink-100 text-pink-700 ring-1 ring-pink-200' : 'bg-zinc-100 text-zinc-500'}`} title={`Birthday ${row.birthdayInTerm.label}${row.birthdayInTerm.soon ? ' — coming up, celebrate! 🎉' : ' (this term)'}`}>🎂 {row.birthdayInTerm.label}</span>
                               )}
@@ -401,17 +423,19 @@ export function AttendanceTable({
                         const style = STATUS_STYLE[w.status ?? 'null']!
                         const isToday = w.date === today
                         const busy = busyKey === `${row.studentId}::${w.date}`
+                        const lockedForCoach = row.blocked && !isAdmin
                         return (
                           <td key={w.date} className="p-0.5 text-center">
                             <button
                               type="button"
                               onClick={() => cycleCell(row, idx)}
-                              className={`w-full h-9 sm:h-10 rounded font-extrabold ${style.bg} ${style.text} ${
-                                isToday && !w.status ? 'ring-2 ring-[#D72027]/40' : ''
-                              } ${busy ? 'opacity-50' : ''} transition-colors active:scale-95`}
-                              title={`${shortDate(w.date)} · ${style.label}`}
+                              disabled={lockedForCoach}
+                              className={`w-full h-9 sm:h-10 rounded font-extrabold ${
+                                lockedForCoach && !w.status ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed' : `${style.bg} ${style.text}`
+                              } ${isToday && !w.status && !row.blocked ? 'ring-2 ring-[#D72027]/40' : ''} ${busy ? 'opacity-50' : ''} transition-colors ${lockedForCoach ? '' : 'active:scale-95'}`}
+                              title={lockedForCoach ? 'Blocked by admin — not returning' : `${shortDate(w.date)} · ${style.label}`}
                             >
-                              {style.emoji}
+                              {lockedForCoach && !w.status ? '⛔' : style.emoji}
                             </button>
                           </td>
                         )
@@ -461,7 +485,7 @@ export function AttendanceTable({
       </div>
 
       <div className="text-xs text-zinc-400 text-center">
-        Tap any week cell to cycle: blank → ✓ here → ⏰ late → ✕ absent. Tap the ⭐ to add stars. Tap ℹ for parent / payment / remove.
+        Tap any week cell to cycle: blank → ✓ here → ⏰ late → ✕ absent. ⛔ grey = blocked by admin, not returning{isAdmin ? ' (block via ℹ)' : " — you can't mark them"}. Tap the ⭐ to add stars. Tap ℹ for {isAdmin ? 'parent / payment / block / remove' : 'parent details and notes'}.
       </div>
 
       {/* Big red — log an incident for THIS class in one place */}
@@ -479,6 +503,7 @@ export function AttendanceTable({
           classId={classId}
           todayDate={todayDate}
           isAdmin={isAdmin}
+          onToggleBlocked={isAdmin && onSetBlocked ? (blocked: boolean) => handleSetBlocked(detailRow, blocked) : undefined}
           onRemove={onRemove}
           onSaveNote={onSaveNote}
           onNoteSaved={(note) => {
@@ -581,6 +606,7 @@ function DetailModal({
   classId,
   todayDate,
   isAdmin = false,
+  onToggleBlocked,
   onRemove,
   onSaveNote,
   onNoteSaved,
@@ -591,6 +617,7 @@ function DetailModal({
   classId: string
   todayDate: string
   isAdmin?: boolean
+  onToggleBlocked?: (blocked: boolean) => void
   onRemove: RemoveFn
   onSaveNote: SaveNoteFn
   onNoteSaved: (note: string | null) => void
@@ -642,7 +669,7 @@ function DetailModal({
           <Row label="Phone" value={row.parentPhone ?? '—'} />
           <Row label="Started" value={row.startDate ?? '—'} />
         </dl>
-        {/* Payment — ADMIN ONLY. Coaches never see money on the roll. */}
+        {/* Payment + roll blocking — ADMIN ONLY. Coaches never see money on the roll. */}
         {isAdmin && (
           <div className="mt-4 border-t border-zinc-200 pt-3">
             <div className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500 mb-2">Payment</div>
@@ -651,6 +678,30 @@ function DetailModal({
               <span>{ps.label}</span>
               {row.weeklyFee > 0 && <span className="opacity-70">· ${row.weeklyFee}/wk</span>}
             </div>
+            {onToggleBlocked && (
+              <div className="mt-3">
+                {row.blocked ? (
+                  <button
+                    type="button"
+                    onClick={() => onToggleBlocked(false)}
+                    className="inline-flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-300 text-emerald-800 text-sm font-extrabold px-4 py-2 rounded-lg"
+                  >
+                    ✓ Unblock — they&apos;re staying after all
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Block ${row.firstName} on the roll?\n\nThe row stays visible but goes grey with a ⛔. Coaches can't mark them anymore — only admin can. Use this when a family has given notice and is finishing up.`)) onToggleBlocked(true)
+                    }}
+                    className="inline-flex items-center gap-2 bg-zinc-100 hover:bg-zinc-200 border-2 border-zinc-300 text-zinc-700 text-sm font-extrabold px-4 py-2 rounded-lg"
+                  >
+                    ⛔ Block on roll — family finishing up
+                  </button>
+                )}
+                <div className="text-[10px] text-zinc-400 mt-1">Blocked students stay visible so coaches know they&apos;re not returning. Removing them entirely is separate, below.</div>
+              </div>
+            )}
           </div>
         )}
         {row.medical && (
