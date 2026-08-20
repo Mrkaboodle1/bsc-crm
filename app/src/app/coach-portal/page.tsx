@@ -2,6 +2,7 @@ import { verifySession } from '@/lib/dal'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { getCoachDays } from '@/lib/coach-portal'
 import { CoachDaysList } from '@/components/coach-days-list'
+import { CoachClock } from '@/components/coach-clock'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,9 @@ export default async function CoachPortalPage() {
 
   return (
     <DashboardShell user={user} currentPath="/coach-portal" pageTitle="Coach Events" pageSubtitle="Your School Holiday Workshops & Kids Night Out — tap a day to run it (sign-in/out, attendance, running order).">
+      {/* Time clock — coaches auto-clock on when they open the portal; the
+          trainee tile lets any coach sign Charlie in and out. */}
+      <CoachClock />
       {days === null ? (
         <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-8 max-w-2xl">
           <div className="text-3xl mb-2">🛠️</div>

@@ -2,6 +2,7 @@ import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
 import { ClassFormButton, type Coach } from '@/components/class-form'
+import { CoachClock } from '@/components/coach-clock'
 import { RollCallBoard, type BoardClass } from '@/components/roll-call-board'
 import { Printer } from 'lucide-react'
 
@@ -114,6 +115,8 @@ export default async function RollCallIndexPage() {
         </>
       }
     >
+      {/* Time clock — opening the roll on the iPad clocks the coach on. */}
+      <CoachClock />
       <RollCallBoard
         days={days}
         todayDow={todayDow}
