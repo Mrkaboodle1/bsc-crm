@@ -55,7 +55,15 @@ export default async function RollCallIndexPage() {
       primary_coach:coaches!classes_primary_coach_id_fkey ( full_name )
     `)
     .eq('status', 'active')
-  if (coachFilterId) classQuery = classQuery.eq('primary_coach_id', coachFilterId)
+  if (coachFilterId) {
+    // A coach sees classes they LEAD plus classes they're rostered onto via
+    // class_staff — that's how Tiffany gets exactly her 13 afternoon rolls.
+    const { data: staffed } = await supabase.from('class_staff').select('class_id').eq('coach_id', coachFilterId)
+    const staffedIds = (staffed ?? []).map((s) => s.class_id)
+    classQuery = staffedIds.length > 0
+      ? classQuery.or(`primary_coach_id.eq.${coachFilterId},id.in.(${staffedIds.join(',')})`)
+      : classQuery.eq('primary_coach_id', coachFilterId)
+  }
   if (hidePrivate) classQuery = classQuery.neq('discipline', 'private')
   const { data: classes } = await classQuery
     .order('day_of_week', { ascending: true })
