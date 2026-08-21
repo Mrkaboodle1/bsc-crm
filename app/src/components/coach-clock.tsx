@@ -13,6 +13,7 @@ type ClockState = {
   ready: boolean            // table exists
   me: { name: string; openLogId: string | null; clockIn: string | null } | null
   trainees: Array<{ coachId: string; name: string; openLogId: string | null; clockIn: string | null }>
+  canManage?: boolean       // admins + head coach: add / rename / remove trainees
 }
 
 function fmtTime(iso: string | null): string {
@@ -32,12 +33,26 @@ export function CoachClock() {
   }
   useEffect(() => { load() }, [])
 
-  async function act(action: 'off' | 'trainee-in' | 'trainee-out', coachId?: string) {
+  async function act(action: string, coachId?: string, name?: string) {
     setBusy(action + (coachId ?? ''))
     try {
-      await fetch('/api/coach-clock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, coachId }) })
+      const r = await fetch('/api/coach-clock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, coachId, name }) })
+      const d = await r.json().catch(() => ({}))
+      if (d && d.ok === false && d.error) alert(d.error)
       await load()
     } finally { setBusy(null) }
+  }
+
+  function addTrainee() {
+    const name = prompt('New trainee’s name (first + last):')
+    if (name && name.trim()) act('trainee-add', undefined, name.trim())
+  }
+  function renameTrainee(coachId: string, current: string) {
+    const name = prompt('Correct name for this trainee:', current)
+    if (name && name.trim() && name.trim() !== current) act('trainee-rename', coachId, name.trim())
+  }
+  function removeTrainee(coachId: string, current: string) {
+    if (confirm(`Remove ${current}'s tile from the clock?\n\nTheir logged hours are kept — the tile just goes away.`)) act('trainee-remove', coachId)
   }
 
   if (!state) return null
@@ -81,7 +96,15 @@ export function CoachClock() {
       {state.trainees.map((t) => (
         <div key={t.coachId} className="bg-white rounded-2xl border-2 border-amber-200 p-4 flex items-center justify-between gap-3">
           <div>
-            <div className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">🎓 Trainee — {t.name}</div>
+            <div className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">
+              🎓 Trainee — {t.name}
+              {state.canManage && (
+                <span className="ml-2 normal-case tracking-normal">
+                  <button type="button" onClick={() => renameTrainee(t.coachId, t.name)} className="text-zinc-400 hover:text-zinc-700 font-bold" title="Fix this trainee's name">✎</button>
+                  <button type="button" onClick={() => removeTrainee(t.coachId, t.name)} className="ml-1.5 text-zinc-400 hover:text-red-600 font-bold" title="Remove this tile (hours are kept)">✕</button>
+                </span>
+              )}
+            </div>
             {t.openLogId ? (
               <div className="font-extrabold text-emerald-700">Signed IN at {fmtTime(t.clockIn)}</div>
             ) : (
@@ -102,6 +125,16 @@ export function CoachClock() {
           )}
         </div>
       ))}
+
+      {state.canManage && (
+        <button
+          type="button"
+          onClick={addTrainee}
+          className="border-2 border-dashed border-zinc-300 rounded-2xl p-4 text-sm font-extrabold text-zinc-400 hover:text-zinc-700 hover:border-zinc-400 text-left"
+        >
+          ＋ Add a trainee tile
+        </button>
+      )}
     </div>
   )
 }

@@ -27,7 +27,10 @@ export async function GET() {
 
   try {
     // my coach record (if I am one)
-    const { data: myCoach } = await admin.from('coaches').select('id, full_name').eq('user_id', user.id).maybeSingle()
+    const { data: myCoach } = await admin.from('coaches').select('id, full_name, role').eq('user_id', user.id).maybeSingle()
+    // Managing trainees (add/rename/remove) is for admins and the HEAD coach —
+    // casual coaches only get the tap-in/out buttons.
+    const canManage = ['owner', 'manager'].includes(user.role) || myCoach?.role === 'head'
 
     let me: { name: string; openLogId: string | null; clockIn: string | null } | null = null
     if (myCoach) {
@@ -60,9 +63,9 @@ export async function GET() {
       tiles.push({ coachId: t.id, name: t.full_name, openLogId: open?.[0]?.id ?? null, clockIn: open?.[0]?.clock_in ?? null })
     }
 
-    return NextResponse.json({ ready: true, me, trainees: tiles })
+    return NextResponse.json({ ready: true, me, trainees: tiles, canManage })
   } catch {
-    return NextResponse.json({ ready: false, me: null, trainees: [] })
+    return NextResponse.json({ ready: false, me: null, trainees: [], canManage: false })
   }
 }
 
@@ -99,6 +102,36 @@ export async function POST(req: Request) {
       }
       return NextResponse.json({ ok: true })
     }
+    // ── Trainee management: admins + head coach only ──
+    if (b.action === 'trainee-add' || b.action === 'trainee-rename' || b.action === 'trainee-remove') {
+      const { data: myCoach } = await admin.from('coaches').select('role').eq('user_id', user.id).maybeSingle()
+      const canManage = ['owner', 'manager'].includes(user.role) || myCoach?.role === 'head'
+      if (!canManage) return NextResponse.json({ ok: false, error: 'Only admin or the head coach can manage trainees' }, { status: 403 })
+
+      if (b.action === 'trainee-add') {
+        const name = String(b.name || '').trim().slice(0, 80)
+        if (!name) return NextResponse.json({ ok: false, error: 'Name required' }, { status: 400 })
+        await admin.from('coaches').insert({
+          tenant_id: user.tenantId, full_name: name, role: 'trainee',
+          employment_type: 'trainee_honorarium', status: 'active',
+        })
+        return NextResponse.json({ ok: true })
+      }
+      const { data: t } = await admin.from('coaches').select('id, role').eq('id', String(b.coachId)).eq('tenant_id', user.tenantId).maybeSingle()
+      if (!t || t.role !== 'trainee') return NextResponse.json({ ok: false, error: 'Trainee not found' }, { status: 400 })
+      if (b.action === 'trainee-rename') {
+        const name = String(b.name || '').trim().slice(0, 80)
+        if (!name) return NextResponse.json({ ok: false, error: 'Name required' }, { status: 400 })
+        await admin.from('coaches').update({ full_name: name }).eq('id', t.id)
+        // keep future log rows readable; existing rows keep their historical name
+        return NextResponse.json({ ok: true })
+      }
+      // trainee-remove: retire, never hard-delete — history and hours stay intact
+      await admin.from('coach_time_logs').update({ clock_out: new Date().toISOString() }).eq('coach_id', t.id).is('clock_out', null)
+      await admin.from('coaches').update({ status: 'departed' }).eq('id', t.id)
+      return NextResponse.json({ ok: true })
+    }
+
     return NextResponse.json({ ok: false, error: 'Unknown action' }, { status: 400 })
   } catch (e) {
     return NextResponse.json({ ok: false, error: String(e).slice(0, 120) }, { status: 500 })
