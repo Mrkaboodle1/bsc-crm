@@ -19,8 +19,9 @@ export default function LoginPage() {
     setErrorMsg('')
 
     const supabase = createBrowserSupabase()
-    // Allow a plain username (e.g. "rodrigo") — map it to the BSC email.
-    const id = email.trim()
+    // Allow a plain username (e.g. "tiffany") — map it to the BSC email.
+    // Lowercased so Tiffany / TIFFANY / tiffany all work on the iPad keyboard.
+    const id = email.trim().toLowerCase()
     const loginEmail = id.includes('@') ? id : `${id}@bigstarcircus.com.au`
     const { error } = await supabase.auth.signInWithPassword({
       email: loginEmail,
