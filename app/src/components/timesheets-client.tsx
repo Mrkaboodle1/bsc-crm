@@ -21,9 +21,12 @@ function toUtcIso(dateKey: string, hhmm: string): string | null {
   return new Date(new Date(`${dateKey}T${hhmm}:00.000Z`).getTime() - BNE_OFFSET_MS).toISOString()
 }
 function hoursBetween(a: string, b: string | null): string {
-  if (!b) return 'open'
-  const h = (new Date(b).getTime() - new Date(a).getTime()) / 3600000
-  return `${h.toFixed(2)} h`
+  if (!b) return 'still on'
+  const mins = Math.round((new Date(b).getTime() - new Date(a).getTime()) / 60000)
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  if (!h) return `${m} min`
+  return m ? `${h} hr ${m} min` : `${h} hr`
 }
 function niceDay(key: string): string {
   return new Date(key + 'T12:00:00Z').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
