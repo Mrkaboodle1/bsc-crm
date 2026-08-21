@@ -40,15 +40,22 @@ export async function GET() {
       if (error) throw error
       if (open?.length) {
         me = { name: myCoach.full_name, openLogId: open[0]!.id, clockIn: open[0]!.clock_in }
-      } else if (user.role === 'coach') {
-        // auto clock-in: first portal visit today starts the shift
-        const { data: ins } = await admin.from('coach_time_logs').insert({
-          tenant_id: user.tenantId, coach_id: myCoach.id, user_id: user.id,
-          person_name: myCoach.full_name, kind: 'coach', source: 'auto',
-        }).select('id, clock_in').single()
-        me = ins ? { name: myCoach.full_name, openLogId: ins.id, clockIn: ins.clock_in } : { name: myCoach.full_name, openLogId: null, clockIn: null }
       } else {
-        me = { name: myCoach.full_name, openLogId: null, clockIn: null }
+        // Auto clock-in ONLY if no shift has been logged at all today. A closed
+        // shift means they clocked off — reloading the page must NOT silently
+        // reopen it (that's how Tiffany ended up "on" again at 5:47pm). Coming
+        // back for a real second shift is the explicit 'on' button below.
+        const { data: anyToday } = await admin.from('coach_time_logs')
+          .select('id').eq('coach_id', myCoach.id).gte('clock_in', since).limit(1)
+        if (user.role === 'coach' && !anyToday?.length) {
+          const { data: ins } = await admin.from('coach_time_logs').insert({
+            tenant_id: user.tenantId, coach_id: myCoach.id, user_id: user.id,
+            person_name: myCoach.full_name, kind: 'coach', source: 'auto',
+          }).select('id, clock_in').single()
+          me = ins ? { name: myCoach.full_name, openLogId: ins.id, clockIn: ins.clock_in } : { name: myCoach.full_name, openLogId: null, clockIn: null }
+        } else {
+          me = { name: myCoach.full_name, openLogId: null, clockIn: null }
+        }
       }
     }
 
@@ -81,6 +88,20 @@ export async function POST(req: Request) {
       if (!myCoach) return NextResponse.json({ ok: false, error: 'No coach record' }, { status: 400 })
       await admin.from('coach_time_logs').update({ clock_out: new Date().toISOString() })
         .eq('coach_id', myCoach.id).is('clock_out', null)
+      return NextResponse.json({ ok: true })
+    }
+    if (b.action === 'on') {
+      // Deliberate clock-back-on (second shift) — never automatic.
+      const { data: myCoach } = await admin.from('coaches').select('id, full_name').eq('user_id', user.id).maybeSingle()
+      if (!myCoach) return NextResponse.json({ ok: false, error: 'No coach record' }, { status: 400 })
+      const { data: open } = await admin.from('coach_time_logs')
+        .select('id').eq('coach_id', myCoach.id).is('clock_out', null).gte('clock_in', since).limit(1)
+      if (!open?.length) {
+        await admin.from('coach_time_logs').insert({
+          tenant_id: user.tenantId, coach_id: myCoach.id, user_id: user.id,
+          person_name: myCoach.full_name, kind: 'coach', source: 'portal',
+        })
+      }
       return NextResponse.json({ ok: true })
     }
     if (b.action === 'trainee-in' || b.action === 'trainee-out') {

@@ -76,11 +76,11 @@ export function CoachClock() {
             {state.me.openLogId ? (
               <div className="font-extrabold text-emerald-700">Clocked ON at {fmtTime(state.me.clockIn)}</div>
             ) : (
-              <div className="font-extrabold text-zinc-500">Clocked off — logging in tomorrow clocks you on again</div>
+              <div className="font-extrabold text-zinc-500">Clocked off for today</div>
             )}
-            <div className="text-[10px] text-zinc-400 mt-0.5">Signing into this portal clocks you on automatically. Tap clock off when you finish.</div>
+            <div className="text-[10px] text-zinc-400 mt-0.5">First sign-in of the day clocks you on automatically. Tap clock off when you finish — reloading won&apos;t restart it.</div>
           </div>
-          {state.me.openLogId && (
+          {state.me.openLogId ? (
             <button
               type="button"
               onClick={() => act('off')}
@@ -88,6 +88,15 @@ export function CoachClock() {
               className="shrink-0 bg-zinc-900 text-white text-sm font-extrabold px-4 py-2.5 rounded-xl hover:bg-zinc-700 disabled:opacity-50"
             >
               {busy === 'off' ? 'Saving…' : 'Clock off'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => act('on')}
+              disabled={busy === 'on'}
+              className="shrink-0 bg-gradient-to-b from-[#D72027] to-[#A0151B] text-white text-sm font-extrabold px-4 py-2.5 rounded-xl shadow disabled:opacity-50"
+            >
+              {busy === 'on' ? 'Saving…' : 'Clock back on'}
             </button>
           )}
         </div>

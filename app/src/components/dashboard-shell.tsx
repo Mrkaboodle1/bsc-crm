@@ -45,7 +45,7 @@ const DEPARTMENTS: Department[] = [
     { label: 'Play On Vouchers', href: '/finance/vouchers' },
   ] },
   { key: 'team', label: 'Team', Icon: Handshake, items: [
-    { label: 'Staff', href: '/coaches' }, { label: 'Coach Replies', href: '/coaches/replies' }, { label: 'Coach Academy', href: '/coaching' }, { label: 'Credentials', href: '/credentials' }, { label: 'Training', href: '/training' },
+    { label: 'Staff', href: '/coaches' }, { label: 'Timesheets', href: '/timesheets' }, { label: 'Coach Replies', href: '/coaches/replies' }, { label: 'Coach Academy', href: '/coaching' }, { label: 'Credentials', href: '/credentials' }, { label: 'Training', href: '/training' },
   ] },
   { key: 'inbox', label: 'Inbox', Icon: Inbox, items: [
     { label: 'Inbox', href: '/inbox' }, { label: 'Conversations', href: '/conversations' }, { label: 'Message History', href: '/conversations/history' },
