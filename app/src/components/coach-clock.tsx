@@ -40,7 +40,17 @@ export function CoachClock() {
     } finally { setBusy(null) }
   }
 
-  if (!state || !state.ready) return null
+  if (!state) return null
+  if (!state.ready) {
+    // The table isn't in the database yet — say so instead of hiding, or the
+    // whole feature looks like it doesn't exist.
+    return (
+      <div className="mb-5 max-w-3xl bg-amber-50 border-2 border-amber-200 rounded-2xl px-4 py-3 text-sm">
+        <span className="font-extrabold text-zinc-800">⏱ Time clock is one paste away.</span>{' '}
+        <span className="text-zinc-600">Rhett: paste <code className="bg-white px-1.5 py-0.5 rounded text-xs">schema/060_coach_time_logs.sql</code> into the Supabase SQL editor and refresh — coach clock-on/off and the trainee sign-in tiles (Charlie, Louis, Elia) appear right here.</span>
+      </div>
+    )
+  }
 
   return (
     <div className="mb-5 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl">
