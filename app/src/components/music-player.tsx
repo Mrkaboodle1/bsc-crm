@@ -81,14 +81,6 @@ const STATIONS: Station[] = [
   },
   {
     kind: 'audio',
-    id: 'secretagent',
-    name: 'Secret Agent',
-    vibe: 'Spy-movie lounge — sneaky, fun, great for acro games',
-    url: 'https://ice2.somafm.com/secretagent-128-mp3',
-    emoji: '🕵️',
-  },
-  {
-    kind: 'audio',
     id: 'illstreet',
     name: 'Illinois St Lounge',
     vibe: 'Vintage lounge & swing — proper circus vibes',
