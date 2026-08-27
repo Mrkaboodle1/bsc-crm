@@ -16,7 +16,8 @@ import { usePathname } from 'next/navigation'
 // KidzBop content that isn't on any free Icecast stream.
 type AudioStation = { kind: 'audio'; id: string; name: string; vibe: string; emoji: string; url: string }
 type YouTubeStation = { kind: 'youtube'; id: string; name: string; vibe: string; emoji: string; playlistId?: string; videoId?: string }
-type Station = AudioStation | YouTubeStation
+type SpotifyStation = { kind: 'spotify'; id: string; name: string; vibe: string; emoji: string; spotifyId: string }
+type Station = AudioStation | YouTubeStation | SpotifyStation
 
 const STATIONS: Station[] = [
   // ── Current Top 40 sung by kids / family-friendly (via YouTube) ──
@@ -36,6 +37,14 @@ const STATIONS: Station[] = [
     vibe: "Haddaway, Vengaboys, Aqua, Eiffel 65 — Rhett's pick · brief ads",
     emoji: '🕺',
     videoId: 'Bi3F2QoASyY',
+  },
+  {
+    kind: 'spotify',
+    id: 'cleanpop',
+    name: 'Clean Pop Hits',
+    vibe: 'Current pop, verified clean — via Spotify · tap play in its window',
+    emoji: '🎵',
+    spotifyId: '31J0PX4kQOlImKIX3FT2nq',
   },
 
   // ── SomaFM (ad-free, listener-supported, always clean) ──
@@ -277,7 +286,7 @@ export function MusicPlayer() {
     // YouTube stations are visually-controlled by the iframe itself — clicking
     // play/pause here just shows/hides the embed. The iframe's autoplay does
     // the rest. (Playlists always use the audio element.)
-    if (playlistIsYt || (!activePlaylist && station.kind === 'youtube')) {
+    if (playlistIsYt || (!activePlaylist && station.kind !== 'audio')) {
       setPlaying((p) => !p)
       return
     }
@@ -340,7 +349,7 @@ export function MusicPlayer() {
     setStationId(id)
     setError(null)
     audioRef.current?.pause()
-    if (target.kind === 'youtube') { setPlaying(wasPlaying); return }
+    if (target.kind !== 'audio') { setPlaying(wasPlaying); return }
     if (wasPlaying) autoNext.current = true   // onCanPlay will start the new station
   }
 
@@ -365,6 +374,19 @@ export function MusicPlayer() {
               ? `https://www.youtube-nocookie.com/embed/${station.videoId}?autoplay=1&loop=1&playlist=${station.videoId}&modestbranding=1&rel=0`
               : `https://www.youtube-nocookie.com/embed/videoseries?list=${station.playlistId}&autoplay=1&modestbranding=1&rel=0`}
             allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+          />
+        </div>
+      )}
+      {playing && !activePlaylist && station.kind === 'spotify' && (
+        <div className={open
+          ? 'fixed z-50 bottom-4 right-[21.5rem] w-72 rounded-xl overflow-hidden border-2 border-emerald-300 shadow-2xl bg-black'
+          : 'fixed z-0 bottom-0 right-0 w-px h-px opacity-0 overflow-hidden pointer-events-none'}>
+          <iframe
+            title={station.name}
+            width="100%"
+            height={open ? 152 : 2}
+            src={`https://open.spotify.com/embed/playlist/${station.spotifyId}?utm_source=generator`}
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           />
         </div>
       )}
@@ -476,6 +498,9 @@ export function MusicPlayer() {
                   it stays alive when this panel is minimised. */}
               {!activePlaylist && station.kind === 'youtube' && playing && (
                 <div className="text-[10px] text-zinc-500 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">🎬 Video playing in the floating window — minimising the player keeps the music going.</div>
+              )}
+              {!activePlaylist && station.kind === 'spotify' && playing && (
+                <div className="text-[10px] text-zinc-500 bg-emerald-50 border border-emerald-200 rounded-lg px-2 py-1.5">🎵 Tap play inside the Spotify window (left). Log the iPad into Spotify once for full songs — it keeps playing when you minimise.</div>
               )}
 
               {playlistIsYt && playing && (
