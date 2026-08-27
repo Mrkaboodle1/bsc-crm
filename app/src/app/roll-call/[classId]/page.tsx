@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import { CoachClock } from '@/components/coach-clock'
 import { verifySession } from '@/lib/dal'
 import { createServerSupabase } from '@/lib/supabase-server'
 import { DashboardShell } from '@/components/dashboard-shell'
@@ -239,20 +241,24 @@ export default async function RollCallClassPage({
       pageTitle={cls.name}
       pageSubtitle={`${DAY_NAMES[cls.day_of_week]} · ${formatTime(cls.start_time)} · ${cls.duration_minutes} min · ${Array.isArray(cls.primary_coach) && cls.primary_coach[0]?.full_name ? `Coach ${cls.primary_coach[0].full_name}` : 'No coach set'}`}
       pageActions={
-        <a
+        <Link
           href="/roll-call"
           className="inline-flex items-center gap-2 bg-white border border-zinc-200 text-zinc-700 font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-50"
         >
           ← All classes
-        </a>
+        </Link>
       }
     >
+      {/* Time clock — coach + trainee sign-in lives on the class roll too, so
+          hours get logged even when someone arrives mid-class. */}
+      <CoachClock />
+
       {/* Term + year picker — BSC red/yellow brand */}
       <div className="bg-white rounded-2xl shadow-sm border-2 border-amber-200 p-3 mb-5 flex items-center gap-3 flex-wrap">
         <span className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">Year</span>
         <div className="flex gap-1">
           {allYears.map((y) => (
-            <a
+            <Link
               key={y}
               href={`/roll-call/${classId}?year=${y}&term=${termRange.term}`}
               className={`px-3 py-1.5 rounded-lg text-xs font-extrabold ${
@@ -262,14 +268,14 @@ export default async function RollCallClassPage({
               }`}
             >
               {y}
-            </a>
+            </Link>
           ))}
         </div>
         <span className="text-zinc-300 mx-1">·</span>
         <span className="text-[10px] uppercase tracking-wider font-extrabold text-zinc-500">Term</span>
         <div className="flex gap-1">
           {termsThisYear.map((t) => (
-            <a
+            <Link
               key={t.term}
               href={`/roll-call/${classId}?year=${t.year}&term=${t.term}`}
               className={`px-3 py-1.5 rounded-lg text-xs font-extrabold ${
@@ -279,7 +285,7 @@ export default async function RollCallClassPage({
               }`}
             >
               T{t.term}
-            </a>
+            </Link>
           ))}
         </div>
         <span className="ml-auto text-xs text-zinc-500">

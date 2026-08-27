@@ -15,7 +15,7 @@ import { usePathname } from 'next/navigation'
 // YouTube stations carry occasional short ads but unlock current-pop /
 // KidzBop content that isn't on any free Icecast stream.
 type AudioStation = { kind: 'audio'; id: string; name: string; vibe: string; emoji: string; url: string }
-type YouTubeStation = { kind: 'youtube'; id: string; name: string; vibe: string; emoji: string; playlistId: string }
+type YouTubeStation = { kind: 'youtube'; id: string; name: string; vibe: string; emoji: string; playlistId?: string; videoId?: string }
 type Station = AudioStation | YouTubeStation
 
 const STATIONS: Station[] = [
@@ -27,6 +27,15 @@ const STATIONS: Station[] = [
     vibe: 'Top 40 sung by kids — official music videos · brief ads',
     emoji: '🎤',
     playlistId: 'PL5pvzdXbuo26GIkkkLvSu2oNR8ZwP8GIe', // KIDZ BOP Official Music Videos
+  },
+
+  {
+    kind: 'youtube',
+    id: 'eurodance',
+    name: '90s Eurodance Mix',
+    vibe: "Haddaway, Vengaboys, Aqua, Eiffel 65 — Rhett's pick · brief ads",
+    emoji: '🕺',
+    videoId: 'Bi3F2QoASyY',
   },
 
   // ── SomaFM (ad-free, listener-supported, always clean) ──
@@ -69,6 +78,30 @@ const STATIONS: Station[] = [
     vibe: 'Progressive house — high energy, no vocals to worry about',
     url: 'https://ice2.somafm.com/thetrip-128-mp3',
     emoji: '⚡',
+  },
+  {
+    kind: 'audio',
+    id: 'secretagent',
+    name: 'Secret Agent',
+    vibe: 'Spy-movie lounge — sneaky, fun, great for acro games',
+    url: 'https://ice2.somafm.com/secretagent-128-mp3',
+    emoji: '🕵️',
+  },
+  {
+    kind: 'audio',
+    id: 'illstreet',
+    name: 'Illinois St Lounge',
+    vibe: 'Vintage lounge & swing — proper circus vibes',
+    url: 'https://ice2.somafm.com/illstreet-128-mp3',
+    emoji: '🎩',
+  },
+  {
+    kind: 'audio',
+    id: 'folkfwd',
+    name: 'Folk Forward',
+    vibe: 'Indie folk — gentle warm-down energy',
+    url: 'https://ice2.somafm.com/folkfwd-128-mp3',
+    emoji: '🪕',
   },
   {
     kind: 'audio',
@@ -325,6 +358,39 @@ export function MusicPlayer() {
 
   return (
     <>
+      {/* YouTube sound — rendered OUTSIDE the panel so minimising the player or
+          navigating pages never unmounts the video (which would kill the music).
+          When the panel is closed the video keeps playing in an invisible box. */}
+      {playing && !activePlaylist && station.kind === 'youtube' && (
+        <div className={open
+          ? 'fixed z-50 bottom-4 right-[21.5rem] w-72 rounded-xl overflow-hidden border-2 border-amber-300 shadow-2xl bg-black'
+          : 'fixed z-0 bottom-0 right-0 w-px h-px opacity-0 overflow-hidden pointer-events-none'}>
+          <iframe
+            title={station.name}
+            width="100%"
+            height={open ? 170 : 2}
+            src={station.videoId
+              ? `https://www.youtube-nocookie.com/embed/${station.videoId}?autoplay=1&loop=1&playlist=${station.videoId}&modestbranding=1&rel=0`
+              : `https://www.youtube-nocookie.com/embed/videoseries?list=${station.playlistId}&autoplay=1&modestbranding=1&rel=0`}
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+          />
+        </div>
+      )}
+      {playing && playlistIsYt && plYtIds[plIdx] && (
+        <div className={open
+          ? 'fixed z-50 bottom-4 right-[21.5rem] w-72 rounded-xl overflow-hidden border-2 border-amber-300 shadow-2xl bg-black'
+          : 'fixed z-0 bottom-0 right-0 w-px h-px opacity-0 overflow-hidden pointer-events-none'}>
+          <iframe
+            key={plIdx}
+            title={activePlaylist?.name || 'Playlist'}
+            width="100%"
+            height={open ? 180 : 2}
+            src={`https://www.youtube.com/embed/${plYtIds[plIdx]}?autoplay=1&modestbranding=1&rel=0${plYtIds.length > 1 ? `&playlist=${plYtIds.slice(plIdx + 1).concat(plYtIds.slice(0, plIdx)).join(',')}` : ''}`}
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          />
+        </div>
+      )}
+
       {/* Hidden audio element — used for radio streams AND uploaded playlist tracks */}
       {((activePlaylist && !playlistIsYt) || station.kind === 'audio') && (
         <audio
@@ -414,32 +480,14 @@ export function MusicPlayer() {
                 </div>
               )}
 
-              {/* YouTube iframe — only when a YouTube station is active and playing */}
+              {/* YouTube video renders in the floating window beside the player —
+                  it stays alive when this panel is minimised. */}
               {!activePlaylist && station.kind === 'youtube' && playing && (
-                <div className="rounded-xl overflow-hidden border-2 border-amber-200">
-                  <iframe
-                    title={station.name}
-                    width="100%"
-                    height="160"
-                    src={`https://www.youtube-nocookie.com/embed/videoseries?list=${station.playlistId}&autoplay=1&modestbranding=1&rel=0`}
-                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                  />
-                </div>
+                <div className="text-[10px] text-zinc-500 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">🎬 Video playing in the floating window — minimising the player keeps the music going.</div>
               )}
 
-              {/* YouTube playlist (a coach's saved YouTube songs) — starts on the chosen
-                  song, then continues through the rest and loops back round. */}
-              {playlistIsYt && playing && plYtIds[plIdx] && (
-                <div className="rounded-xl overflow-hidden border-2 border-amber-200">
-                  <iframe
-                    key={plIdx}
-                    title={activePlaylist?.name || 'Playlist'}
-                    width="100%"
-                    height="180"
-                    src={`https://www.youtube.com/embed/${plYtIds[plIdx]}?autoplay=1&modestbranding=1&rel=0${plYtIds.length > 1 ? `&playlist=${plYtIds.slice(plIdx + 1).concat(plYtIds.slice(0, plIdx)).join(',')}` : ''}`}
-                    allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  />
-                </div>
+              {playlistIsYt && playing && (
+                <div className="text-[10px] text-zinc-500 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">🎬 Playlist playing in the floating window — it keeps going when you minimise.</div>
               )}
 
               {/* Song list — see every song and tap any one to play it (iPod-style) */}
